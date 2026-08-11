@@ -25,6 +25,12 @@ mesure inscrite dans `BENCHMARKS.md` quand le jalon revendique une performance.
   cache : un débrief périmé servi comme actuel est pire que pas de débrief.
 - **Manifeste installable** : icônes générées par script (`npm run make-icons`),
   dessinées dans la zone de sécurité maskable.
+- **Choix de caméra** : avant par défaut (se cadrer soi-même demande de voir
+  l'aperçu), arrière à un tap, choix mémorisé. Bascule possible en cours de
+  séance sans perdre les reps déjà comptées — mais la calibration est invalidée,
+  un autre point de vue change l'amplitude mesurée. L'aperçu n'est mis en miroir
+  que si la piste **déclare** une caméra frontale : un webcam de portable n'en
+  déclare aucune, et deviner casserait un affichage qui marche.
 
 **Reste à faire dans M0, avant de le déclarer clos :**
 

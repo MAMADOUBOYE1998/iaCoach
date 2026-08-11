@@ -50,6 +50,13 @@ body {
   object-fit: contain;
 }
 
+/* Selfie view. Both layers are flipped together, so the skeleton stays on the
+   athlete rather than beside them. */
+#stage.mirrored #video,
+#stage.mirrored #overlay {
+  transform: scaleX(-1);
+}
+
 #hud {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));

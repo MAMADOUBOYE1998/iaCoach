@@ -11,8 +11,15 @@ import type { PoseLandmarker } from "@mediapipe/tasks-vision";
 
 import { RepCounter, type FrameSample } from "./analysis/counting";
 import { CalibrationRecorder, FrameSampler } from "./analysis/frame";
-import { API_BASE, athleteId } from "./config";
-import { CameraError, startCamera, type CameraHandle } from "./pose/camera";
+import { API_BASE, athleteId, preferredFacing, rememberFacing } from "./config";
+import {
+  CameraError,
+  hasMultipleCameras,
+  otherFacing,
+  startCamera,
+  type CameraHandle,
+  type Facing,
+} from "./pose/camera";
 import { assetsLabel, resolveAssets } from "./pose/assets";
 import { createLandmarker, detect, type Detection } from "./pose/landmarker";
 import { registerServiceWorker } from "./pwa/register";
@@ -32,8 +39,10 @@ const el = <T extends HTMLElement>(id: string): T => {
 };
 
 const video = el<HTMLVideoElement>("video");
+const stage = el<HTMLElement>("stage");
 const canvas = el<HTMLCanvasElement>("overlay");
 const startButton = el<HTMLButtonElement>("start");
+const flipButton = el<HTMLButtonElement>("flip");
 const calibrateButton = el<HTMLButtonElement>("calibrate");
 const newSetButton = el<HTMLButtonElement>("new-set");
 const finishButton = el<HTMLButtonElement>("finish");
@@ -329,7 +338,7 @@ async function start(): Promise<void> {
   setStatus("Autorise l'accès à la caméra…");
   let camera: CameraHandle;
   try {
-    camera = await startCamera(video);
+    camera = await startCamera(video, preferredFacing());
   } catch (error) {
     console.error(error);
     setStatus(
@@ -351,8 +360,61 @@ async function start(): Promise<void> {
   startButton.textContent = "Arrêter";
   startButton.disabled = false;
   calibrateButton.hidden = false;
+  applyCamera(camera);
+  // Only meaningful once permission is granted: before that the browser hides
+  // the device list, so asking earlier would always answer "one camera".
+  flipButton.hidden = !(await hasMultipleCameras());
   setStatus("Place-toi de profil, corps entier dans le cadre, puis calibre ton amplitude.");
   loop(running);
+}
+
+/** Reflect the open camera in the UI: mirror the preview, label the switch. */
+function applyCamera(camera: CameraHandle): void {
+  stage.classList.toggle("mirrored", camera.mirrored);
+  flipButton.textContent =
+    otherFacing(camera.facing) === "user" ? "Caméra avant" : "Caméra arrière";
+}
+
+/**
+ * Swap cameras without ending the session.
+ *
+ * The landmarker, the counter and the recorded sets are untouched: switching
+ * camera mid-set is a framing fix, not a reason to lose the reps already
+ * counted. Only the calibration is invalidated — a new viewpoint changes the
+ * measured range, and keeping the old one would silently score every following
+ * rep against a range from a different angle.
+ */
+async function flipCamera(): Promise<void> {
+  if (!running) return;
+  const target: Facing = otherFacing(running.camera.facing);
+  flipButton.disabled = true;
+  running.camera.stop();
+
+  try {
+    running.camera = await startCamera(video, target);
+    rememberFacing(running.camera.facing);
+  } catch (error) {
+    console.error(error);
+    // Put the previous one back rather than leaving a dead preview.
+    try {
+      running.camera = await startCamera(video, otherFacing(target));
+      setStatus("Impossible de changer de caméra.", true);
+    } catch {
+      stop();
+      setStatus("Caméra perdue. Redémarre-la.", true);
+      return;
+    }
+  } finally {
+    flipButton.disabled = false;
+  }
+
+  applyCamera(running.camera);
+  running.sampler.reset();
+  if (running.mode.kind === "calibrating") {
+    running.mode = { kind: "idle" };
+    calibrateButton.hidden = false;
+    setStatus("Caméra changée — recommence la calibration.");
+  }
 }
 
 function stop(): void {
@@ -365,7 +427,10 @@ function stop(): void {
   for (const out of [repsOut, confidenceOut, fpsOut, latencyOut]) out.textContent = "—";
   confidenceOut.classList.remove("warn");
   lastRepPanel.hidden = true;
-  for (const button of [calibrateButton, newSetButton, finishButton]) button.hidden = true;
+  for (const button of [calibrateButton, newSetButton, finishButton, flipButton]) {
+    button.hidden = true;
+  }
+  stage.classList.remove("mirrored");
   startButton.textContent = "Démarrer la caméra";
   setStatus("Arrêté.");
 }
@@ -374,6 +439,8 @@ startButton.addEventListener("click", () => {
   if (running) stop();
   else void start();
 });
+
+flipButton.addEventListener("click", () => void flipCamera());
 
 calibrateButton.addEventListener("click", () => {
   if (!running) return;

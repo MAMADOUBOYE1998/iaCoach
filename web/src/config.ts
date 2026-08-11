@@ -6,7 +6,10 @@
  * useful — that is the offline-first requirement, not a fallback path.
  */
 
+import type { Facing } from "./pose/camera";
+
 const ATHLETE_KEY = "iacoach.athlete-id";
+const FACING_KEY = "iacoach.camera-facing";
 
 /**
  * Backend origin. Set `VITE_API_BASE` when the API is not on the dev default —
@@ -28,4 +31,21 @@ export function athleteId(storage: Storage = localStorage): string {
   const fresh = crypto.randomUUID();
   storage.setItem(ATHLETE_KEY, fresh);
   return fresh;
+}
+
+/**
+ * Which camera to open.
+ *
+ * Defaults to the front one: framing yourself in shot is the first thing that
+ * has to work, and you cannot do it from a preview you cannot see. The rear
+ * camera is one tap away and the choice survives a reload — re-picking it at
+ * the start of every session would be its own kind of broken.
+ */
+export function preferredFacing(storage: Storage = localStorage): Facing {
+  const stored = storage.getItem(FACING_KEY);
+  return stored === "environment" || stored === "user" ? stored : "user";
+}
+
+export function rememberFacing(facing: Facing, storage: Storage = localStorage): void {
+  storage.setItem(FACING_KEY, facing);
 }
