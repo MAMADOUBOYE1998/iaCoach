@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "Anthropometry": {
+      "additionalProperties": false,
+      "description": "Measured once at calibration. Used to normalise angles across body types.",
+      "properties": {
+        "arm_span_m": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 2.6,
+              "exclusiveMinimum": 0.5,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Arm Span M"
+        },
+        "height_m": {
+          "exclusiveMaximum": 2.5,
+          "exclusiveMinimum": 0.5,
+          "title": "Height M",
+          "type": "number"
+        },
+        "mass_kg": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 250.0,
+              "exclusiveMinimum": 20.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mass Kg"
+        }
+      },
+      "required": [
+        "height_m"
+      ],
+      "title": "Anthropometry",
+      "type": "object"
+    },
+    "Exercise": {
+      "description": "Exercises the movement classifier can emit.\n\nv1 ships pull-up end to end; the rest are declared so the classifier and the\ndatabase schema are stable before the rules exist.",
+      "enum": [
+        "pull_up",
+        "chin_up",
+        "dip",
+        "push_up",
+        "squat",
+        "muscle_up",
+        "l_sit",
+        "unknown"
+      ],
+      "title": "Exercise",
+      "type": "string"
+    },
+    "ExerciseCalibration": {
+      "additionalProperties": false,
+      "description": "Per-athlete, per-exercise reference range of motion.\n\nAll downstream thresholds are expressed as a fraction of this range, never as\nhard-coded angles. ``rom_min_deg``/``rom_max_deg`` are the joint angle\nextremes the athlete actually reached during a supervised calibration set.",
+      "properties": {
+        "captured_at": {
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "confidence": {
+          "description": "Fraction of calibration frames above the visibility threshold.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "exercise": {
+          "$ref": "#/$defs/Exercise"
+        },
+        "joint": {
+          "description": "Joint driving the FSM, e.g. 'elbow'.",
+          "title": "Joint",
+          "type": "string"
+        },
+        "rom_max_deg": {
+          "title": "Rom Max Deg",
+          "type": "number"
+        },
+        "rom_min_deg": {
+          "title": "Rom Min Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "exercise",
+        "joint",
+        "rom_min_deg",
+        "rom_max_deg",
+        "captured_at",
+        "confidence"
+      ],
+      "title": "ExerciseCalibration",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "anthropometry": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Anthropometry"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "athlete_id": {
+      "title": "Athlete Id",
+      "type": "string"
+    },
+    "calibrations": {
+      "items": {
+        "$ref": "#/$defs/ExerciseCalibration"
+      },
+      "title": "Calibrations",
+      "type": "array"
+    },
+    "constraints": {
+      "description": "Injuries, equipment limits, schedule constraints. Free text.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Constraints",
+      "type": "array"
+    },
+    "goals": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Goals",
+      "type": "array"
+    },
+    "level": {
+      "enum": [
+        "debutant",
+        "intermediaire",
+        "avance"
+      ],
+      "title": "Level",
+      "type": "string"
+    }
+  },
+  "required": [
+    "athlete_id",
+    "level"
+  ],
+  "title": "AthleteProfile",
+  "type": "object"
+}

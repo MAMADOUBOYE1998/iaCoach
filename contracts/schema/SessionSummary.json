@@ -1,0 +1,263 @@
+{
+  "$defs": {
+    "Exercise": {
+      "description": "Exercises the movement classifier can emit.\n\nv1 ships pull-up end to end; the rest are declared so the classifier and the\ndatabase schema are stable before the rules exist.",
+      "enum": [
+        "pull_up",
+        "chin_up",
+        "dip",
+        "push_up",
+        "squat",
+        "muscle_up",
+        "l_sit",
+        "unknown"
+      ],
+      "title": "Exercise",
+      "type": "string"
+    },
+    "FormScores": {
+      "additionalProperties": false,
+      "description": "Continuous quality scores for one repetition.\n\nEach field is a magnitude of deviation normalised to [0, 1], where 1.0 means\n\"no deviation detected\". A rule never returns a boolean: the coaching layer\nneeds to say \"tu ne descends pas assez bas\" with a degree, not \"rep invalide\".",
+      "properties": {
+        "alignment": {
+          "description": "1.0 = trunk/shoulder alignment held through the rep.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Alignment",
+          "type": "number"
+        },
+        "kipping": {
+          "description": "1.0 = no parasitic hip momentum. Derived from pelvis acceleration orthogonal to the movement axis.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Kipping",
+          "type": "number"
+        },
+        "rom": {
+          "description": "Fraction of the athlete's calibrated range reached.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Rom",
+          "type": "number"
+        },
+        "symmetry": {
+          "description": "1.0 = identical left/right joint angles through the rep.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Symmetry",
+          "type": "number"
+        },
+        "tempo_control": {
+          "description": "1.0 = smooth, controlled velocity profile; low = jerky.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Tempo Control",
+          "type": "number"
+        }
+      },
+      "required": [
+        "rom",
+        "symmetry",
+        "kipping",
+        "tempo_control",
+        "alignment"
+      ],
+      "title": "FormScores",
+      "type": "object"
+    },
+    "RepEvent": {
+      "additionalProperties": false,
+      "description": "The central contract. Every counted repetition produces one of these.\n\nNothing in the system increments a bare counter: fatigue tracking, progression,\nperiodisation and the LLM coach are all built on the stream of RepEvents.",
+      "properties": {
+        "confidence": {
+          "description": "Fraction of frames in this rep whose driving landmarks were above the visibility threshold. Below ~0.7, corrections are suppressed.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "counted": {
+          "description": "Whether this rep counts toward the valid total. A rep can be recorded with poor scores and still count; `counted=False` is reserved for reps that failed the hard ROM floor.",
+          "title": "Counted",
+          "type": "boolean"
+        },
+        "duration_ms": {
+          "exclusiveMinimum": 0.0,
+          "title": "Duration Ms",
+          "type": "number"
+        },
+        "exercise": {
+          "$ref": "#/$defs/Exercise"
+        },
+        "flags": {
+          "description": "Machine-readable issue codes, e.g. 'rom_short', 'kipping', 'left_lag'. Rendered to French by the UI, not stored in French.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Flags",
+          "type": "array"
+        },
+        "min_angle_deg": {
+          "title": "Min Angle Deg",
+          "type": "number"
+        },
+        "peak_angle_deg": {
+          "title": "Peak Angle Deg",
+          "type": "number"
+        },
+        "rep_index": {
+          "description": "0-based index within the set.",
+          "minimum": 0,
+          "title": "Rep Index",
+          "type": "integer"
+        },
+        "scores": {
+          "$ref": "#/$defs/FormScores"
+        },
+        "started_at_ms": {
+          "description": "Monotonic clock offset from session start, in milliseconds.",
+          "title": "Started At Ms",
+          "type": "number"
+        },
+        "tempo": {
+          "$ref": "#/$defs/Tempo"
+        }
+      },
+      "required": [
+        "rep_index",
+        "exercise",
+        "started_at_ms",
+        "duration_ms",
+        "tempo",
+        "scores",
+        "peak_angle_deg",
+        "min_angle_deg",
+        "confidence",
+        "counted"
+      ],
+      "title": "RepEvent",
+      "type": "object"
+    },
+    "SetSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "exercise": {
+          "$ref": "#/$defs/Exercise"
+        },
+        "reps": {
+          "items": {
+            "$ref": "#/$defs/RepEvent"
+          },
+          "title": "Reps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "exercise",
+        "reps"
+      ],
+      "title": "SetSummary",
+      "type": "object"
+    },
+    "Tempo": {
+      "additionalProperties": false,
+      "description": "Phase durations in seconds. Mirrors the usual eccentric/pause/concentric\nnotation used in strength programming.",
+      "properties": {
+        "bottom_pause_s": {
+          "minimum": 0.0,
+          "title": "Bottom Pause S",
+          "type": "number"
+        },
+        "concentric_s": {
+          "minimum": 0.0,
+          "title": "Concentric S",
+          "type": "number"
+        },
+        "eccentric_s": {
+          "minimum": 0.0,
+          "title": "Eccentric S",
+          "type": "number"
+        },
+        "top_pause_s": {
+          "minimum": 0.0,
+          "title": "Top Pause S",
+          "type": "number"
+        }
+      },
+      "required": [
+        "eccentric_s",
+        "bottom_pause_s",
+        "concentric_s",
+        "top_pause_s"
+      ],
+      "title": "Tempo",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Aggregated, image-free payload. This — and only this — is what may be sent\nto the Anthropic API.",
+  "properties": {
+    "athlete_id": {
+      "title": "Athlete Id",
+      "type": "string"
+    },
+    "duration_s": {
+      "minimum": 0.0,
+      "title": "Duration S",
+      "type": "number"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    },
+    "perceived_effort": {
+      "anyOf": [
+        {
+          "maximum": 10,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "RPE, self-reported.",
+      "title": "Perceived Effort"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "sets": {
+      "items": {
+        "$ref": "#/$defs/SetSummary"
+      },
+      "title": "Sets",
+      "type": "array"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "athlete_id",
+    "started_at",
+    "duration_s",
+    "sets"
+  ],
+  "title": "SessionSummary",
+  "type": "object"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "iaCoach",
+  "short_name": "iaCoach",
+  "description": "Coach street workout: comptage et qualité de mouvement sur l'appareil.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d0f12",
+  "theme_color": "#0d0f12",
+  "icons": []
+}

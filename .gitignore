@@ -1,0 +1,36 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Vendored pose model (multi-MB binary; fetch with `npm run fetch-model`)
+web/public/models/
+
+# Training data and runs — personal video, never leaves the local machine
+vision/finetune/data/
+vision/finetune/runs/
+fixtures/clips/
+
+# Local database
+*.db
+*.db-wal
+*.db-shm
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

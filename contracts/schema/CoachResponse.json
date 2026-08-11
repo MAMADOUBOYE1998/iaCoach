@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "NextSession": {
+      "additionalProperties": false,
+      "properties": {
+        "duree_estimee_min": {
+          "maximum": 180,
+          "minimum": 5,
+          "title": "Duree Estimee Min",
+          "type": "integer"
+        },
+        "exercices": {
+          "items": {
+            "$ref": "#/$defs/SuggestedExercise"
+          },
+          "title": "Exercices",
+          "type": "array"
+        },
+        "focus": {
+          "title": "Focus",
+          "type": "string"
+        }
+      },
+      "required": [
+        "focus",
+        "exercices",
+        "duree_estimee_min"
+      ],
+      "title": "NextSession",
+      "type": "object"
+    },
+    "SuggestedExercise": {
+      "additionalProperties": false,
+      "properties": {
+        "nom": {
+          "title": "Nom",
+          "type": "string"
+        },
+        "raison": {
+          "title": "Raison",
+          "type": "string"
+        },
+        "series_reps": {
+          "title": "Series Reps",
+          "type": "string"
+        }
+      },
+      "required": [
+        "nom",
+        "raison",
+        "series_reps"
+      ],
+      "title": "SuggestedExercise",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Schema the model is *constrained* to, via structured outputs — not a format\nrequested in prose. Field names are French because they surface directly in\nthe UI.",
+  "properties": {
+    "confiance": {
+      "enum": [
+        "eleve",
+        "moyen",
+        "faible"
+      ],
+      "title": "Confiance",
+      "type": "string"
+    },
+    "diagnostic": {
+      "title": "Diagnostic",
+      "type": "string"
+    },
+    "exercices_suggeres": {
+      "items": {
+        "$ref": "#/$defs/SuggestedExercise"
+      },
+      "title": "Exercices Suggeres",
+      "type": "array"
+    },
+    "points_faibles": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Points Faibles",
+      "type": "array"
+    },
+    "seance_suivante": {
+      "$ref": "#/$defs/NextSession"
+    }
+  },
+  "required": [
+    "diagnostic",
+    "points_faibles",
+    "exercices_suggeres",
+    "seance_suivante",
+    "confiance"
+  ],
+  "title": "CoachResponse",
+  "type": "object"
+}
