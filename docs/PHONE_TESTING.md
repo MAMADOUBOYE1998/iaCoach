@@ -17,25 +17,31 @@ GitHub construit la PWA et la sert en HTTPS, ce qui suffit comme contexte
 sécurisé. Le workflow `.github/workflows/pages.yml` fait tout : `npm ci`,
 vendoring des assets, build sous le bon sous-chemin, déploiement.
 
-**Une seule action manuelle, une fois pour toutes** — et elle n'est pas faisable
-depuis l'app GitHub, qui n'a pas d'écran Pages. Ouvrir dans un navigateur :
+**Rien à activer.** Le site est en ligne :
 
-1. https://github.com/MAMADOUBOYE1998/iaCoach/settings/pages
-   → section « Build and deployment » → **Source : GitHub Actions**
-2. Onglet Actions → « Deploy PWA to Pages » → **Re-run** (le dernier run a
-   échoué avant cette activation)
-3. Ouvrir `https://mamadouboye1998.github.io/iaCoach/` dans Chrome sur le
-   téléphone.
+**https://mamadouboye1998.github.io/iaCoach/**
 
-Le premier déploiement met une à deux minutes à être servi après la fin du
-workflow.
+À chaque commit touchant `web/`, le workflow reconstruit et pousse sur la branche
+`gh-pages` ; Pages sert cette branche. Compter une à deux minutes après la fin du
+workflow avant que le nouveau contenu soit servi.
 
-Le workflow demande bien à `actions/configure-pages` de créer le site lui-même
-(`enablement: true`), mais GitHub le refuse : `Resource not accessible by
-integration`. Le jeton d'un workflow ne peut pas créer un site Pages, et aucune
-permission déclarable dans le fichier ne le permet. L'option est conservée parce
-qu'elle transforme un « Not Found » opaque en erreur explicite — pas parce
-qu'elle évite l'étape.
+### Pourquoi la branche et pas `actions/deploy-pages`
+
+La route officielle (`configure-pages` → `upload-pages-artifact` →
+`deploy-pages`) exige que Pages soit configuré avec « Source : GitHub Actions ».
+Ce réglage ne peut pas être créé par un workflow — GitHub répond `Create Pages
+site failed: Resource not accessible by integration`, et aucune permission
+déclarable dans le fichier ne l'autorise. Il n'est pas non plus atteignable
+depuis l'app GitHub, qui n'a pas d'écran Pages.
+
+Pousser une branche `gh-pages`, en revanche, active Pages tout seul. C'est la
+route retenue : aucune action manuelle, jamais.
+
+La branche est un **artefact**, réécrite en force à chaque déploiement (un seul
+commit). Elle contient volontairement le modèle et le runtime WASM que
+`.gitignore` exclut de la branche source — sans eux la PWA déployée retomberait
+sur un CDN, donc plus de fonctionnement hors-ligne, qui est justement ce qu'on
+veut pouvoir tester. Ne rien y éditer à la main.
 
 **Ce qui marche sans backend** : caméra, pose, calibration, comptage, scores,
 file d'attente locale des séances. **Ce qui ne marche pas** : le débrief coach,
