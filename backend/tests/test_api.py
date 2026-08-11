@@ -27,6 +27,7 @@ from iacoach.contracts import (
     NextSession,
     SessionSummary,
     SetSummary,
+    SuggestedExercise,
 )
 
 DEBRIEF = CoachResponse(
@@ -155,7 +156,10 @@ class TestDebrief:
         monkeypatch.setattr("iacoach.api.app.Coach", lambda _s: _StubCoach(DEBRIEF))
         client.post("/sessions", json=make_session().model_dump(mode="json"))
         body = client.post("/sessions/s1/debrief").json()
-        assert body["diagnostic"] == DEBRIEF.diagnostic
+        assert body["coach"]["diagnostic"] == DEBRIEF.diagnostic
+        # The deterministic stage travels with the answer, not behind it.
+        assert body["load"]["sessions_28d"] >= 0
+        assert body["constraints"]["rationale"]
 
     def test_second_call_is_served_from_cache(
         self, client: TestClient, monkeypatch: pytest.MonkeyPatch
@@ -210,6 +214,49 @@ class TestDebrief:
         assert stub.last is not None
         assert stub.last.catalogue, "retrieval should anchor suggestions to the catalogue"
         assert len(stub.last.history) == 1, "the session being debriefed is not its own history"
+
+    def test_the_proposal_is_bounded_before_it_reaches_the_athlete(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The invariant this whole stage exists for: the model can ask for
+        anything, and what comes out is still within the computed bounds."""
+        greedy = CoachResponse(
+            diagnostic="En forme.",
+            points_faibles=[],
+            exercices_suggeres=[],
+            seance_suivante=NextSession(
+                focus="volume",
+                exercices=[
+                    SuggestedExercise(
+                        nom="Traction stricte", raison="progresser", series_reps="20x10"
+                    )
+                ],
+                duree_estimee_min=180,
+            ),
+            confiance="eleve",
+        )
+        monkeypatch.setattr("iacoach.api.app.Coach", lambda _s: _StubCoach(greedy))
+        client.post("/sessions", json=make_session().model_dump(mode="json"))
+        body = client.post("/sessions/s1/debrief").json()
+
+        prescribed = body["coach"]["seance_suivante"]["exercices"][0]["series_reps"]
+        assert prescribed != "20x10", "200 reps must not survive the guardrails"
+        assert body["coach"]["seance_suivante"]["duree_estimee_min"] <= 75
+        assert body["adjustments"], "every correction is surfaced, never silent"
+
+    def test_guardrails_are_reapplied_to_a_cached_debrief(
+        self, client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Only the model's raw answer is cached, so tightening a bound takes
+        effect on past debriefs instead of leaving stale advice in the database."""
+        stub = _StubCoach(DEBRIEF)
+        monkeypatch.setattr("iacoach.api.app.Coach", lambda _s: stub)
+        client.post("/sessions", json=make_session().model_dump(mode="json"))
+        first = client.post("/sessions/s1/debrief").json()
+        second = client.post("/sessions/s1/debrief").json()
+        assert stub.calls == 1
+        assert second["constraints"] == first["constraints"]
+        assert second["load"] == first["load"]
 
     def test_missing_profile_does_not_block_a_first_debrief(
         self, client: TestClient, monkeypatch: pytest.MonkeyPatch

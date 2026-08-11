@@ -6,7 +6,7 @@
  * same way would quietly launder uncertainty into advice.
  */
 
-import type { CoachResponse } from "../types/contracts";
+import type { CoachResponse, SessionDebrief } from "../types/contracts";
 
 const CONFIDENCE_LABEL: Record<CoachResponse["confiance"], string> = {
   eleve: "Confiance élevée",
@@ -34,7 +34,8 @@ function list(items: string[]): HTMLUListElement {
   return ul;
 }
 
-export function renderDebrief(container: HTMLElement, debrief: CoachResponse): void {
+export function renderDebrief(container: HTMLElement, result: SessionDebrief): void {
+  const debrief = result.coach;
   container.replaceChildren();
 
   const badge = document.createElement("p");
@@ -66,6 +67,20 @@ export function renderDebrief(container: HTMLElement, debrief: CoachResponse): v
     container.append(section("Exercices suggérés", ul));
   }
 
+  container.append(section("Charge", loadSummary(result)));
+
+  if (result.adjustments.length > 0) {
+    const ul = document.createElement("ul");
+    for (const adjustment of result.adjustments) {
+      const li = document.createElement("li");
+      li.textContent = `${adjustment.raison} (proposé : ${adjustment.propose} → appliqué : ${adjustment.applique})`;
+      ul.append(li);
+    }
+    const wrapper = section("Ajustements appliqués", ul);
+    wrapper.classList.add("adjustments");
+    container.append(wrapper);
+  }
+
   const next = debrief.seance_suivante;
   const nextBody = document.createElement("div");
   const focus = document.createElement("p");
@@ -75,6 +90,39 @@ export function renderDebrief(container: HTMLElement, debrief: CoachResponse): v
     nextBody.append(list(next.exercices.map((e) => `${e.nom} — ${e.series_reps}`)));
   }
   container.append(section("Séance suivante", nextBody));
+}
+
+/**
+ * The deterministic side of the answer.
+ *
+ * Shown next to the coach's prose on purpose: these numbers, not the model,
+ * decided how much volume was authorised, and the athlete should be able to see
+ * that rather than infer it.
+ */
+function loadSummary(result: SessionDebrief): HTMLElement {
+  const wrapper = document.createElement("div");
+
+  const figures = document.createElement("p");
+  const ratio =
+    result.load.ratio === null
+      ? "historique trop mince"
+      : `${result.load.ratio.toFixed(2)}×`;
+  figures.textContent =
+    `${result.load.acute_reps} reps sur 7 j · ` +
+    `${result.load.chronic_reps_per_week.toFixed(0)}/semaine sur 28 j · ` +
+    `ratio aigu/chronique : ${ratio}`;
+  wrapper.append(figures);
+
+  const rationale = document.createElement("ul");
+  rationale.append(
+    ...result.constraints.rationale.map((text) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      return li;
+    }),
+  );
+  wrapper.append(rationale);
+  return wrapper;
 }
 
 export function renderDebriefUnavailable(container: HTMLElement, reason: string): void {

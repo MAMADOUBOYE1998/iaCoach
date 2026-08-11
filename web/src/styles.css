@@ -235,3 +235,15 @@ button:disabled {
   vertical-align: middle;
   background: var(--dot);
 }
+
+/* Adjustments are the visible trace of the deterministic stage overriding the
+   model. Muted, but never hidden. */
+.adjustments {
+  border-left: 2px solid var(--warn);
+  padding-left: 10px;
+}
+
+.adjustments li {
+  font-size: 0.85rem;
+  color: var(--muted);
+}

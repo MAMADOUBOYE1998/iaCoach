@@ -325,6 +325,51 @@
       "title": "HistoryPoint",
       "type": "object"
     },
+    "PlanConstraints": {
+      "additionalProperties": false,
+      "description": "Hard bounds the coach's proposal is held to.\n\nComputed before the model is called and enforced after it answers. The model\nproposes; this decides.",
+      "properties": {
+        "allow_volume_increase": {
+          "title": "Allow Volume Increase",
+          "type": "boolean"
+        },
+        "max_exercises": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Max Exercises",
+          "type": "integer"
+        },
+        "max_session_minutes": {
+          "maximum": 180,
+          "minimum": 5,
+          "title": "Max Session Minutes",
+          "type": "integer"
+        },
+        "max_total_reps": {
+          "description": "Ceiling on prescribed volume.",
+          "minimum": 0,
+          "title": "Max Total Reps",
+          "type": "integer"
+        },
+        "rationale": {
+          "description": "Why these bounds, in French, shown to the athlete. A silent cap is indistinguishable from a bug.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Rationale",
+          "type": "array"
+        }
+      },
+      "required": [
+        "max_total_reps",
+        "max_session_minutes",
+        "max_exercises",
+        "allow_volume_increase",
+        "rationale"
+      ],
+      "title": "PlanConstraints",
+      "type": "object"
+    },
     "RepEvent": {
       "additionalProperties": false,
       "description": "The central contract. Every counted repetition produces one of these.\n\nNothing in the system increments a bare counter: fatigue tracking, progression,\nperiodisation and the LLM coach are all built on the stream of RepEvents.",
@@ -520,6 +565,56 @@
       ],
       "title": "Tempo",
       "type": "object"
+    },
+    "TrainingLoad": {
+      "additionalProperties": false,
+      "description": "Load state computed from measured history. No model involved.",
+      "properties": {
+        "acute_reps": {
+          "description": "Valid reps over the last 7 days.",
+          "minimum": 0,
+          "title": "Acute Reps",
+          "type": "integer"
+        },
+        "chronic_reps_per_week": {
+          "description": "Weekly average of valid reps over the last 28 days.",
+          "minimum": 0.0,
+          "title": "Chronic Reps Per Week",
+          "type": "number"
+        },
+        "form_trend": {
+          "description": "Change in mean form score, recent sessions vs the ones before. Negative means technique is degrading under the current load.",
+          "title": "Form Trend",
+          "type": "number"
+        },
+        "ratio": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Acute:chronic workload ratio. None until there is enough history for the denominator to mean anything — a ratio computed from three days of data is a number, not a signal.",
+          "title": "Ratio"
+        },
+        "sessions_28d": {
+          "minimum": 0,
+          "title": "Sessions 28D",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "acute_reps",
+        "chronic_reps_per_week",
+        "form_trend",
+        "sessions_28d"
+      ],
+      "title": "TrainingLoad",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -537,6 +632,18 @@
       "title": "Catalogue",
       "type": "array"
     },
+    "constraints": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PlanConstraints"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Told to the model up front so it proposes something within bounds, rather than being silently clipped afterwards."
+    },
     "history": {
       "items": {
         "$ref": "#/$defs/HistoryPoint"
@@ -544,6 +651,17 @@
       "maxItems": 30,
       "title": "History",
       "type": "array"
+    },
+    "load": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TrainingLoad"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "session": {
       "$ref": "#/$defs/SessionSummary"

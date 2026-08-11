@@ -332,6 +332,68 @@ class ExerciseEntry(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# Deterministic training load and constraints
+# --------------------------------------------------------------------------- #
+
+
+class TrainingLoad(BaseModel):
+    """Load state computed from measured history. No model involved."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    acute_reps: int = Field(ge=0, description="Valid reps over the last 7 days.")
+    chronic_reps_per_week: float = Field(
+        ge=0.0, description="Weekly average of valid reps over the last 28 days."
+    )
+    ratio: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Acute:chronic workload ratio. None until there is enough "
+        "history for the denominator to mean anything — a ratio computed from "
+        "three days of data is a number, not a signal.",
+    )
+    form_trend: float = Field(
+        description="Change in mean form score, recent sessions vs the ones "
+        "before. Negative means technique is degrading under the current load."
+    )
+    sessions_28d: int = Field(ge=0)
+
+
+class PlanConstraints(BaseModel):
+    """Hard bounds the coach's proposal is held to.
+
+    Computed before the model is called and enforced after it answers. The model
+    proposes; this decides.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    max_total_reps: int = Field(ge=0, description="Ceiling on prescribed volume.")
+    max_session_minutes: int = Field(ge=5, le=180)
+    max_exercises: int = Field(ge=1, le=10)
+    allow_volume_increase: bool
+    rationale: list[str] = Field(
+        description="Why these bounds, in French, shown to the athlete. A silent "
+        "cap is indistinguishable from a bug."
+    )
+
+
+class GuardrailAdjustment(BaseModel):
+    """One correction applied to the model's proposal.
+
+    Surfaced rather than applied silently: the athlete should be able to see that
+    the coach asked for more than the deterministic stage allowed.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    champ: str
+    raison: str
+    propose: str
+    applique: str
+
+
+# --------------------------------------------------------------------------- #
 # Coaching: request to the LLM, response from the LLM
 # --------------------------------------------------------------------------- #
 
@@ -351,6 +413,12 @@ class CoachRequest(BaseModel):
         description="Exercise entries retrieved for this session's detected "
         "weaknesses. Keeps the coach's suggestions anchored to a real catalogue "
         "instead of invented movement names.",
+    )
+    load: TrainingLoad | None = None
+    constraints: PlanConstraints | None = Field(
+        default=None,
+        description="Told to the model up front so it proposes something within "
+        "bounds, rather than being silently clipped afterwards.",
     )
 
 
@@ -384,6 +452,18 @@ class CoachResponse(BaseModel):
     confiance: Literal["eleve", "moyen", "faible"]
 
 
+class SessionDebrief(BaseModel):
+    """What the athlete actually receives: the model's answer, the deterministic
+    load state it was bounded by, and every correction that was applied."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    coach: CoachResponse
+    load: TrainingLoad
+    constraints: PlanConstraints
+    adjustments: list[GuardrailAdjustment] = Field(default_factory=list)
+
+
 __all__ = [
     "Anthropometry",
     "AthleteProfile",
@@ -394,15 +474,19 @@ __all__ = [
     "ExerciseEntry",
     "FormScores",
     "FrameSample",
+    "GuardrailAdjustment",
     "HistoryPoint",
     "NextSession",
+    "PlanConstraints",
     "ProgressPoint",
     "RepEvent",
     "RepPhase",
+    "SessionDebrief",
     "SessionSummary",
     "SetSummary",
     "Side",
     "SuggestedExercise",
     "Tempo",
+    "TrainingLoad",
     "Unit",
 ]

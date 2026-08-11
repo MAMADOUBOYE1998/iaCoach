@@ -132,12 +132,20 @@ describe("SessionSync.flush", () => {
 });
 
 describe("SessionSync.debrief", () => {
-  it("returns the debrief", async () => {
-    const payload = { diagnostic: "ok", confiance: "moyen" };
+  it("returns the debrief with its deterministic bounds", async () => {
+    const payload = {
+      coach: { diagnostic: "ok", confiance: "moyen" },
+      load: { acute_reps: 20, chronic_reps_per_week: 18, ratio: 1.1, form_trend: 0, sessions_28d: 5 },
+      constraints: { max_total_reps: 22, rationale: ["Progression plafonnée."] },
+      adjustments: [],
+    };
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify(payload), { status: 200 }));
     const sync = new SessionSync("http://api", new MemoryStorage(), fetchImpl as unknown as typeof fetch);
     const result = await sync.debrief("s1");
-    expect(result?.diagnostic).toBe("ok");
+    expect(result?.coach.diagnostic).toBe("ok");
+    // The bounds travel with the answer: the client never has to ask separately
+    // what the model was allowed to prescribe.
+    expect(result?.constraints.max_total_reps).toBe(22);
   });
 
   it("returns null when coaching is unavailable", async () => {

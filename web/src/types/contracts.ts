@@ -124,11 +124,41 @@ export interface ExerciseEntry {
   tags: string[];
 }
 
+export interface TrainingLoad {
+  /** Valid reps over the last 7 days. */
+  acute_reps: number;
+  /** Weekly average of valid reps over the last 28 days. */
+  chronic_reps_per_week: number;
+  /** Acute:chronic workload ratio. Null until the history is thick enough. */
+  ratio: number | null;
+  /** Change in mean form score; negative means technique degrading under load. */
+  form_trend: number;
+  sessions_28d: number;
+}
+
+export interface PlanConstraints {
+  max_total_reps: number;
+  max_session_minutes: number;
+  max_exercises: number;
+  allow_volume_increase: boolean;
+  /** Why these bounds, in French. A silent cap is indistinguishable from a bug. */
+  rationale: string[];
+}
+
+export interface GuardrailAdjustment {
+  champ: string;
+  raison: string;
+  propose: string;
+  applique: string;
+}
+
 export interface CoachRequest {
   athlete: AthleteProfile;
   session: SessionSummary;
   history: HistoryPoint[];
   catalogue: ExerciseEntry[];
+  load?: TrainingLoad | null;
+  constraints?: PlanConstraints | null;
 }
 
 export interface SuggestedExercise {
@@ -149,6 +179,17 @@ export interface CoachResponse {
   exercices_suggeres: SuggestedExercise[];
   seance_suivante: NextSession;
   confiance: "eleve" | "moyen" | "faible";
+}
+
+/**
+ * What the athlete actually receives: the model's answer, the deterministic load
+ * state it was bounded by, and every correction that was applied.
+ */
+export interface SessionDebrief {
+  coach: CoachResponse;
+  load: TrainingLoad;
+  constraints: PlanConstraints;
+  adjustments: GuardrailAdjustment[];
 }
 
 /**

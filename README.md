@@ -3,9 +3,10 @@
 Coach de street workout / calisthenics pour athlète seul, équipé d'un téléphone.
 Comptage de répétitions et contrôle qualité **sur l'appareil**, débrief par LLM.
 
-> **État : M0, M1 et M3 livrés** — pose temps réel, calibration, comptage de
-> tractions et scores de forme sur l'appareil ; persistance, catalogue
-> d'exercices, débrief coach et courbe de progression. Architecture dans
+> **État : M0, M1, M3 et M5 livrés** — pose temps réel, calibration, comptage
+> et scores de forme sur l'appareil ; persistance, catalogue d'exercices,
+> débrief coach borné par un étage déterministe, progression, module running.
+> Architecture dans
 > [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), jalons dans
 > [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -91,6 +92,9 @@ cd web && npm test && npm run typecheck
 | `backend/src/iacoach/counting.py` | FSM de comptage + scores, miroir de `web/src/analysis/counting.ts` |
 | `fixtures/` | Séquences partagées + golden streams : la conformance TS↔Python |
 | `vision/finetune/` | Pipeline de fine-tuning pose (PC/RTX), M4 |
+| `backend/src/iacoach/planning.py` | Charge d'entraînement et bornes — **le LLM ne décide pas de la charge** |
+| `backend/src/iacoach/coach/guardrails.py` | Application des bornes à la réponse du modèle |
+| `web/src/running/` | Cadence, régularité, allure (accéléromètre + GPS) |
 | `backend/src/iacoach/storage.py` | Persistance SQLite (schéma, agrégats) |
 | `backend/src/iacoach/data/exercises.json` | Catalogue d'exercices structuré |
 | `docs/PHONE_TESTING.md` | Tester la PWA depuis un téléphone |

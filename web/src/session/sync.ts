@@ -9,7 +9,7 @@
  * safe to send again — at-least-once is the delivery model on both sides.
  */
 
-import type { CoachResponse, SessionSummary } from "../types/contracts";
+import type { SessionDebrief, SessionSummary } from "../types/contracts";
 
 export const QUEUE_KEY = "iacoach.pending-sessions";
 
@@ -114,13 +114,13 @@ export class SessionSync {
    * shows the measurements without a debrief. The session data is the product;
    * the debrief is an addition to it.
    */
-  async debrief(sessionId: string): Promise<CoachResponse | null> {
+  async debrief(sessionId: string): Promise<SessionDebrief | null> {
     const response = await this.fetchImpl(
       `${this.baseUrl}/sessions/${encodeURIComponent(sessionId)}/debrief`,
       { method: "POST" },
     );
     if (response.status === 503) return null;
     if (!response.ok) throw new Error(`Debrief failed: HTTP ${response.status}`);
-    return (await response.json()) as CoachResponse;
+    return (await response.json()) as SessionDebrief;
   }
 }

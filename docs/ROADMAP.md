@@ -101,9 +101,49 @@ Sortie mesurée : accord avec annotation experte sur le jeu de test.
   avant/après sur ce jeu de test. Le gagnant sert l'analyse serveur ; le temps
   réel on-device reste MediaPipe pour la latence.
 
-## M5 — Adaptation
+## M5 — Adaptation ✅ livré
 
-- Étage déterministe de bornage (`coach/guardrails.py`) : le LLM propose, le code
-  borne volume et progression.
-- Programmation adaptative pilotée par les mesures.
-- Module running : cadence, régularité, allure, réutilisant la couche capteurs.
+- **Étage déterministe de bornage.** `planning.py` calcule la charge (ratio
+  aigu/chronique sur 7 j / 28 j, tendance de la qualité technique) et en déduit
+  des bornes ; `coach/guardrails.py` y tient la réponse du modèle. Le LLM
+  propose, le code décide. L'invariant n'est plus une phrase dans un prompt.
+- Les bornes sont **données au modèle à l'avance** puis réappliquées après : une
+  séance conçue dans les clous est cohérente, une séance rognée après coup ne
+  l'est pas.
+- Chaque correction est un `GuardrailAdjustment` affiché à l'athlète. Un plafond
+  silencieux est indiscernable d'un bug.
+- Seul le brut du modèle est mis en cache : resserrer une borne agit aussi sur
+  les débriefs passés.
+- **Module running** : cadence, régularité et allure — depuis l'accéléromètre et
+  le GPS, **pas la caméra** (voir ci-dessous).
+
+**Décisions et limites :**
+
+1. Croissance de volume plafonnée à **+10 % par séance**, quoi qu'il arrive. Le
+   ratio aigu/chronique peut justifier de maintenir, jamais de dépasser ce
+   plafond.
+2. Le ratio n'est **pas calculé** en dessous de 4 séances sur 28 jours. Un ratio
+   tiré de trois jours de données est un nombre, pas un signal.
+3. La notation `NxM` est parsée pour vérifier le volume ; `3x30s` (gainage) et
+   `AMRAP` ne le sont pas et sont signalés comme non vérifiés plutôt que devinés.
+   Une fourchette `3x8-10` est lue à sa borne **haute** : ce chiffre alimente un
+   plafond de sécurité.
+4. L'ACWR est une heuristique à la littérature contestée. Elle est utilisée ici
+   comme **frein**, jamais comme autorisation de pousser.
+5. Le running n'est **ni persisté ni coaché** : c'est un module de mesure
+   autonome et testé, pas encore branché sur les contrats partagés. Le brancher
+   sans données réelles reviendrait à figer des seuils inventés.
+6. `REGULARITY_TOLERANCE` et `DEFAULT_PEAK_THRESHOLD` sont calibrés sur signal
+   synthétique uniquement. À recaler sur des courses enregistrées avant
+   d'afficher une cadence comme un fait.
+
+### Pourquoi le running n'utilise pas la caméra
+
+Le cahier des charges dit « en réutilisant la couche capteurs/vision quand
+pertinent ». Pour la course, la vision ne l'est pas : se filmer en courant
+demande une seconde personne ou un trépied fixe qu'on quitte en courant — ce qui
+décrit une séance de piste, pas une sortie. Le téléphone est déjà sur l'athlète
+et son accéléromètre mesure la foulée directement.
+
+La caméra redevient pertinente pour des **éducatifs de course filmés sur place**.
+C'est un module ultérieur, pas celui-ci.

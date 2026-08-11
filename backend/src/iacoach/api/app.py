@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from iacoach import storage
 from iacoach.catalogue import retrieve
+from iacoach.coach import guardrails
 from iacoach.coach.client import Coach, CoachUnavailable
 from iacoach.config import Settings, load_settings
 from iacoach.contracts import (
@@ -25,14 +26,17 @@ from iacoach.contracts import (
     CoachResponse,
     Exercise,
     ProgressPoint,
+    SessionDebrief,
     SessionSummary,
+    TrainingLoad,
 )
+from iacoach.planning import compute_load, plan_constraints, session_confidence_is_low
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="iaCoach API",
-    version="0.3.0",
+    version="0.5.0",
     summary="Coaching and persistence layer. Real-time analysis runs on-device.",
 )
 
@@ -102,6 +106,14 @@ def get_athlete(athlete_id: str, conn: Conn) -> AthleteProfile:
     return profile
 
 
+@app.get("/athletes/{athlete_id}/load", response_model=TrainingLoad)
+def get_load(athlete_id: str, conn: Conn) -> TrainingLoad:
+    """Current training load. Pure arithmetic over measured history — this is the
+    figure the coach's proposal is bounded against, exposed so the athlete can see
+    it before training rather than only after."""
+    return compute_load(storage.recent_history(conn, athlete_id, limit=60))
+
+
 @app.get("/athletes/{athlete_id}/progress", response_model=list[ProgressPoint])
 def get_progress(
     athlete_id: str,
@@ -149,50 +161,72 @@ def _build_request(conn: sqlite3.Connection, summary: SessionSummary) -> CoachRe
     profile = storage.load_athlete(conn, summary.athlete_id) or AthleteProfile(
         athlete_id=summary.athlete_id, level="intermediaire"
     )
+    # The session just stored is itself the most recent history row; skip it so
+    # the model does not read its own input back as a past trend.
+    history = [
+        point
+        for point in storage.recent_history(conn, summary.athlete_id, limit=61)
+        if point.date != summary.started_at
+    ]
+    load = compute_load(history)
+    constraints = plan_constraints(
+        summary, load, confidence_is_low=session_confidence_is_low(summary)
+    )
     return CoachRequest(
         athlete=profile,
-        # The session just stored is itself the most recent history row; skip it
-        # so the model does not read its own input back as a past trend.
-        history=[
-            point
-            for point in storage.recent_history(conn, summary.athlete_id, limit=11)
-            if point.date != summary.started_at
-        ][:10],
+        history=history[:10],
         session=summary,
         catalogue=retrieve(summary),
+        load=load,
+        # Given to the model up front so it proposes something within bounds,
+        # rather than being clipped afterwards and reading as incoherent.
+        constraints=constraints,
     )
 
 
-@app.post("/sessions/{session_id}/debrief", response_model=CoachResponse)
+@app.post("/sessions/{session_id}/debrief", response_model=SessionDebrief)
 def post_session_debrief(
     session_id: str,
     conn: Conn,
     settings: Config,
     refresh: Annotated[bool, Query(description="Ignore the cached debrief.")] = False,
-) -> CoachResponse:
-    """Debrief a stored session, caching the result.
+) -> SessionDebrief:
+    """Debrief a stored session, bounded by the deterministic plan.
 
-    Returns 503 when the coaching layer is unavailable. The client is expected to
-    show the session summary without a debrief rather than treat that as fatal —
-    the measurements are the product; the debrief is an addition to them.
+    Only the model's raw answer is cached. The bounds are recomputed and
+    re-applied on every read, so tightening a guardrail takes effect on past
+    debriefs too instead of leaving stale advice in the database.
+
+    Returns 503 when the coaching layer is unavailable. The client shows the
+    session summary without a debrief rather than treating that as fatal — the
+    measurements are the product; the debrief is an addition to them.
     """
     summary = storage.load_session(conn, session_id)
     if summary is None:
         raise HTTPException(status_code=404, detail="Unknown session")
 
-    if not refresh:
-        cached = storage.load_debrief(conn, session_id)
-        if cached is not None:
-            return cached
+    request = _build_request(conn, summary)
+    assert request.load is not None and request.constraints is not None
 
-    try:
-        response = Coach(settings).debrief(_build_request(conn, summary))
-    except CoachUnavailable as exc:
-        logger.warning("coach unavailable for %s: %s", session_id, exc)
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    raw = None if refresh else storage.load_debrief(conn, session_id)
+    if raw is None:
+        try:
+            raw = Coach(settings).debrief(request)
+        except CoachUnavailable as exc:
+            logger.warning("coach unavailable for %s: %s", session_id, exc)
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        storage.save_debrief(conn, session_id, raw, model=settings.session_model)
 
-    storage.save_debrief(conn, session_id, response, model=settings.session_model)
-    return response
+    bounded, adjustments = guardrails.apply(raw, request.constraints, request.catalogue)
+    if adjustments:
+        logger.info("guardrails adjusted %d field(s) for %s", len(adjustments), session_id)
+
+    return SessionDebrief(
+        coach=bounded,
+        load=request.load,
+        constraints=request.constraints,
+        adjustments=adjustments,
+    )
 
 
 @app.post("/coach/debrief", response_model=CoachResponse)
