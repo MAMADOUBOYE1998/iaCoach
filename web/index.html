@@ -16,6 +16,14 @@
 
       <section id="hud">
         <div class="metric">
+          <span class="metric-value" id="reps">—</span>
+          <span class="metric-label">reps validées</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" id="confidence">—</span>
+          <span class="metric-label">confiance</span>
+        </div>
+        <div class="metric">
           <span class="metric-value" id="fps">—</span>
           <span class="metric-label">fps</span>
         </div>
@@ -23,18 +31,17 @@
           <span class="metric-value" id="latency">—</span>
           <span class="metric-label">ms / frame</span>
         </div>
-        <div class="metric">
-          <span class="metric-value" id="elbow">—</span>
-          <span class="metric-label">angle coude</span>
-        </div>
-        <div class="metric">
-          <span class="metric-value" id="confidence">—</span>
-          <span class="metric-label">confiance</span>
-        </div>
+      </section>
+
+      <section id="last-rep" hidden>
+        <h2>Dernière rep</h2>
+        <ul id="last-rep-scores"></ul>
+        <p id="last-rep-feedback"></p>
       </section>
 
       <section id="controls">
         <button id="start" type="button">Démarrer la caméra</button>
+        <button id="calibrate" type="button" hidden>Calibrer mon amplitude</button>
         <p id="status" role="status">Prêt.</p>
       </section>
     </main>

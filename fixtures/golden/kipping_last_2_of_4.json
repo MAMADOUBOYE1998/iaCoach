@@ -1,0 +1,102 @@
+[
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2100.0,
+    "exercise": "pull_up",
+    "flags": [],
+    "min_angle_deg": 49.00218216819688,
+    "peak_angle_deg": 160.52566730283635,
+    "rep_index": 0,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9305543303728895,
+      "symmetry": 1.0,
+      "tempo_control": 0.9698315323217579
+    },
+    "started_at_ms": 1333.3333,
+    "tempo": {
+      "bottom_pause_s": 1.3333333,
+      "concentric_s": 0.4,
+      "eccentric_s": 0.6,
+      "top_pause_s": 1.0999999999999999
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2100.0,
+    "exercise": "pull_up",
+    "flags": [],
+    "min_angle_deg": 48.997886456372214,
+    "peak_angle_deg": 160.42067836943517,
+    "rep_index": 1,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9306211636308424,
+      "symmetry": 1.0,
+      "tempo_control": 0.9691671667379204
+    },
+    "started_at_ms": 4633.3333,
+    "tempo": {
+      "bottom_pause_s": 1.2000000000000004,
+      "concentric_s": 0.4,
+      "eccentric_s": 0.6,
+      "top_pause_s": 1.1
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 1833.3333000000002,
+    "exercise": "pull_up",
+    "flags": [
+      "kipping"
+    ],
+    "min_angle_deg": 49.021733556790274,
+    "peak_angle_deg": 160.2924500473446,
+    "rep_index": 2,
+    "scores": {
+      "alignment": 0.866666666666667,
+      "kipping": 0.0,
+      "rom": 0.9313491295830808,
+      "symmetry": 1.0,
+      "tempo_control": 0.965576432893794
+    },
+    "started_at_ms": 7800.0,
+    "tempo": {
+      "bottom_pause_s": 1.0666666999999999,
+      "concentric_s": 0.26666669999999976,
+      "eccentric_s": 0.6,
+      "top_pause_s": 0.9666666000000005
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 1833.3333000000002,
+    "exercise": "pull_up",
+    "flags": [
+      "kipping"
+    ],
+    "min_angle_deg": 48.95966914706863,
+    "peak_angle_deg": 160.34134873171772,
+    "rep_index": 3,
+    "scores": {
+      "alignment": 0.866666666666667,
+      "kipping": 0.0,
+      "rom": 0.9311948495658218,
+      "symmetry": 1.0,
+      "tempo_control": 0.9642587602441061
+    },
+    "started_at_ms": 10700.0,
+    "tempo": {
+      "bottom_pause_s": 1.0666666999999999,
+      "concentric_s": 0.26666669999999976,
+      "eccentric_s": 0.6,
+      "top_pause_s": 0.9666666000000005
+    }
+  }
+]

@@ -119,6 +119,39 @@ class AthleteProfile(BaseModel):
 # --------------------------------------------------------------------------- #
 
 
+class FrameSample(BaseModel):
+    """One frame, reduced to the signals the rep counter consumes.
+
+    This is the seam between pose estimation and analysis. The counter never
+    sees raw landmarks: it sees derived quantities, which is what makes the same
+    logic runnable on-device (from MediaPipe) and server-side (from a heavier
+    model) without either knowing which produced it.
+
+    All angles are computed from ``worldLandmarks`` — metric 3D — never from the
+    normalised 2D set.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    t_ms: float = Field(description="Monotonic offset from set start, milliseconds.")
+    elbow_left_deg: float
+    elbow_right_deg: float
+    trunk_deg: float = Field(description="Trunk deviation from vertical, in degrees. 0 = upright.")
+    hip_speed: float = Field(
+        ge=0.0,
+        description="Hip speed orthogonal to the movement axis, m/s. This is the "
+        "kipping signal: a strict pull-up moves the hips very little sideways.",
+    )
+    confidence: Unit = Field(
+        description="Fraction of the driving landmarks above the visibility "
+        "threshold on this frame."
+    )
+
+    @property
+    def elbow_mean_deg(self) -> float:
+        return (self.elbow_left_deg + self.elbow_right_deg) / 2.0
+
+
 class Tempo(BaseModel):
     """Phase durations in seconds. Mirrors the usual eccentric/pause/concentric
     notation used in strength programming."""
@@ -305,6 +338,7 @@ __all__ = [
     "Exercise",
     "ExerciseCalibration",
     "FormScores",
+    "FrameSample",
     "HistoryPoint",
     "NextSession",
     "RepEvent",

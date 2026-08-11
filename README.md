@@ -3,9 +3,10 @@
 Coach de street workout / calisthenics pour athlète seul, équipé d'un téléphone.
 Comptage de répétitions et contrôle qualité **sur l'appareil**, débrief par LLM.
 
-> **État : M0 livré, architecture en attente de validation.**
-> Le plan complet est dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), les
-> jalons dans [`docs/ROADMAP.md`](docs/ROADMAP.md). M1+ n'est pas commencé.
+> **État : M0 et M1 livrés** — pose temps réel, calibration, comptage de
+> tractions et scores de forme, sur l'appareil. Architecture dans
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), jalons dans
+> [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
@@ -83,8 +84,21 @@ cd web && npm test && npm run typecheck
 | `contracts/schema/` | JSON Schema générés (ne pas éditer à la main) |
 | `web/src/types/contracts.ts` | Miroir TypeScript des contrats |
 | `prompts/coaching.md` | System prompt du coach, versionné |
+| `backend/src/iacoach/counting.py` | FSM de comptage + scores, miroir de `web/src/analysis/counting.ts` |
+| `fixtures/` | Séquences partagées + golden streams : la conformance TS↔Python |
 | `vision/finetune/` | Pipeline de fine-tuning pose (PC/RTX), M4 |
 | `docs/BENCHMARKS.md` | Journal des mesures — aucune perf revendiquée sans ligne ici |
 
 Les contrats sont générés depuis Pydantic ; un changement de modèle non
-répercuté fait échouer la CI plutôt que de dériver en silence.
+répercuté fait échouer la CI plutôt que de dériver en silence. Idem pour les
+fixtures : la suite TypeScript rejoue exactement les fichiers que Python
+génère, donc une divergence entre les deux implémentations casse le build au
+lieu de passer inaperçue.
+
+Régénérer après un changement de comportement :
+
+```bash
+cd backend
+python -m iacoach.scripts.export_schemas
+python -m iacoach.scripts.make_fixtures
+```

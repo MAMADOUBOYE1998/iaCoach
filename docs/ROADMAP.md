@@ -24,18 +24,38 @@ mesure inscrite dans `BENCHMARKS.md` quand le jalon revendique une performance.
    offline-first. Aujourd'hui le `.task` vient d'un CDN.
 3. **Service worker** pour le cache d'app shell.
 
-## M1 — Comptage traction
+## M1 — Comptage traction ✅ livré
 
-- Filtre One-Euro sur l'angle de coude (`web/src/pose/filter.ts`).
-- Calibration ROM par athlète au premier usage.
-- FSM `idle → eccentric → bottom → concentric → top` sur l'angle de coude,
-  seuils exprimés en % de la ROM calibrée.
-- Émission de `RepEvent` complets (jamais un compteur nu).
-- **Fixtures partagées** : `fixtures/sequences/*.json`, séquences synthétiques
-  d'abord (rep propre, rep courte, kipping, occlusion), puis réelles annotées.
-- Conformance TS↔Python sur ces fixtures, bloquante en CI.
+- Filtre One-Euro sur l'angle de coude, en TS et en Python.
+- Calibration ROM par athlète (`CalibrationRecorder`), qui **refuse de calibrer**
+  si l'amplitude est trop faible ou le suivi trop instable — une mauvaise
+  calibration corrompt silencieusement tous les scores suivants.
+- FSM `idle → bottom → concentric → top → eccentric` sur l'angle de coude, avec
+  hystérésis sur chaque frontière, seuils en % de la ROM calibrée.
+- `RepEvent` complets, avec les cinq scores continus. Une rep trop courte est
+  **enregistrée** avec `counted=false`, jamais jetée.
+- Confiance basse → seul `low_confidence` est remonté, les corrections sont
+  supprimées.
+- 8 fixtures partagées (`fixtures/sequences/`) + golden streams
+  (`fixtures/golden/`). Conformance TS↔Python bloquante en CI : les deux
+  implémentations produisent des `RepEvent` identiques à 1e-9 près.
+- PWA : calibration puis comptage en direct, avec retour par rep.
 
-Sortie mesurée : précision de comptage sur footage propre.
+**Dette assumée, à traiter en M2 :**
+
+1. `tempo_control` reste bruité sur les reps de faible amplitude (0,63 vs 0,76
+   sur deux reps identiques dans `short_rom_3_reps`). L'écart ne change aucun
+   flag aujourd'hui, mais la métrique est trop sensible au jitter pour être
+   montrée telle quelle à l'athlète.
+2. `kip_tolerance_ms = 0.80 m/s` et `trunk_tolerance_deg = 30°` sont des
+   placeholders. Ils tiennent sur les fixtures synthétiques ; il faut les
+   recaler sur des vidéos réelles annotées.
+3. Les fixtures sont **synthétiques**. Elles verrouillent le comportement et la
+   conformance, mais ne disent rien de la précision sur du vrai footage — c'est
+   la mesure qui manque, et elle vient avec les clips réels.
+
+Sortie mesurée : précision de comptage sur footage propre. **Non mesurée** —
+bloquée sur l'acquisition de clips annotés.
 
 ## M2 — Qualité fine + classifieur
 

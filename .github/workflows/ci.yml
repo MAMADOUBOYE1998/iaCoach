@@ -24,6 +24,10 @@ jobs:
       # change that does not regenerate contracts/schema/ fails here rather than
       # drifting away from the TypeScript mirror unnoticed.
       - run: python -m iacoach.scripts.export_schemas --check
+      # The fixtures are the cross-language contract: the TypeScript suite
+      # replays these exact files. A behaviour change that is not
+      # regenerated here would let the two implementations diverge.
+      - run: python -m iacoach.scripts.make_fixtures --check
 
   web:
     runs-on: ubuntu-latest

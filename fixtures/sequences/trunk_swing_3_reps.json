@@ -1,0 +1,2647 @@
+{
+  "calibration": {
+    "captured_at": "2026-01-01T00:00:00Z",
+    "confidence": 1.0,
+    "exercise": "pull_up",
+    "joint": "elbow",
+    "rom_max_deg": 172.0,
+    "rom_min_deg": 40.0
+  },
+  "description": "Three reps with a pronounced trunk lean throughout.",
+  "exercise": "pull_up",
+  "expected": {
+    "counted": 3,
+    "events": 3,
+    "flags": [
+      [
+        "trunk_swing"
+      ],
+      [
+        "trunk_swing"
+      ],
+      [
+        "trunk_swing"
+      ]
+    ]
+  },
+  "fps": 30.0,
+  "frames": [
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.84280344098806,
+      "elbow_right_deg": 171.84280344098806,
+      "hip_speed": 0.02,
+      "t_ms": 0.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.13925144062378,
+      "elbow_right_deg": 172.13925144062378,
+      "hip_speed": 0.02,
+      "t_ms": 33.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.84584507299587,
+      "elbow_right_deg": 171.84584507299587,
+      "hip_speed": 0.02,
+      "t_ms": 66.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.2117692363914,
+      "elbow_right_deg": 172.2117692363914,
+      "hip_speed": 0.02,
+      "t_ms": 100.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.1298451958224,
+      "elbow_right_deg": 172.1298451958224,
+      "hip_speed": 0.02,
+      "t_ms": 133.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.91621709358878,
+      "elbow_right_deg": 171.91621709358878,
+      "hip_speed": 0.02,
+      "t_ms": 166.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.9993466549553,
+      "elbow_right_deg": 171.9993466549553,
+      "hip_speed": 0.02,
+      "t_ms": 200.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.83248025062494,
+      "elbow_right_deg": 171.83248025062494,
+      "hip_speed": 0.02,
+      "t_ms": 233.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.7308122616261,
+      "elbow_right_deg": 171.7308122616261,
+      "hip_speed": 0.02,
+      "t_ms": 266.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.22142400839365,
+      "elbow_right_deg": 172.22142400839365,
+      "hip_speed": 0.02,
+      "t_ms": 300.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.73921224093064,
+      "elbow_right_deg": 171.73921224093064,
+      "hip_speed": 0.02,
+      "t_ms": 333.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.79697586833498,
+      "elbow_right_deg": 171.79697586833498,
+      "hip_speed": 0.02,
+      "t_ms": 366.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.99888108912856,
+      "elbow_right_deg": 171.99888108912856,
+      "hip_speed": 0.02,
+      "t_ms": 400.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.0865224898327,
+      "elbow_right_deg": 172.0865224898327,
+      "hip_speed": 0.02,
+      "t_ms": 433.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.78902958231046,
+      "elbow_right_deg": 171.78902958231046,
+      "hip_speed": 0.02,
+      "t_ms": 466.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.20713611538523,
+      "elbow_right_deg": 172.20713611538523,
+      "hip_speed": 0.02,
+      "t_ms": 500.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.98410236611963,
+      "elbow_right_deg": 171.98410236611963,
+      "hip_speed": 0.02,
+      "t_ms": 533.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.93260604948736,
+      "elbow_right_deg": 171.93260604948736,
+      "hip_speed": 0.02,
+      "t_ms": 566.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.22616374371574,
+      "elbow_right_deg": 172.22616374371574,
+      "hip_speed": 0.02,
+      "t_ms": 600.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.74714921466074,
+      "elbow_right_deg": 171.74714921466074,
+      "hip_speed": 0.02,
+      "t_ms": 633.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.28817396666855,
+      "elbow_right_deg": 172.28817396666855,
+      "hip_speed": 0.02,
+      "t_ms": 666.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.9135097455699,
+      "elbow_right_deg": 171.9135097455699,
+      "hip_speed": 0.02,
+      "t_ms": 700.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.1508855209686,
+      "elbow_right_deg": 172.1508855209686,
+      "hip_speed": 0.02,
+      "t_ms": 733.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.06343101966195,
+      "elbow_right_deg": 172.06343101966195,
+      "hip_speed": 0.02,
+      "t_ms": 766.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.05964358784257,
+      "elbow_right_deg": 172.05964358784257,
+      "hip_speed": 0.02,
+      "t_ms": 800.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.9846944602672,
+      "elbow_right_deg": 171.9846944602672,
+      "hip_speed": 0.02,
+      "t_ms": 833.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.2881170465611,
+      "elbow_right_deg": 172.2881170465611,
+      "hip_speed": 0.02,
+      "t_ms": 866.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.96856788559816,
+      "elbow_right_deg": 171.96856788559816,
+      "hip_speed": 0.02,
+      "t_ms": 900.0,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.00141607392578,
+      "elbow_right_deg": 172.00141607392578,
+      "hip_speed": 0.02,
+      "t_ms": 933.3333,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.83209211458453,
+      "elbow_right_deg": 171.83209211458453,
+      "hip_speed": 0.02,
+      "t_ms": 966.6667,
+      "trunk_deg": 2.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.868669582624,
+      "elbow_right_deg": 171.868669582624,
+      "hip_speed": 0.02,
+      "t_ms": 1000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.79145797798148,
+      "elbow_right_deg": 171.79145797798148,
+      "hip_speed": 0.02,
+      "t_ms": 1033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 170.2988404281378,
+      "elbow_right_deg": 170.2988404281378,
+      "hip_speed": 0.02,
+      "t_ms": 1066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 168.6188868206892,
+      "elbow_right_deg": 168.6188868206892,
+      "hip_speed": 0.02,
+      "t_ms": 1100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 166.51404850139545,
+      "elbow_right_deg": 166.51404850139545,
+      "hip_speed": 0.02,
+      "t_ms": 1133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 163.04342601872048,
+      "elbow_right_deg": 163.04342601872048,
+      "hip_speed": 0.02,
+      "t_ms": 1166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 159.88025151185244,
+      "elbow_right_deg": 159.88025151185244,
+      "hip_speed": 0.02,
+      "t_ms": 1200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 155.4838069717545,
+      "elbow_right_deg": 155.4838069717545,
+      "hip_speed": 0.02,
+      "t_ms": 1233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 151.14290045318975,
+      "elbow_right_deg": 151.14290045318975,
+      "hip_speed": 0.02,
+      "t_ms": 1266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 146.21768646971398,
+      "elbow_right_deg": 146.21768646971398,
+      "hip_speed": 0.02,
+      "t_ms": 1300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 141.4326414313167,
+      "elbow_right_deg": 141.4326414313167,
+      "hip_speed": 0.05,
+      "t_ms": 1333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 135.81690326930322,
+      "elbow_right_deg": 135.81690326930322,
+      "hip_speed": 0.05,
+      "t_ms": 1366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 130.11837772186618,
+      "elbow_right_deg": 130.11837772186618,
+      "hip_speed": 0.05,
+      "t_ms": 1400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 124.46873015394472,
+      "elbow_right_deg": 124.46873015394472,
+      "hip_speed": 0.05,
+      "t_ms": 1433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 118.29233561186939,
+      "elbow_right_deg": 118.29233561186939,
+      "hip_speed": 0.05,
+      "t_ms": 1466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 112.39598768805153,
+      "elbow_right_deg": 112.39598768805153,
+      "hip_speed": 0.05,
+      "t_ms": 1500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 106.41689476779774,
+      "elbow_right_deg": 106.41689476779774,
+      "hip_speed": 0.05,
+      "t_ms": 1533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 100.57540931407326,
+      "elbow_right_deg": 100.57540931407326,
+      "hip_speed": 0.05,
+      "t_ms": 1566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 95.18774855965971,
+      "elbow_right_deg": 95.18774855965971,
+      "hip_speed": 0.05,
+      "t_ms": 1600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 89.27610837825276,
+      "elbow_right_deg": 89.27610837825276,
+      "hip_speed": 0.05,
+      "t_ms": 1633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 83.75995195833966,
+      "elbow_right_deg": 83.75995195833966,
+      "hip_speed": 0.05,
+      "t_ms": 1666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 78.83589610853159,
+      "elbow_right_deg": 78.83589610853159,
+      "hip_speed": 0.05,
+      "t_ms": 1700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 73.83009431086629,
+      "elbow_right_deg": 73.83009431086629,
+      "hip_speed": 0.05,
+      "t_ms": 1733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 69.50003550554104,
+      "elbow_right_deg": 69.50003550554104,
+      "hip_speed": 0.05,
+      "t_ms": 1766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 65.25670148579849,
+      "elbow_right_deg": 65.25670148579849,
+      "hip_speed": 0.05,
+      "t_ms": 1800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 62.10228954511693,
+      "elbow_right_deg": 62.10228954511693,
+      "hip_speed": 0.05,
+      "t_ms": 1833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 58.81952656841575,
+      "elbow_right_deg": 58.81952656841575,
+      "hip_speed": 0.05,
+      "t_ms": 1866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 56.40933302827514,
+      "elbow_right_deg": 56.40933302827514,
+      "hip_speed": 0.05,
+      "t_ms": 1900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 54.754130472900705,
+      "elbow_right_deg": 54.754130472900705,
+      "hip_speed": 0.05,
+      "t_ms": 1933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.71424585208557,
+      "elbow_right_deg": 53.71424585208557,
+      "hip_speed": 0.05,
+      "t_ms": 1966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.13858352620155,
+      "elbow_right_deg": 53.13858352620155,
+      "hip_speed": 0.05,
+      "t_ms": 2000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.2855914123822,
+      "elbow_right_deg": 53.2855914123822,
+      "hip_speed": 0.05,
+      "t_ms": 2033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 52.98733626576141,
+      "elbow_right_deg": 52.98733626576141,
+      "hip_speed": 0.05,
+      "t_ms": 2066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.03940728674643,
+      "elbow_right_deg": 53.03940728674643,
+      "hip_speed": 0.05,
+      "t_ms": 2100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 52.955612380802634,
+      "elbow_right_deg": 52.955612380802634,
+      "hip_speed": 0.05,
+      "t_ms": 2133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.23979628370144,
+      "elbow_right_deg": 53.23979628370144,
+      "hip_speed": 0.05,
+      "t_ms": 2166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.450768914353105,
+      "elbow_right_deg": 53.450768914353105,
+      "hip_speed": 0.05,
+      "t_ms": 2200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.468804381554946,
+      "elbow_right_deg": 53.468804381554946,
+      "hip_speed": 0.05,
+      "t_ms": 2233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 52.95484853070229,
+      "elbow_right_deg": 52.95484853070229,
+      "hip_speed": 0.05,
+      "t_ms": 2266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.192208017827944,
+      "elbow_right_deg": 53.192208017827944,
+      "hip_speed": 0.05,
+      "t_ms": 2300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.1913496597165,
+      "elbow_right_deg": 53.1913496597165,
+      "hip_speed": 0.05,
+      "t_ms": 2333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.95351391633653,
+      "elbow_right_deg": 53.95351391633653,
+      "hip_speed": 0.05,
+      "t_ms": 2366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 54.68040288866283,
+      "elbow_right_deg": 54.68040288866283,
+      "hip_speed": 0.05,
+      "t_ms": 2400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 56.30333251526985,
+      "elbow_right_deg": 56.30333251526985,
+      "hip_speed": 0.05,
+      "t_ms": 2433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 58.02664946581402,
+      "elbow_right_deg": 58.02664946581402,
+      "hip_speed": 0.05,
+      "t_ms": 2466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 59.932354613724385,
+      "elbow_right_deg": 59.932354613724385,
+      "hip_speed": 0.05,
+      "t_ms": 2500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 61.86598332766444,
+      "elbow_right_deg": 61.86598332766444,
+      "hip_speed": 0.05,
+      "t_ms": 2533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 64.52875116483428,
+      "elbow_right_deg": 64.52875116483428,
+      "hip_speed": 0.05,
+      "t_ms": 2566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 67.48769763975808,
+      "elbow_right_deg": 67.48769763975808,
+      "hip_speed": 0.05,
+      "t_ms": 2600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 69.93242704469192,
+      "elbow_right_deg": 69.93242704469192,
+      "hip_speed": 0.05,
+      "t_ms": 2633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 73.48919785516038,
+      "elbow_right_deg": 73.48919785516038,
+      "hip_speed": 0.05,
+      "t_ms": 2666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 76.98867362497995,
+      "elbow_right_deg": 76.98867362497995,
+      "hip_speed": 0.05,
+      "t_ms": 2700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 80.02446172117192,
+      "elbow_right_deg": 80.02446172117192,
+      "hip_speed": 0.05,
+      "t_ms": 2733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 84.04084417275153,
+      "elbow_right_deg": 84.04084417275153,
+      "hip_speed": 0.05,
+      "t_ms": 2766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 88.12385853897216,
+      "elbow_right_deg": 88.12385853897216,
+      "hip_speed": 0.05,
+      "t_ms": 2800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 91.68351203829643,
+      "elbow_right_deg": 91.68351203829643,
+      "hip_speed": 0.05,
+      "t_ms": 2833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 96.12680716837998,
+      "elbow_right_deg": 96.12680716837998,
+      "hip_speed": 0.05,
+      "t_ms": 2866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 99.82784502953086,
+      "elbow_right_deg": 99.82784502953086,
+      "hip_speed": 0.05,
+      "t_ms": 2900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 103.9623069574193,
+      "elbow_right_deg": 103.9623069574193,
+      "hip_speed": 0.05,
+      "t_ms": 2933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 108.6471403088479,
+      "elbow_right_deg": 108.6471403088479,
+      "hip_speed": 0.05,
+      "t_ms": 2966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 112.42311796387656,
+      "elbow_right_deg": 112.42311796387656,
+      "hip_speed": 0.05,
+      "t_ms": 3000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 116.61011258586657,
+      "elbow_right_deg": 116.61011258586657,
+      "hip_speed": 0.05,
+      "t_ms": 3033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 121.19479652353814,
+      "elbow_right_deg": 121.19479652353814,
+      "hip_speed": 0.05,
+      "t_ms": 3066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 125.31011431701683,
+      "elbow_right_deg": 125.31011431701683,
+      "hip_speed": 0.05,
+      "t_ms": 3100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 129.40840940729473,
+      "elbow_right_deg": 129.40840940729473,
+      "hip_speed": 0.05,
+      "t_ms": 3133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 133.59749006039797,
+      "elbow_right_deg": 133.59749006039797,
+      "hip_speed": 0.05,
+      "t_ms": 3166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 137.1730544968006,
+      "elbow_right_deg": 137.1730544968006,
+      "hip_speed": 0.05,
+      "t_ms": 3200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 140.9572280718479,
+      "elbow_right_deg": 140.9572280718479,
+      "hip_speed": 0.05,
+      "t_ms": 3233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 145.09880809587492,
+      "elbow_right_deg": 145.09880809587492,
+      "hip_speed": 0.05,
+      "t_ms": 3266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 148.38247066566097,
+      "elbow_right_deg": 148.38247066566097,
+      "hip_speed": 0.02,
+      "t_ms": 3300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 151.72989868233276,
+      "elbow_right_deg": 151.72989868233276,
+      "hip_speed": 0.02,
+      "t_ms": 3333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 154.91378080089163,
+      "elbow_right_deg": 154.91378080089163,
+      "hip_speed": 0.02,
+      "t_ms": 3366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 158.05927409243364,
+      "elbow_right_deg": 158.05927409243364,
+      "hip_speed": 0.02,
+      "t_ms": 3400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 160.5818357916816,
+      "elbow_right_deg": 160.5818357916816,
+      "hip_speed": 0.02,
+      "t_ms": 3433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 162.97678381763401,
+      "elbow_right_deg": 162.97678381763401,
+      "hip_speed": 0.02,
+      "t_ms": 3466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 165.44492997754807,
+      "elbow_right_deg": 165.44492997754807,
+      "hip_speed": 0.02,
+      "t_ms": 3500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 167.40144028083256,
+      "elbow_right_deg": 167.40144028083256,
+      "hip_speed": 0.02,
+      "t_ms": 3533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 168.78981662707,
+      "elbow_right_deg": 168.78981662707,
+      "hip_speed": 0.02,
+      "t_ms": 3566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 170.05115264679517,
+      "elbow_right_deg": 170.05115264679517,
+      "hip_speed": 0.02,
+      "t_ms": 3600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.1025052859107,
+      "elbow_right_deg": 171.1025052859107,
+      "hip_speed": 0.02,
+      "t_ms": 3633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.8984439089468,
+      "elbow_right_deg": 171.8984439089468,
+      "hip_speed": 0.02,
+      "t_ms": 3666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.95215421761387,
+      "elbow_right_deg": 171.95215421761387,
+      "hip_speed": 0.02,
+      "t_ms": 3700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.04071449562906,
+      "elbow_right_deg": 172.04071449562906,
+      "hip_speed": 0.02,
+      "t_ms": 3733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.83747776509261,
+      "elbow_right_deg": 171.83747776509261,
+      "hip_speed": 0.02,
+      "t_ms": 3766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.8185815873556,
+      "elbow_right_deg": 171.8185815873556,
+      "hip_speed": 0.02,
+      "t_ms": 3800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.8583338370081,
+      "elbow_right_deg": 171.8583338370081,
+      "hip_speed": 0.02,
+      "t_ms": 3833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.87168669756502,
+      "elbow_right_deg": 171.87168669756502,
+      "hip_speed": 0.02,
+      "t_ms": 3866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.2419051971752,
+      "elbow_right_deg": 172.2419051971752,
+      "hip_speed": 0.02,
+      "t_ms": 3900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.78996886620297,
+      "elbow_right_deg": 171.78996886620297,
+      "hip_speed": 0.02,
+      "t_ms": 3933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.06865729945713,
+      "elbow_right_deg": 172.06865729945713,
+      "hip_speed": 0.02,
+      "t_ms": 3966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.9330196429044,
+      "elbow_right_deg": 171.9330196429044,
+      "hip_speed": 0.02,
+      "t_ms": 4000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.86274623149075,
+      "elbow_right_deg": 171.86274623149075,
+      "hip_speed": 0.02,
+      "t_ms": 4033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.81261291792617,
+      "elbow_right_deg": 171.81261291792617,
+      "hip_speed": 0.02,
+      "t_ms": 4066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.25885182931088,
+      "elbow_right_deg": 172.25885182931088,
+      "hip_speed": 0.02,
+      "t_ms": 4100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.0828244747594,
+      "elbow_right_deg": 172.0828244747594,
+      "hip_speed": 0.02,
+      "t_ms": 4133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.75048967381008,
+      "elbow_right_deg": 171.75048967381008,
+      "hip_speed": 0.02,
+      "t_ms": 4166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.765939506609,
+      "elbow_right_deg": 171.765939506609,
+      "hip_speed": 0.02,
+      "t_ms": 4200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.7988791174721,
+      "elbow_right_deg": 171.7988791174721,
+      "hip_speed": 0.02,
+      "t_ms": 4233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.00465102642775,
+      "elbow_right_deg": 172.00465102642775,
+      "hip_speed": 0.02,
+      "t_ms": 4266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.0914054273162,
+      "elbow_right_deg": 172.0914054273162,
+      "hip_speed": 0.02,
+      "t_ms": 4300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.57334428769275,
+      "elbow_right_deg": 171.57334428769275,
+      "hip_speed": 0.02,
+      "t_ms": 4333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 170.40851256748996,
+      "elbow_right_deg": 170.40851256748996,
+      "hip_speed": 0.02,
+      "t_ms": 4366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 168.83664202061146,
+      "elbow_right_deg": 168.83664202061146,
+      "hip_speed": 0.02,
+      "t_ms": 4400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 166.08819908244797,
+      "elbow_right_deg": 166.08819908244797,
+      "hip_speed": 0.02,
+      "t_ms": 4433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 163.0393524759449,
+      "elbow_right_deg": 163.0393524759449,
+      "hip_speed": 0.02,
+      "t_ms": 4466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 159.3664629791539,
+      "elbow_right_deg": 159.3664629791539,
+      "hip_speed": 0.02,
+      "t_ms": 4500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 155.82641695613563,
+      "elbow_right_deg": 155.82641695613563,
+      "hip_speed": 0.02,
+      "t_ms": 4533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 151.4271524442438,
+      "elbow_right_deg": 151.4271524442438,
+      "hip_speed": 0.02,
+      "t_ms": 4566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 146.36309570092783,
+      "elbow_right_deg": 146.36309570092783,
+      "hip_speed": 0.02,
+      "t_ms": 4600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 141.13322766958734,
+      "elbow_right_deg": 141.13322766958734,
+      "hip_speed": 0.05,
+      "t_ms": 4633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 135.72516068216714,
+      "elbow_right_deg": 135.72516068216714,
+      "hip_speed": 0.05,
+      "t_ms": 4666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 130.08852499718552,
+      "elbow_right_deg": 130.08852499718552,
+      "hip_speed": 0.05,
+      "t_ms": 4700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 124.66218104996756,
+      "elbow_right_deg": 124.66218104996756,
+      "hip_speed": 0.05,
+      "t_ms": 4733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 118.34503803184144,
+      "elbow_right_deg": 118.34503803184144,
+      "hip_speed": 0.05,
+      "t_ms": 4766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 112.69159165993332,
+      "elbow_right_deg": 112.69159165993332,
+      "hip_speed": 0.05,
+      "t_ms": 4800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 106.4181913075421,
+      "elbow_right_deg": 106.4181913075421,
+      "hip_speed": 0.05,
+      "t_ms": 4833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 100.49822729862258,
+      "elbow_right_deg": 100.49822729862258,
+      "hip_speed": 0.05,
+      "t_ms": 4866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 95.19348053098878,
+      "elbow_right_deg": 95.19348053098878,
+      "hip_speed": 0.05,
+      "t_ms": 4900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 89.685684911941,
+      "elbow_right_deg": 89.685684911941,
+      "hip_speed": 0.05,
+      "t_ms": 4933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 84.13968936321325,
+      "elbow_right_deg": 84.13968936321325,
+      "hip_speed": 0.05,
+      "t_ms": 4966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 78.63974332865254,
+      "elbow_right_deg": 78.63974332865254,
+      "hip_speed": 0.05,
+      "t_ms": 5000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 74.02416613771729,
+      "elbow_right_deg": 74.02416613771729,
+      "hip_speed": 0.05,
+      "t_ms": 5033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 69.30762465869486,
+      "elbow_right_deg": 69.30762465869486,
+      "hip_speed": 0.05,
+      "t_ms": 5066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 65.39185485107339,
+      "elbow_right_deg": 65.39185485107339,
+      "hip_speed": 0.05,
+      "t_ms": 5100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 61.85762373348697,
+      "elbow_right_deg": 61.85762373348697,
+      "hip_speed": 0.05,
+      "t_ms": 5133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 58.859423199423766,
+      "elbow_right_deg": 58.859423199423766,
+      "hip_speed": 0.05,
+      "t_ms": 5166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 56.749061642916494,
+      "elbow_right_deg": 56.749061642916494,
+      "hip_speed": 0.05,
+      "t_ms": 5200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 54.72641637181526,
+      "elbow_right_deg": 54.72641637181526,
+      "hip_speed": 0.05,
+      "t_ms": 5233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.30013661119416,
+      "elbow_right_deg": 53.30013661119416,
+      "hip_speed": 0.05,
+      "t_ms": 5266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 52.95438874880784,
+      "elbow_right_deg": 52.95438874880784,
+      "hip_speed": 0.05,
+      "t_ms": 5300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.47375014126301,
+      "elbow_right_deg": 53.47375014126301,
+      "hip_speed": 0.05,
+      "t_ms": 5333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.295526592293754,
+      "elbow_right_deg": 53.295526592293754,
+      "hip_speed": 0.05,
+      "t_ms": 5366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.142678544949746,
+      "elbow_right_deg": 53.142678544949746,
+      "hip_speed": 0.05,
+      "t_ms": 5400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 52.946673249965535,
+      "elbow_right_deg": 52.946673249965535,
+      "hip_speed": 0.05,
+      "t_ms": 5433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.23303966354579,
+      "elbow_right_deg": 53.23303966354579,
+      "hip_speed": 0.05,
+      "t_ms": 5466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.287604335369544,
+      "elbow_right_deg": 53.287604335369544,
+      "hip_speed": 0.05,
+      "t_ms": 5500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.147971771005544,
+      "elbow_right_deg": 53.147971771005544,
+      "hip_speed": 0.05,
+      "t_ms": 5533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.253773781983185,
+      "elbow_right_deg": 53.253773781983185,
+      "hip_speed": 0.05,
+      "t_ms": 5566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.14609633944929,
+      "elbow_right_deg": 53.14609633944929,
+      "hip_speed": 0.05,
+      "t_ms": 5600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.54989642649495,
+      "elbow_right_deg": 53.54989642649495,
+      "hip_speed": 0.05,
+      "t_ms": 5633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 54.21048582278804,
+      "elbow_right_deg": 54.21048582278804,
+      "hip_speed": 0.05,
+      "t_ms": 5666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 55.04298908568704,
+      "elbow_right_deg": 55.04298908568704,
+      "hip_speed": 0.05,
+      "t_ms": 5700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 56.092934240563174,
+      "elbow_right_deg": 56.092934240563174,
+      "hip_speed": 0.05,
+      "t_ms": 5733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 57.638443334942465,
+      "elbow_right_deg": 57.638443334942465,
+      "hip_speed": 0.05,
+      "t_ms": 5766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 59.5223656482112,
+      "elbow_right_deg": 59.5223656482112,
+      "hip_speed": 0.05,
+      "t_ms": 5800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 61.98316249395721,
+      "elbow_right_deg": 61.98316249395721,
+      "hip_speed": 0.05,
+      "t_ms": 5833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 64.7805246406433,
+      "elbow_right_deg": 64.7805246406433,
+      "hip_speed": 0.05,
+      "t_ms": 5866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 66.93251865340801,
+      "elbow_right_deg": 66.93251865340801,
+      "hip_speed": 0.05,
+      "t_ms": 5900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 70.43017268708388,
+      "elbow_right_deg": 70.43017268708388,
+      "hip_speed": 0.05,
+      "t_ms": 5933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 73.5546003403578,
+      "elbow_right_deg": 73.5546003403578,
+      "hip_speed": 0.05,
+      "t_ms": 5966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 76.46034684383932,
+      "elbow_right_deg": 76.46034684383932,
+      "hip_speed": 0.05,
+      "t_ms": 6000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 80.28908359674674,
+      "elbow_right_deg": 80.28908359674674,
+      "hip_speed": 0.05,
+      "t_ms": 6033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 84.16828533718362,
+      "elbow_right_deg": 84.16828533718362,
+      "hip_speed": 0.05,
+      "t_ms": 6066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 87.72808486940707,
+      "elbow_right_deg": 87.72808486940707,
+      "hip_speed": 0.05,
+      "t_ms": 6100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 91.91617919604887,
+      "elbow_right_deg": 91.91617919604887,
+      "hip_speed": 0.05,
+      "t_ms": 6133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 95.62756504753847,
+      "elbow_right_deg": 95.62756504753847,
+      "hip_speed": 0.05,
+      "t_ms": 6166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 100.03665130170789,
+      "elbow_right_deg": 100.03665130170789,
+      "hip_speed": 0.05,
+      "t_ms": 6200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 104.02250242108227,
+      "elbow_right_deg": 104.02250242108227,
+      "hip_speed": 0.05,
+      "t_ms": 6233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 108.50129390913645,
+      "elbow_right_deg": 108.50129390913645,
+      "hip_speed": 0.05,
+      "t_ms": 6266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 112.84463827093131,
+      "elbow_right_deg": 112.84463827093131,
+      "hip_speed": 0.05,
+      "t_ms": 6300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 116.69921288224285,
+      "elbow_right_deg": 116.69921288224285,
+      "hip_speed": 0.05,
+      "t_ms": 6333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 121.0656222394134,
+      "elbow_right_deg": 121.0656222394134,
+      "hip_speed": 0.05,
+      "t_ms": 6366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 125.08483157265202,
+      "elbow_right_deg": 125.08483157265202,
+      "hip_speed": 0.05,
+      "t_ms": 6400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 129.24834556698556,
+      "elbow_right_deg": 129.24834556698556,
+      "hip_speed": 0.05,
+      "t_ms": 6433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 133.333699459232,
+      "elbow_right_deg": 133.333699459232,
+      "hip_speed": 0.05,
+      "t_ms": 6466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 137.12264871857695,
+      "elbow_right_deg": 137.12264871857695,
+      "hip_speed": 0.05,
+      "t_ms": 6500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 141.47923035304993,
+      "elbow_right_deg": 141.47923035304993,
+      "hip_speed": 0.05,
+      "t_ms": 6533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 145.14592586051737,
+      "elbow_right_deg": 145.14592586051737,
+      "hip_speed": 0.05,
+      "t_ms": 6566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 148.67966215994517,
+      "elbow_right_deg": 148.67966215994517,
+      "hip_speed": 0.02,
+      "t_ms": 6600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 151.80192208648955,
+      "elbow_right_deg": 151.80192208648955,
+      "hip_speed": 0.02,
+      "t_ms": 6633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 154.87058488040748,
+      "elbow_right_deg": 154.87058488040748,
+      "hip_speed": 0.02,
+      "t_ms": 6666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 157.76973022844237,
+      "elbow_right_deg": 157.76973022844237,
+      "hip_speed": 0.02,
+      "t_ms": 6700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 160.58162571394695,
+      "elbow_right_deg": 160.58162571394695,
+      "hip_speed": 0.02,
+      "t_ms": 6733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 163.09714252590203,
+      "elbow_right_deg": 163.09714252590203,
+      "hip_speed": 0.02,
+      "t_ms": 6766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 165.52380982264387,
+      "elbow_right_deg": 165.52380982264387,
+      "hip_speed": 0.02,
+      "t_ms": 6800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 167.47559836461974,
+      "elbow_right_deg": 167.47559836461974,
+      "hip_speed": 0.02,
+      "t_ms": 6833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 168.7742324960657,
+      "elbow_right_deg": 168.7742324960657,
+      "hip_speed": 0.02,
+      "t_ms": 6866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 170.27549273299266,
+      "elbow_right_deg": 170.27549273299266,
+      "hip_speed": 0.02,
+      "t_ms": 6900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.18448314723875,
+      "elbow_right_deg": 171.18448314723875,
+      "hip_speed": 0.02,
+      "t_ms": 6933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.69807098219567,
+      "elbow_right_deg": 171.69807098219567,
+      "hip_speed": 0.02,
+      "t_ms": 6966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.80625375686213,
+      "elbow_right_deg": 171.80625375686213,
+      "hip_speed": 0.02,
+      "t_ms": 7000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.87628172687255,
+      "elbow_right_deg": 171.87628172687255,
+      "hip_speed": 0.02,
+      "t_ms": 7033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.98306331243367,
+      "elbow_right_deg": 171.98306331243367,
+      "hip_speed": 0.02,
+      "t_ms": 7066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.20176942166873,
+      "elbow_right_deg": 172.20176942166873,
+      "hip_speed": 0.02,
+      "t_ms": 7100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.78824391523375,
+      "elbow_right_deg": 171.78824391523375,
+      "hip_speed": 0.02,
+      "t_ms": 7133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.84464525985533,
+      "elbow_right_deg": 171.84464525985533,
+      "hip_speed": 0.02,
+      "t_ms": 7166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.89280145205558,
+      "elbow_right_deg": 171.89280145205558,
+      "hip_speed": 0.02,
+      "t_ms": 7200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.07862358712592,
+      "elbow_right_deg": 172.07862358712592,
+      "hip_speed": 0.02,
+      "t_ms": 7233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.2680015428923,
+      "elbow_right_deg": 172.2680015428923,
+      "hip_speed": 0.02,
+      "t_ms": 7266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.20982360108755,
+      "elbow_right_deg": 172.20982360108755,
+      "hip_speed": 0.02,
+      "t_ms": 7300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.77124104667456,
+      "elbow_right_deg": 171.77124104667456,
+      "hip_speed": 0.02,
+      "t_ms": 7333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.1448567383457,
+      "elbow_right_deg": 172.1448567383457,
+      "hip_speed": 0.02,
+      "t_ms": 7366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.00403565587476,
+      "elbow_right_deg": 172.00403565587476,
+      "hip_speed": 0.02,
+      "t_ms": 7400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.9917357168626,
+      "elbow_right_deg": 171.9917357168626,
+      "hip_speed": 0.02,
+      "t_ms": 7433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.23575150966644,
+      "elbow_right_deg": 172.23575150966644,
+      "hip_speed": 0.02,
+      "t_ms": 7466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.0232683195267,
+      "elbow_right_deg": 172.0232683195267,
+      "hip_speed": 0.02,
+      "t_ms": 7500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.24120094282551,
+      "elbow_right_deg": 172.24120094282551,
+      "hip_speed": 0.02,
+      "t_ms": 7533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.94099744237027,
+      "elbow_right_deg": 171.94099744237027,
+      "hip_speed": 0.02,
+      "t_ms": 7566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.90940217506142,
+      "elbow_right_deg": 171.90940217506142,
+      "hip_speed": 0.02,
+      "t_ms": 7600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.60988486837334,
+      "elbow_right_deg": 171.60988486837334,
+      "hip_speed": 0.02,
+      "t_ms": 7633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 170.5185699329652,
+      "elbow_right_deg": 170.5185699329652,
+      "hip_speed": 0.02,
+      "t_ms": 7666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 168.87290966529062,
+      "elbow_right_deg": 168.87290966529062,
+      "hip_speed": 0.02,
+      "t_ms": 7700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 166.08945868426264,
+      "elbow_right_deg": 166.08945868426264,
+      "hip_speed": 0.02,
+      "t_ms": 7733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 163.27806304343974,
+      "elbow_right_deg": 163.27806304343974,
+      "hip_speed": 0.02,
+      "t_ms": 7766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 159.87382235155926,
+      "elbow_right_deg": 159.87382235155926,
+      "hip_speed": 0.02,
+      "t_ms": 7800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 155.5857699468877,
+      "elbow_right_deg": 155.5857699468877,
+      "hip_speed": 0.02,
+      "t_ms": 7833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 150.86408406026513,
+      "elbow_right_deg": 150.86408406026513,
+      "hip_speed": 0.02,
+      "t_ms": 7866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 146.36125358897337,
+      "elbow_right_deg": 146.36125358897337,
+      "hip_speed": 0.02,
+      "t_ms": 7900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 141.49182666288687,
+      "elbow_right_deg": 141.49182666288687,
+      "hip_speed": 0.05,
+      "t_ms": 7933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 135.9144825806033,
+      "elbow_right_deg": 135.9144825806033,
+      "hip_speed": 0.05,
+      "t_ms": 7966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 130.32151946937438,
+      "elbow_right_deg": 130.32151946937438,
+      "hip_speed": 0.05,
+      "t_ms": 8000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 124.18600123725868,
+      "elbow_right_deg": 124.18600123725868,
+      "hip_speed": 0.05,
+      "t_ms": 8033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 118.3422888007097,
+      "elbow_right_deg": 118.3422888007097,
+      "hip_speed": 0.05,
+      "t_ms": 8066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 112.7276420881506,
+      "elbow_right_deg": 112.7276420881506,
+      "hip_speed": 0.05,
+      "t_ms": 8100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 106.65721967042536,
+      "elbow_right_deg": 106.65721967042536,
+      "hip_speed": 0.05,
+      "t_ms": 8133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 100.78395554846117,
+      "elbow_right_deg": 100.78395554846117,
+      "hip_speed": 0.05,
+      "t_ms": 8166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 95.00854308624042,
+      "elbow_right_deg": 95.00854308624042,
+      "hip_speed": 0.05,
+      "t_ms": 8200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 89.68546515310817,
+      "elbow_right_deg": 89.68546515310817,
+      "hip_speed": 0.05,
+      "t_ms": 8233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 83.74561815150082,
+      "elbow_right_deg": 83.74561815150082,
+      "hip_speed": 0.05,
+      "t_ms": 8266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 78.85606768797078,
+      "elbow_right_deg": 78.85606768797078,
+      "hip_speed": 0.05,
+      "t_ms": 8300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 73.9283603336118,
+      "elbow_right_deg": 73.9283603336118,
+      "hip_speed": 0.05,
+      "t_ms": 8333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 69.75154599201343,
+      "elbow_right_deg": 69.75154599201343,
+      "hip_speed": 0.05,
+      "t_ms": 8366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 65.54919695415049,
+      "elbow_right_deg": 65.54919695415049,
+      "hip_speed": 0.05,
+      "t_ms": 8400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 61.721748141245904,
+      "elbow_right_deg": 61.721748141245904,
+      "hip_speed": 0.05,
+      "t_ms": 8433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 58.73924814284518,
+      "elbow_right_deg": 58.73924814284518,
+      "hip_speed": 0.05,
+      "t_ms": 8466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 56.363010162956634,
+      "elbow_right_deg": 56.363010162956634,
+      "hip_speed": 0.05,
+      "t_ms": 8500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 54.5867361851096,
+      "elbow_right_deg": 54.5867361851096,
+      "hip_speed": 0.05,
+      "t_ms": 8533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.337360366157064,
+      "elbow_right_deg": 53.337360366157064,
+      "hip_speed": 0.05,
+      "t_ms": 8566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.22511838031933,
+      "elbow_right_deg": 53.22511838031933,
+      "hip_speed": 0.05,
+      "t_ms": 8600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.11364181167446,
+      "elbow_right_deg": 53.11364181167446,
+      "hip_speed": 0.05,
+      "t_ms": 8633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 52.9782182155177,
+      "elbow_right_deg": 52.9782182155177,
+      "hip_speed": 0.05,
+      "t_ms": 8666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.41682538283058,
+      "elbow_right_deg": 53.41682538283058,
+      "hip_speed": 0.05,
+      "t_ms": 8700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.211996846739204,
+      "elbow_right_deg": 53.211996846739204,
+      "hip_speed": 0.05,
+      "t_ms": 8733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.192959355143834,
+      "elbow_right_deg": 53.192959355143834,
+      "hip_speed": 0.05,
+      "t_ms": 8766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.21226156763733,
+      "elbow_right_deg": 53.21226156763733,
+      "hip_speed": 0.05,
+      "t_ms": 8800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.42751230099239,
+      "elbow_right_deg": 53.42751230099239,
+      "hip_speed": 0.05,
+      "t_ms": 8833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.05445013260469,
+      "elbow_right_deg": 53.05445013260469,
+      "hip_speed": 0.05,
+      "t_ms": 8866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 52.94861460267566,
+      "elbow_right_deg": 52.94861460267566,
+      "hip_speed": 0.05,
+      "t_ms": 8900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 53.26199330831484,
+      "elbow_right_deg": 53.26199330831484,
+      "hip_speed": 0.05,
+      "t_ms": 8933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 54.07269707344153,
+      "elbow_right_deg": 54.07269707344153,
+      "hip_speed": 0.05,
+      "t_ms": 8966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 55.22498308683531,
+      "elbow_right_deg": 55.22498308683531,
+      "hip_speed": 0.05,
+      "t_ms": 9000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 56.25769556232203,
+      "elbow_right_deg": 56.25769556232203,
+      "hip_speed": 0.05,
+      "t_ms": 9033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 57.777543987083966,
+      "elbow_right_deg": 57.777543987083966,
+      "hip_speed": 0.05,
+      "t_ms": 9066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 59.63537147273797,
+      "elbow_right_deg": 59.63537147273797,
+      "hip_speed": 0.05,
+      "t_ms": 9100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 61.80323291895911,
+      "elbow_right_deg": 61.80323291895911,
+      "hip_speed": 0.05,
+      "t_ms": 9133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 64.70470093551211,
+      "elbow_right_deg": 64.70470093551211,
+      "hip_speed": 0.05,
+      "t_ms": 9166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 67.07973516264403,
+      "elbow_right_deg": 67.07973516264403,
+      "hip_speed": 0.05,
+      "t_ms": 9200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 69.990208777985,
+      "elbow_right_deg": 69.990208777985,
+      "hip_speed": 0.05,
+      "t_ms": 9233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 73.22880752961785,
+      "elbow_right_deg": 73.22880752961785,
+      "hip_speed": 0.05,
+      "t_ms": 9266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 76.98204992965485,
+      "elbow_right_deg": 76.98204992965485,
+      "hip_speed": 0.05,
+      "t_ms": 9300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 80.31800069847081,
+      "elbow_right_deg": 80.31800069847081,
+      "hip_speed": 0.05,
+      "t_ms": 9333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 84.20703260027804,
+      "elbow_right_deg": 84.20703260027804,
+      "hip_speed": 0.05,
+      "t_ms": 9366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 87.71618709271209,
+      "elbow_right_deg": 87.71618709271209,
+      "hip_speed": 0.05,
+      "t_ms": 9400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 91.96942600386811,
+      "elbow_right_deg": 91.96942600386811,
+      "hip_speed": 0.05,
+      "t_ms": 9433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 96.0703503552569,
+      "elbow_right_deg": 96.0703503552569,
+      "hip_speed": 0.05,
+      "t_ms": 9466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 99.85098133953083,
+      "elbow_right_deg": 99.85098133953083,
+      "hip_speed": 0.05,
+      "t_ms": 9500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 103.92870966178113,
+      "elbow_right_deg": 103.92870966178113,
+      "hip_speed": 0.05,
+      "t_ms": 9533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 108.10861817757251,
+      "elbow_right_deg": 108.10861817757251,
+      "hip_speed": 0.05,
+      "t_ms": 9566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 112.67255680263042,
+      "elbow_right_deg": 112.67255680263042,
+      "hip_speed": 0.05,
+      "t_ms": 9600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 116.79318933681932,
+      "elbow_right_deg": 116.79318933681932,
+      "hip_speed": 0.05,
+      "t_ms": 9633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 121.22367615047163,
+      "elbow_right_deg": 121.22367615047163,
+      "hip_speed": 0.05,
+      "t_ms": 9666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 125.37113577658512,
+      "elbow_right_deg": 125.37113577658512,
+      "hip_speed": 0.05,
+      "t_ms": 9700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 129.5533973183738,
+      "elbow_right_deg": 129.5533973183738,
+      "hip_speed": 0.05,
+      "t_ms": 9733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 133.4001789642252,
+      "elbow_right_deg": 133.4001789642252,
+      "hip_speed": 0.05,
+      "t_ms": 9766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 137.12069750050648,
+      "elbow_right_deg": 137.12069750050648,
+      "hip_speed": 0.05,
+      "t_ms": 9800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 141.4279716167133,
+      "elbow_right_deg": 141.4279716167133,
+      "hip_speed": 0.05,
+      "t_ms": 9833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 144.89782517514254,
+      "elbow_right_deg": 144.89782517514254,
+      "hip_speed": 0.05,
+      "t_ms": 9866.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 148.68633865217987,
+      "elbow_right_deg": 148.68633865217987,
+      "hip_speed": 0.02,
+      "t_ms": 9900.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 151.79015903715342,
+      "elbow_right_deg": 151.79015903715342,
+      "hip_speed": 0.02,
+      "t_ms": 9933.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 154.7808886248484,
+      "elbow_right_deg": 154.7808886248484,
+      "hip_speed": 0.02,
+      "t_ms": 9966.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 157.70994571468387,
+      "elbow_right_deg": 157.70994571468387,
+      "hip_speed": 0.02,
+      "t_ms": 10000.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 160.763861854308,
+      "elbow_right_deg": 160.763861854308,
+      "hip_speed": 0.02,
+      "t_ms": 10033.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 163.10867701219397,
+      "elbow_right_deg": 163.10867701219397,
+      "hip_speed": 0.02,
+      "t_ms": 10066.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 165.56460489755938,
+      "elbow_right_deg": 165.56460489755938,
+      "hip_speed": 0.02,
+      "t_ms": 10100.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 167.49767210955565,
+      "elbow_right_deg": 167.49767210955565,
+      "hip_speed": 0.02,
+      "t_ms": 10133.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 168.8745219497715,
+      "elbow_right_deg": 168.8745219497715,
+      "hip_speed": 0.02,
+      "t_ms": 10166.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 170.17842233439188,
+      "elbow_right_deg": 170.17842233439188,
+      "hip_speed": 0.02,
+      "t_ms": 10200.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.47925219718684,
+      "elbow_right_deg": 171.47925219718684,
+      "hip_speed": 0.02,
+      "t_ms": 10233.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.550935812345,
+      "elbow_right_deg": 171.550935812345,
+      "hip_speed": 0.02,
+      "t_ms": 10266.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.03765808311292,
+      "elbow_right_deg": 172.03765808311292,
+      "hip_speed": 0.02,
+      "t_ms": 10300.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.76243430087342,
+      "elbow_right_deg": 171.76243430087342,
+      "hip_speed": 0.02,
+      "t_ms": 10333.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.29630212741904,
+      "elbow_right_deg": 172.29630212741904,
+      "hip_speed": 0.02,
+      "t_ms": 10366.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.0402829606086,
+      "elbow_right_deg": 172.0402829606086,
+      "hip_speed": 0.02,
+      "t_ms": 10400.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.7366478162352,
+      "elbow_right_deg": 171.7366478162352,
+      "hip_speed": 0.02,
+      "t_ms": 10433.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.24795967927201,
+      "elbow_right_deg": 172.24795967927201,
+      "hip_speed": 0.02,
+      "t_ms": 10466.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.0267810524907,
+      "elbow_right_deg": 172.0267810524907,
+      "hip_speed": 0.02,
+      "t_ms": 10500.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.27303785998373,
+      "elbow_right_deg": 172.27303785998373,
+      "hip_speed": 0.02,
+      "t_ms": 10533.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.08553022225388,
+      "elbow_right_deg": 172.08553022225388,
+      "hip_speed": 0.02,
+      "t_ms": 10566.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.9348379132338,
+      "elbow_right_deg": 171.9348379132338,
+      "hip_speed": 0.02,
+      "t_ms": 10600.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.0191662527155,
+      "elbow_right_deg": 172.0191662527155,
+      "hip_speed": 0.02,
+      "t_ms": 10633.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.24844207316636,
+      "elbow_right_deg": 172.24844207316636,
+      "hip_speed": 0.02,
+      "t_ms": 10666.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.18347803638318,
+      "elbow_right_deg": 172.18347803638318,
+      "hip_speed": 0.02,
+      "t_ms": 10700.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 171.72015147460624,
+      "elbow_right_deg": 171.72015147460624,
+      "hip_speed": 0.02,
+      "t_ms": 10733.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.07490974492393,
+      "elbow_right_deg": 172.07490974492393,
+      "hip_speed": 0.02,
+      "t_ms": 10766.6667,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.28481029551477,
+      "elbow_right_deg": 172.28481029551477,
+      "hip_speed": 0.02,
+      "t_ms": 10800.0,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.19878249359317,
+      "elbow_right_deg": 172.19878249359317,
+      "hip_speed": 0.02,
+      "t_ms": 10833.3333,
+      "trunk_deg": 26.0
+    },
+    {
+      "confidence": 1.0,
+      "elbow_left_deg": 172.17178895706311,
+      "elbow_right_deg": 172.17178895706311,
+      "hip_speed": 0.02,
+      "t_ms": 10866.6667,
+      "trunk_deg": 26.0
+    }
+  ],
+  "name": "trunk_swing_3_reps"
+}

@@ -29,3 +29,12 @@ repos:
         language: system
         files: ^backend/src/iacoach/contracts\.py$
         pass_filenames: false
+
+      # Same idea for the conformance fixtures: the TypeScript suite replays
+      # them, so a stale golden file is a silent cross-language divergence.
+      - id: conformance-fixtures
+        name: conformance fixtures are current
+        entry: bash -c 'cd backend && python -m iacoach.scripts.make_fixtures --check'
+        language: system
+        files: ^backend/src/iacoach/(counting|filter|contracts)\.py$
+        pass_filenames: false

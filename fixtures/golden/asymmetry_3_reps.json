@@ -1,0 +1,80 @@
+[
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2066.6666999999998,
+    "exercise": "pull_up",
+    "flags": [
+      "asymmetry"
+    ],
+    "min_angle_deg": 52.94620256181807,
+    "peak_angle_deg": 157.81284442634848,
+    "rep_index": 0,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9012857962401016,
+      "symmetry": 0.3999999999999997,
+      "tempo_control": 0.9638626774752753
+    },
+    "started_at_ms": 1333.3333,
+    "tempo": {
+      "bottom_pause_s": 1.3333333,
+      "concentric_s": 0.4333334,
+      "eccentric_s": 0.5666667000000002,
+      "top_pause_s": 1.0666665999999998
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2066.6666999999998,
+    "exercise": "pull_up",
+    "flags": [
+      "asymmetry"
+    ],
+    "min_angle_deg": 52.90772959315218,
+    "peak_angle_deg": 158.21378742654403,
+    "rep_index": 1,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9002651473878103,
+      "symmetry": 0.3999999999999996,
+      "tempo_control": 0.9666536047156604
+    },
+    "started_at_ms": 4633.3333,
+    "tempo": {
+      "bottom_pause_s": 1.2333333000000002,
+      "concentric_s": 0.43333339999999954,
+      "eccentric_s": 0.5666666999999997,
+      "top_pause_s": 1.0666666000000005
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2066.6666999999998,
+    "exercise": "pull_up",
+    "flags": [
+      "asymmetry"
+    ],
+    "min_angle_deg": 52.99227719972842,
+    "peak_angle_deg": 158.258108610544,
+    "rep_index": 2,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9005710401362941,
+      "symmetry": 0.39999999999999963,
+      "tempo_control": 0.9573710926036624
+    },
+    "started_at_ms": 7933.3333,
+    "tempo": {
+      "bottom_pause_s": 1.2333333000000002,
+      "concentric_s": 0.43333339999999954,
+      "eccentric_s": 0.5666666999999997,
+      "top_pause_s": 1.0666666000000005
+    }
+  }
+]

@@ -116,3 +116,41 @@ button:disabled {
 #status.error {
   color: var(--error);
 }
+
+#last-rep {
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+#last-rep h2 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#last-rep-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 4px 16px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+#last-rep-scores .warn {
+  color: var(--warn);
+}
+
+#last-rep-feedback {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+#last-rep-feedback.warn {
+  color: var(--warn);
+}

@@ -1,0 +1,102 @@
+[
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2100.0,
+    "exercise": "pull_up",
+    "flags": [],
+    "min_angle_deg": 47.659896536851306,
+    "peak_angle_deg": 160.499940160842,
+    "rep_index": 0,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9409643519436087,
+      "symmetry": 1.0,
+      "tempo_control": 0.9747986741440186
+    },
+    "started_at_ms": 1333.3333,
+    "tempo": {
+      "bottom_pause_s": 1.3333333,
+      "concentric_s": 0.4,
+      "eccentric_s": 0.5666665999999996,
+      "top_pause_s": 1.1333334000000002
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2066.6666999999998,
+    "exercise": "pull_up",
+    "flags": [],
+    "min_angle_deg": 50.30914218746125,
+    "peak_angle_deg": 157.92583851751934,
+    "rep_index": 1,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9209836878374239,
+      "symmetry": 1.0,
+      "tempo_control": 0.9649562368317776
+    },
+    "started_at_ms": 4633.3333,
+    "tempo": {
+      "bottom_pause_s": 1.2000000000000004,
+      "concentric_s": 0.43333339999999954,
+      "eccentric_s": 0.5666666999999997,
+      "top_pause_s": 1.0666666000000005
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": false,
+    "duration_ms": 2233.3333999999995,
+    "exercise": "pull_up",
+    "flags": [
+      "rom_short"
+    ],
+    "min_angle_deg": 81.95012634499929,
+    "peak_angle_deg": 159.24806948572416,
+    "rep_index": 2,
+    "scores": {
+      "alignment": 0.9333333333333318,
+      "kipping": 0.9375,
+      "rom": 0.6800886693421093,
+      "symmetry": 1.0,
+      "tempo_control": 0.6666793850105164
+    },
+    "started_at_ms": 8133.3333,
+    "tempo": {
+      "bottom_pause_s": 1.4333333000000001,
+      "concentric_s": 1.0,
+      "eccentric_s": 1.2333333999999996,
+      "top_pause_s": 0.0
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": false,
+    "duration_ms": 2200.0,
+    "exercise": "pull_up",
+    "flags": [
+      "rom_short"
+    ],
+    "min_angle_deg": 99.1117188007105,
+    "peak_angle_deg": 157.71027586355373,
+    "rep_index": 3,
+    "scores": {
+      "alignment": 0.9333333333333318,
+      "kipping": 0.9375,
+      "rom": 0.5501443234981156,
+      "symmetry": 1.0,
+      "tempo_control": 0.6640340650113465
+    },
+    "started_at_ms": 12000.0,
+    "tempo": {
+      "bottom_pause_s": 1.6333333000000003,
+      "concentric_s": 1.0333333000000002,
+      "eccentric_s": 1.1666666999999997,
+      "top_pause_s": 0.0
+    }
+  }
+]

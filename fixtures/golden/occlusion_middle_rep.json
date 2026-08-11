@@ -1,0 +1,76 @@
+[
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2100.0,
+    "exercise": "pull_up",
+    "flags": [],
+    "min_angle_deg": 50.286784205203865,
+    "peak_angle_deg": 160.47091776853057,
+    "rep_index": 0,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9208368431740241,
+      "symmetry": 1.0,
+      "tempo_control": 0.9643194257361593
+    },
+    "started_at_ms": 1333.3333,
+    "tempo": {
+      "bottom_pause_s": 1.3333333,
+      "concentric_s": 0.4333334,
+      "eccentric_s": 0.6,
+      "top_pause_s": 1.0666665999999998
+    }
+  },
+  {
+    "confidence": 0.35000000000000026,
+    "counted": true,
+    "duration_ms": 2100.0,
+    "exercise": "pull_up",
+    "flags": [
+      "low_confidence"
+    ],
+    "min_angle_deg": 50.287669259859236,
+    "peak_angle_deg": 160.22309711862917,
+    "rep_index": 1,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9211911329392246,
+      "symmetry": 1.0,
+      "tempo_control": 0.9595719404473629
+    },
+    "started_at_ms": 4633.3333,
+    "tempo": {
+      "bottom_pause_s": 1.2000000000000004,
+      "concentric_s": 0.43333339999999954,
+      "eccentric_s": 0.6,
+      "top_pause_s": 1.0666666000000005
+    }
+  },
+  {
+    "confidence": 1.0,
+    "counted": true,
+    "duration_ms": 2100.0,
+    "exercise": "pull_up",
+    "flags": [],
+    "min_angle_deg": 50.42405564039013,
+    "peak_angle_deg": 160.468771798756,
+    "rep_index": 2,
+    "scores": {
+      "alignment": 0.9333333333333319,
+      "kipping": 0.9375,
+      "rom": 0.9202401453385788,
+      "symmetry": 1.0,
+      "tempo_control": 0.9651141843943555
+    },
+    "started_at_ms": 7933.3333,
+    "tempo": {
+      "bottom_pause_s": 1.2,
+      "concentric_s": 0.43333339999999954,
+      "eccentric_s": 0.6,
+      "top_pause_s": 1.0666666000000005
+    }
+  }
+]
