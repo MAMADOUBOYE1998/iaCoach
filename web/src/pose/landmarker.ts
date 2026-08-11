@@ -13,6 +13,8 @@
 
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 
+import type { PoseAssets } from "./assets";
+
 /** MediaPipe BlazePose landmark indices we actually use. */
 export const LANDMARK = {
   LEFT_SHOULDER: 11,
@@ -35,17 +37,6 @@ export const LANDMARK = {
  */
 export const VISIBILITY_THRESHOLD = 0.6;
 
-const WASM_BASE =
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm";
-
-/**
- * Served from a CDN for now. Vendoring it under `public/models/` is a
- * prerequisite for the offline-first requirement — see `scripts/fetch-model.mjs`
- * and the M0 notes in docs/ROADMAP.md.
- */
-const MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
-
 export interface Landmark {
   x: number;
   y: number;
@@ -58,15 +49,32 @@ export interface PoseFrame {
   world: Landmark[];
   /** Normalised [0,1] image-space landmarks. Overlay drawing only. */
   normalized: Landmark[];
-  /** Wall-clock cost of this inference, in milliseconds. */
-  inferenceMs: number;
 }
 
-export async function createLandmarker(): Promise<PoseLandmarker> {
-  const fileset = await FilesetResolver.forVisionTasks(WASM_BASE);
+export interface Detection {
+  /**
+   * Wall-clock cost of this inference, in milliseconds.
+   *
+   * Reported whether or not a pose was found, and that is the point: an empty
+   * frame costs a full inference. Timing only the successful frames would
+   * quietly drop every moment the athlete is out of shot from the average and
+   * report a latency the device never achieved.
+   */
+  inferenceMs: number;
+  /** `null` when no pose was found — never a neutral or default pose. */
+  pose: PoseFrame | null;
+}
+
+/**
+ * Where the runtime and model come from is resolved by `resolveAssets()` and
+ * passed in, rather than decided here: the caller is the one that has to tell
+ * the athlete whether this session will survive losing the network.
+ */
+export async function createLandmarker(assets: PoseAssets): Promise<PoseLandmarker> {
+  const fileset = await FilesetResolver.forVisionTasks(assets.wasmBase);
   return PoseLandmarker.createFromOptions(fileset, {
     baseOptions: {
-      modelAssetPath: MODEL_URL,
+      modelAssetPath: assets.modelUrl,
       // GPU delegate is what makes the 25 fps target reachable on a phone.
       // MediaPipe falls back to CPU on its own if WebGL is unavailable.
       delegate: "GPU",
@@ -80,23 +88,23 @@ export async function createLandmarker(): Promise<PoseLandmarker> {
 }
 
 /**
- * Run one inference. Returns `null` when no pose was found — the caller must
+ * Run one inference. `pose` is `null` when nothing was found — the caller must
  * treat that as "no data this frame", never as a neutral/default pose.
  */
 export function detect(
   landmarker: PoseLandmarker,
   video: HTMLVideoElement,
   timestampMs: number,
-): PoseFrame | null {
+): Detection {
   const started = performance.now();
   const result = landmarker.detectForVideo(video, timestampMs);
   const inferenceMs = performance.now() - started;
 
   const world = result.worldLandmarks[0];
   const normalized = result.landmarks[0];
-  if (!world || !normalized) return null;
+  if (!world || !normalized) return { inferenceMs, pose: null };
 
-  return { world, normalized, inferenceMs };
+  return { inferenceMs, pose: { world, normalized } };
 }
 
 /**

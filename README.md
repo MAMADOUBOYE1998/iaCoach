@@ -56,8 +56,21 @@ Si le backend n'est pas sur `http://localhost:8000`, le pointer avec
 `VITE_API_BASE`. Sans backend joignable, la PWA compte et score quand même :
 les séances sont mises en file locale et resynchronisées plus tard.
 
-Optionnel, pour l'offline-first : `npm run fetch-model` vendore le modèle de pose
-dans `public/models/` au lieu de le charger depuis un CDN.
+Pour l'offline-first : `npm run vendor-assets` copie le runtime WASM MediaPipe
+depuis `node_modules` et télécharge le modèle de pose dans `public/`. Sans ça,
+les deux viennent d'un CDN et une séance hors-ligne échoue au démarrage — l'app
+le détecte au lancement et le dit dans la console.
+
+Le service worker (`src/sw.ts`, actif en build de production seulement) met en
+cache le shell et les assets du build à l'installation, le modèle à la première
+utilisation. Vérification de bout en bout, y compris le rechargement réseau
+coupé :
+
+```bash
+npm run build && npm run vendor-assets
+npx vite preview --port 4173 &
+node scripts/smoke.mjs
+```
 
 ### Backend (coaching, persistance)
 

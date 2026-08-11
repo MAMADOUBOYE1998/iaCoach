@@ -17,8 +17,10 @@ node_modules/
 dist/
 .vite/
 
-# Vendored pose model (multi-MB binary; fetch with `npm run fetch-model`)
+# Vendored pose model and MediaPipe WASM runtime (~44 MB of binary; produced by
+# `npm run vendor-assets`, shipped in the build artifact rather than in git)
 web/public/models/
+web/public/vendor/
 
 # Training data and runs — personal video, never leaves the local machine
 vision/finetune/data/

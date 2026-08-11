@@ -14,15 +14,41 @@ mesure inscrite dans `BENCHMARKS.md` quand le jalon revendique une performance.
 - Angle de coude 3D affiché en direct (vérifie que les `worldLandmarks` sont
   bien lus, avant que la FSM ne s'appuie dessus en M1).
 
+- **Offline-first tenu** : `npm run vendor-assets` vendore le modèle *et* le
+  runtime WASM (les deux venaient d'un CDN ; n'en vendorer qu'un ne change
+  rien). `resolveAssets()` choisit la source au démarrage et le dit, plutôt que
+  d'être figé au build.
+- **Service worker** : shell et assets hashés du build mis en cache à
+  l'installation, modèle à la première utilisation — 20 Mo forcés en 4G à
+  l'installation pour une séance hors-ligne hypothétique n'est pas un marché que
+  l'athlète a accepté. Les données d'entraînement ne sont **jamais** mises en
+  cache : un débrief périmé servi comme actuel est pire que pas de débrief.
+- **Manifeste installable** : icônes générées par script (`npm run make-icons`),
+  dessinées dans la zone de sécurité maskable.
+
 **Reste à faire dans M0, avant de le déclarer clos :**
 
 1. **Mesurer sur un vrai téléphone.** L'environnement de dev ici n'a pas de
-   caméra : les cibles fps/latence ne sont pas encore mesurées. Procédure
+   caméra ni de GPU : les cibles fps/latence ne sont pas mesurées. Procédure
    complète dans `docs/PHONE_TESTING.md` (port forwarding Chrome DevTools : pas
    de certificat à gérer).
-2. **Vendorer le modèle** (`npm run fetch-model`) pour tenir la promesse
-   offline-first. Aujourd'hui le `.task` vient d'un CDN.
-3. **Service worker** pour le cache d'app shell.
+
+**Vérifié, mais pas mesuré** : `web/scripts/smoke.mjs` fait tourner la chaîne
+complète dans un Chromium headless avec caméra factice — service worker installé
+et périmètre correct, aucun tiers contacté, rechargement réseau coupé qui
+exécute réellement le bundle (et pas seulement le HTML statique). Ses chiffres de
+latence viennent d'un rasteriseur logiciel et ne transposent pas : voir
+`BENCHMARKS.md`.
+
+Deux défauts trouvés par ce test, qui ne se voyaient dans aucun test unitaire :
+
+1. La latence d'inférence n'était accumulée que sur les frames où une pose est
+   trouvée. Une frame vide coûte pourtant une inférence complète : la moyenne
+   affichée excluait silencieusement chaque instant où l'athlète sort du cadre.
+   `detect()` renvoie maintenant le coût dans tous les cas.
+2. L'URL CDN du runtime WASM était figée sur `0.10.18` alors que npm avait
+   installé `0.10.35`. Elle est désormais injectée au build depuis la version
+   réellement installée.
 
 ## M1 — Comptage traction ✅ livré
 

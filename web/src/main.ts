@@ -13,7 +13,9 @@ import { RepCounter, type FrameSample } from "./analysis/counting";
 import { CalibrationRecorder, FrameSampler } from "./analysis/frame";
 import { API_BASE, athleteId } from "./config";
 import { CameraError, startCamera, type CameraHandle } from "./pose/camera";
-import { createLandmarker, detect } from "./pose/landmarker";
+import { assetsLabel, resolveAssets } from "./pose/assets";
+import { createLandmarker, detect, type Detection } from "./pose/landmarker";
+import { registerServiceWorker } from "./pwa/register";
 import { SessionRecorder, newSessionId } from "./session/recorder";
 import { SessionSync } from "./session/sync";
 import { renderDebrief, renderDebriefUnavailable } from "./ui/debrief";
@@ -214,17 +216,20 @@ function loop(state: RunState): void {
     const timestamp = Math.max(Math.round(now), lastTimestamp + 1);
     lastTimestamp = timestamp;
 
-    let frame: ReturnType<typeof detect> = null;
+    let detection: Detection | null = null;
     try {
-      frame = detect(state.landmarker, video, timestamp);
+      detection = detect(state.landmarker, video, timestamp);
     } catch (error) {
+      // Only a throw leaves the cost unknown, and only then is it left out of
+      // the average.
       console.error("pose inference failed", error);
     }
+    if (detection) latency.push(detection.inferenceMs);
 
     clear(ctx);
 
+    const frame = detection?.pose ?? null;
     if (frame) {
-      latency.push(frame.inferenceMs);
       drawSkeleton(ctx, frame.normalized);
 
       const sample = state.sampler.sample(frame.world, frame.normalized, timestamp);
@@ -309,7 +314,11 @@ async function start(): Promise<void> {
 
   let landmarker: PoseLandmarker;
   try {
-    landmarker = await createLandmarker();
+    const assets = await resolveAssets();
+    // Logged rather than shown: the athlete finds out from the offline banner
+    // below, and the console line is what makes a failed vendoring diagnosable.
+    console.info(assetsLabel(assets));
+    landmarker = await createLandmarker(assets);
   } catch (error) {
     console.error(error);
     setStatus("Échec du chargement du modèle de pose. Vérifie ta connexion.", true);
@@ -395,3 +404,5 @@ window.addEventListener("pagehide", stop);
 // Flush anything left over from a previous offline session before showing the
 // history, so the chart reflects everything recorded rather than everything sent.
 void sync.flush().then(reportPending).then(refreshProgress);
+
+registerServiceWorker();

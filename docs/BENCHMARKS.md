@@ -31,6 +31,23 @@ un vrai téléphone pour remplir ce tableau. Procédure :
 > throttling CPU volontaire dans DevTools (4× ou 6× slowdown) comme approximation
 > — approximation à documenter comme telle, pas à faire passer pour une mesure.
 
+### Ce qui a été vérifié en CI-like, et qui n'est pas un benchmark
+
+`web/scripts/smoke.mjs` fait tourner la chaîne complète dans un Chromium headless
+avec une caméra factice. Il établit que le pipeline s'exécute de bout en bout
+(runtime WASM, modèle, boucle d'inférence, service worker, rechargement
+hors-ligne). Les chiffres qu'il affiche viennent d'un **rasteriseur logiciel**
+(SwiftShader, aucun GPU) :
+
+| Date | Machine | fps | ms/frame |
+|---|---|---|---|
+| 2026-08-11 | conteneur headless, SwiftShader | 4 | ~990 |
+
+Deux ordres de grandeur au-dessus de la cible, et c'est attendu : sans GPU,
+BlazePose tourne intégralement sur CPU en WASM. **Ce chiffre ne dit rien d'un
+téléphone** et n'a pas sa place dans le tableau ci-dessus. Il sert uniquement de
+plancher : si le pipeline ne tournait pas du tout, ce test le dirait.
+
 **Protocole** (à appliquer identiquement à chaque mesure) :
 1. Téléphone en charge, luminosité fixe, application seule au premier plan.
 2. Sujet cadré en pied, 2–3 m de la caméra, éclairage intérieur constant.

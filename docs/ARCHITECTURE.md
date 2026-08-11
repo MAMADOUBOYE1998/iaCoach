@@ -99,7 +99,9 @@ iaCoach/
 │   │   └── scripts/        export_schemas.py
 │   └── tests/
 ├── web/             PWA : caméra, pose temps réel, comptage, UI
-│   └── src/{pose,analysis,ui,types}
+│   ├── src/{pose,analysis,ui,session,running,types}
+│   ├── src/{sw.ts,pwa/}    service worker + politique de cache testée
+│   └── scripts/     vendor-assets (offline), make-icons, smoke (bout en bout)
 └── vision/finetune/ pipeline PC/RTX : dataset, entraînement, métriques avant/après
 ```
 
@@ -114,6 +116,15 @@ iaCoach/
 - Mode 100 % local documenté : sans `ANTHROPIC_API_KEY`, l'app fonctionne
   intégralement sauf le débrief coach.
 - Clé API via variable d'environnement uniquement. `.env` est gitignored.
+- **Aucun tiers contacté en fonctionnement nominal.** Avec les assets vendorés
+  (`npm run vendor-assets`), la PWA ne parle qu'à sa propre origine et au backend
+  qu'on héberge : plus de CDN, donc plus d'adresse IP ni de fréquence de séance
+  divulguées à un intermédiaire. Le smoke test vérifie explicitement qu'aucune
+  origine tierce n'est jointe.
+- **Le cache ne contient jamais de données d'entraînement.** Le service worker
+  met en cache le code et les assets ; les séances, la progression et les
+  débriefs sont exclus par la politique de routage, et cette exclusion est
+  testée.
 
 ---
 
