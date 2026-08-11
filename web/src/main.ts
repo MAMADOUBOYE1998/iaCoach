@@ -1,21 +1,26 @@
 /**
- * Camera -> on-device pose -> calibration -> rep counting, with the latency
- * instrumentation the project's performance claims will be measured against.
+ * Camera -> on-device pose -> calibration -> rep counting -> session sync.
  *
- * No network call happens in this loop, and none ever will: the correction
- * window is ~100 ms and a cloud round trip costs 150-400 ms. The backend is for
- * asynchronous work only.
+ * No network call happens in the analysis loop, and none ever will: the
+ * correction window is ~100 ms and a cloud round trip costs 150-400 ms. The
+ * backend is touched only when a session ends, and its absence degrades the app
+ * to "counts and scores locally, syncs later" rather than breaking it.
  */
 
 import type { PoseLandmarker } from "@mediapipe/tasks-vision";
 
-import { CalibrationRecorder, FrameSampler } from "./analysis/frame";
 import { RepCounter, type FrameSample } from "./analysis/counting";
+import { CalibrationRecorder, FrameSampler } from "./analysis/frame";
+import { API_BASE, athleteId } from "./config";
 import { CameraError, startCamera, type CameraHandle } from "./pose/camera";
 import { createLandmarker, detect } from "./pose/landmarker";
+import { SessionRecorder, newSessionId } from "./session/recorder";
+import { SessionSync } from "./session/sync";
+import { renderDebrief, renderDebriefUnavailable } from "./ui/debrief";
 import { feedbackFor, formatPercent, scoreLines } from "./ui/feedback";
 import { clear, drawSkeleton, resizeToVideo } from "./ui/overlay";
-import type { ExerciseCalibration, RepEvent } from "./types/contracts";
+import { renderProgress } from "./ui/progress";
+import type { ExerciseCalibration, ProgressPoint, RepEvent } from "./types/contracts";
 import "./styles.css";
 
 const el = <T extends HTMLElement>(id: string): T => {
@@ -28,6 +33,8 @@ const video = el<HTMLVideoElement>("video");
 const canvas = el<HTMLCanvasElement>("overlay");
 const startButton = el<HTMLButtonElement>("start");
 const calibrateButton = el<HTMLButtonElement>("calibrate");
+const newSetButton = el<HTMLButtonElement>("new-set");
+const finishButton = el<HTMLButtonElement>("finish");
 const statusLine = el<HTMLParagraphElement>("status");
 const repsOut = el<HTMLSpanElement>("reps");
 const confidenceOut = el<HTMLSpanElement>("confidence");
@@ -36,6 +43,10 @@ const latencyOut = el<HTMLSpanElement>("latency");
 const lastRepPanel = el<HTMLElement>("last-rep");
 const lastRepScores = el<HTMLUListElement>("last-rep-scores");
 const lastRepFeedback = el<HTMLParagraphElement>("last-rep-feedback");
+const debriefPanel = el<HTMLElement>("debrief-panel");
+const debriefOut = el<HTMLDivElement>("debrief");
+const progressOut = el<HTMLDivElement>("progress");
+const syncStatus = el<HTMLParagraphElement>("sync-status");
 
 // Extracted so the non-null result is carried into the closures below; a
 // narrowed `const` does not survive the function boundary.
@@ -46,6 +57,8 @@ function requireContext(target: HTMLCanvasElement): CanvasRenderingContext2D {
 }
 
 const ctx = requireContext(canvas);
+const sync = new SessionSync(API_BASE, localStorage);
+const ATHLETE_ID = athleteId();
 
 const CALIBRATION_MS = 8000;
 
@@ -74,7 +87,7 @@ class Rolling {
 type Mode =
   | { kind: "idle" }
   | { kind: "calibrating"; recorder: CalibrationRecorder; startedAt: number }
-  | { kind: "counting"; counter: RepCounter };
+  | { kind: "counting"; counter: RepCounter; session: SessionRecorder };
 
 interface RunState {
   camera: CameraHandle;
@@ -107,9 +120,30 @@ function showRep(event: RepEvent): void {
   lastRepFeedback.classList.toggle("warn", event.flags.length > 0);
 }
 
-function buildCalibration(
-  range: { rom_min_deg: number; rom_max_deg: number; confidence: number },
-): ExerciseCalibration {
+async function refreshProgress(): Promise<void> {
+  try {
+    const response = await fetch(
+      `${API_BASE}/athletes/${encodeURIComponent(ATHLETE_ID)}/progress?exercise=pull_up`,
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    renderProgress(progressOut, (await response.json()) as ProgressPoint[]);
+  } catch {
+    // The backend is optional. A missing history view is not an error state.
+    renderProgress(progressOut, []);
+  }
+}
+
+function reportPending(): void {
+  const pending = sync.pending.length;
+  syncStatus.textContent =
+    pending === 0 ? "" : `${pending} séance(s) en attente de synchronisation.`;
+}
+
+function buildCalibration(range: {
+  rom_min_deg: number;
+  rom_max_deg: number;
+  confidence: number;
+}): ExerciseCalibration {
   return {
     exercise: "pull_up",
     joint: "elbow",
@@ -146,8 +180,15 @@ function onCalibrationFrame(state: RunState, sample: FrameSample, now: number): 
     return;
   }
 
-  state.mode = { kind: "counting", counter: new RepCounter("pull_up", buildCalibration(range)) };
+  state.mode = {
+    kind: "counting",
+    counter: new RepCounter("pull_up", buildCalibration(range)),
+    session: new SessionRecorder(newSessionId(), ATHLETE_ID),
+  };
   repsOut.textContent = "0";
+  newSetButton.hidden = false;
+  finishButton.hidden = false;
+  debriefPanel.hidden = true;
   setStatus(
     `Calibré sur ${range.rom_min_deg.toFixed(0)}°–${range.rom_max_deg.toFixed(0)}°. ` +
       "Vas-y, je compte.",
@@ -196,11 +237,10 @@ function loop(state: RunState): void {
         } else if (state.mode.kind === "counting") {
           const event = state.mode.counter.push(sample);
           if (event) {
-            repsOut.textContent = String(
-              // The displayed figure is valid reps, not attempts. Short reps are
-              // still recorded and shown in the panel below.
-              Number(repsOut.textContent ?? "0") + (event.counted ? 1 : 0),
-            );
+            state.mode.session.addRep(event);
+            // The displayed figure is valid reps, not attempts. Short reps are
+            // still recorded and shown in the panel below.
+            repsOut.textContent = String(state.mode.session.validReps);
             showRep(event);
           }
         }
@@ -217,6 +257,50 @@ function loop(state: RunState): void {
   };
 
   state.rafId = requestAnimationFrame(tick);
+}
+
+async function finishSession(): Promise<void> {
+  if (!running || running.mode.kind !== "counting") return;
+  const { session } = running.mode;
+
+  if (session.isEmpty) {
+    setStatus("Aucune rep enregistrée : rien à sauvegarder.");
+    return;
+  }
+
+  const summary = session.finish();
+  // Queue before sending: if the tab dies mid-request, the session survives.
+  sync.enqueue(summary);
+  running.mode = { kind: "idle" };
+  newSetButton.hidden = true;
+  finishButton.hidden = true;
+  calibrateButton.hidden = false;
+
+  setStatus(`Séance terminée : ${session.validReps}/${session.totalReps} reps validées.`);
+
+  const result = await sync.flush();
+  reportPending();
+  debriefPanel.hidden = false;
+
+  if (result.sent === 0) {
+    renderDebriefUnavailable(
+      debriefOut,
+      "Séance non synchronisée — pas de connexion au backend.",
+    );
+    return;
+  }
+
+  debriefOut.textContent = "Analyse en cours…";
+  try {
+    const debrief = await sync.debrief(summary.session_id);
+    if (debrief) renderDebrief(debriefOut, debrief);
+    else renderDebriefUnavailable(debriefOut, "Coaching indisponible (pas de clé API).");
+  } catch (error) {
+    console.error(error);
+    renderDebriefUnavailable(debriefOut, "Le débrief a échoué.");
+  }
+
+  await refreshProgress();
 }
 
 async function start(): Promise<void> {
@@ -272,7 +356,7 @@ function stop(): void {
   for (const out of [repsOut, confidenceOut, fpsOut, latencyOut]) out.textContent = "—";
   confidenceOut.classList.remove("warn");
   lastRepPanel.hidden = true;
-  calibrateButton.hidden = true;
+  for (const button of [calibrateButton, newSetButton, finishButton]) button.hidden = true;
   startButton.textContent = "Démarrer la caméra";
   setStatus("Arrêté.");
 }
@@ -296,6 +380,18 @@ calibrateButton.addEventListener("click", () => {
   setStatus("Calibration : une traction lente et complète…");
 });
 
+newSetButton.addEventListener("click", () => {
+  if (!running || running.mode.kind !== "counting") return;
+  running.mode.session.startSet("pull_up");
+  setStatus(`Série ${running.mode.session.setCount} — vas-y.`);
+});
+
+finishButton.addEventListener("click", () => void finishSession());
+
 // Releasing the camera on unload matters on mobile: a stream left open keeps the
 // hardware busy and the indicator light on after the tab is gone.
 window.addEventListener("pagehide", stop);
+
+// Flush anything left over from a previous offline session before showing the
+// history, so the chart reflects everything recorded rather than everything sent.
+void sync.flush().then(reportPending).then(refreshProgress);

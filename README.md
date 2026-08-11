@@ -3,8 +3,9 @@
 Coach de street workout / calisthenics pour athlète seul, équipé d'un téléphone.
 Comptage de répétitions et contrôle qualité **sur l'appareil**, débrief par LLM.
 
-> **État : M0 et M1 livrés** — pose temps réel, calibration, comptage de
-> tractions et scores de forme, sur l'appareil. Architecture dans
+> **État : M0, M1 et M3 livrés** — pose temps réel, calibration, comptage de
+> tractions et scores de forme sur l'appareil ; persistance, catalogue
+> d'exercices, débrief coach et courbe de progression. Architecture dans
 > [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), jalons dans
 > [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -48,8 +49,11 @@ npm run dev          # http://localhost:5173
 ```
 
 `getUserMedia` exige un contexte sécurisé : `localhost` suffit sur desktop.
-Pour tester depuis un téléphone sur le LAN, il faut du HTTPS (certificat local
-ou tunnel).
+Pour tester depuis un téléphone : [`docs/PHONE_TESTING.md`](docs/PHONE_TESTING.md).
+
+Si le backend n'est pas sur `http://localhost:8000`, le pointer avec
+`VITE_API_BASE`. Sans backend joignable, la PWA compte et score quand même :
+les séances sont mises en file locale et resynchronisées plus tard.
 
 Optionnel, pour l'offline-first : `npm run fetch-model` vendore le modèle de pose
 dans `public/models/` au lieu de le charger depuis un CDN.
@@ -87,6 +91,9 @@ cd web && npm test && npm run typecheck
 | `backend/src/iacoach/counting.py` | FSM de comptage + scores, miroir de `web/src/analysis/counting.ts` |
 | `fixtures/` | Séquences partagées + golden streams : la conformance TS↔Python |
 | `vision/finetune/` | Pipeline de fine-tuning pose (PC/RTX), M4 |
+| `backend/src/iacoach/storage.py` | Persistance SQLite (schéma, agrégats) |
+| `backend/src/iacoach/data/exercises.json` | Catalogue d'exercices structuré |
+| `docs/PHONE_TESTING.md` | Tester la PWA depuis un téléphone |
 | `docs/BENCHMARKS.md` | Journal des mesures — aucune perf revendiquée sans ligne ici |
 
 Les contrats sont générés depuis Pydantic ; un changement de modèle non

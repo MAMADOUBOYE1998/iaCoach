@@ -17,7 +17,19 @@ pas des résultats. Elles seront révisées après la première mesure réelle.
 
 **Statut : non mesuré.** L'environnement de développement de ce dépôt n'a pas de
 caméra. Le M0 instrumente fps et latence à l'écran ; il faut ouvrir la PWA depuis
-un vrai téléphone pour remplir ce tableau. Voir `docs/ROADMAP.md` § M0.
+un vrai téléphone pour remplir ce tableau. Procédure :
+[`PHONE_TESTING.md`](PHONE_TESTING.md).
+
+> ⚠️ **Le Galaxy S26 (SM-S942B/DS) ne valide pas la cible.** La cible de départ
+> est « ≥ 25 fps sur téléphone **milieu de gamme** ». Un flagship 2026 devrait
+> l'atteindre largement — s'il ne l'atteint pas, c'est un signal d'alarme, mais
+> l'atteindre ne prouve rien sur le milieu de gamme.
+>
+> Ce que la mesure sur S26 établit réellement : que le pipeline tient en
+> conditions réelles, quel est le plafond de performance, et où passe le temps.
+> Pour la cible milieu de gamme, il faudra soit un second appareil, soit un
+> throttling CPU volontaire dans DevTools (4× ou 6× slowdown) comme approximation
+> — approximation à documenter comme telle, pas à faire passer pour une mesure.
 
 **Protocole** (à appliquer identiquement à chaque mesure) :
 1. Téléphone en charge, luminosité fixe, application seule au premier plan.

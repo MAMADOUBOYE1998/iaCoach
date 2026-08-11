@@ -17,9 +17,9 @@ mesure inscrite dans `BENCHMARKS.md` quand le jalon revendique une performance.
 **Reste à faire dans M0, avant de le déclarer clos :**
 
 1. **Mesurer sur un vrai téléphone.** L'environnement de dev ici n'a pas de
-   caméra : les cibles fps/latence ne sont pas encore mesurées. `npm run dev`
-   puis ouvrir depuis le téléphone — il faut du HTTPS sur le LAN (`vite --https`
-   avec un certificat local, ou un tunnel).
+   caméra : les cibles fps/latence ne sont pas encore mesurées. Procédure
+   complète dans `docs/PHONE_TESTING.md` (port forwarding Chrome DevTools : pas
+   de certificat à gérer).
 2. **Vendorer le modèle** (`npm run fetch-model`) pour tenir la promesse
    offline-first. Aujourd'hui le `.task` vient d'un CDN.
 3. **Service worker** pour le cache d'app shell.
@@ -67,14 +67,29 @@ bloquée sur l'acquisition de clips annotés.
 
 Sortie mesurée : accord avec annotation experte sur le jeu de test.
 
-## M3 — Coaching + persistance
+## M3 — Coaching + persistance ✅ livré
 
-- Persistance SQLite (SQLModel) : athlète, sessions, reps, métriques.
-- Base d'exercices structurée (nom, muscles, prérequis, progressions/régressions,
-  critères de qualité) + RAG léger.
-- Branchement de `POST /coach/debrief` depuis la PWA, avec dégradation propre
-  quand `ANTHROPIC_API_KEY` est absente.
-- Visualisation de progression (volume, qualité moyenne, PR).
+- Persistance SQLite (`sqlite3` nu, pas d'ORM) : athlète, sessions, reps,
+  débriefs. Les reps sont stockées en colonnes, pas en blob — « amplitude moyenne
+  par semaine » est une requête SQL, pas une boucle Python.
+- Base d'exercices structurée (19 entrées) + retrieval déterministe par règles.
+  Le coach reçoit un sous-ensemble du catalogue réel plutôt que carte blanche
+  pour inventer des noms de mouvements.
+- API : athlètes, sessions, progression, débrief. Le débrief est mis en cache par
+  séance — rouvrir une séance passée ne refacture pas l'API.
+- PWA : enregistrement de séance, file d'attente hors-ligne, débrief affiché,
+  courbe de progression (meilleure rep vs moyenne).
+- Dégradation propre : sans backend, la séance est mise en file et resynchronisée
+  plus tard ; sans `ANTHROPIC_API_KEY`, tout marche sauf le débrief.
+
+**Dette assumée :**
+
+1. Aucune authentification. Un `athlete_id` par appareil, pas de compte. Suffisant
+   pour l'usage solo visé ; à revoir avant toute exposition réseau.
+2. Le retrieval est un score de tags. Ça suffit à 19 entrées ; au-delà de ~100 il
+   faudra autre chose.
+3. La courbe ne montre que l'amplitude. Volume, tempo et fatigue sont en base
+   mais pas encore tracés.
 
 ## M4 — Robustesse
 

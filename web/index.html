@@ -42,7 +42,20 @@
       <section id="controls">
         <button id="start" type="button">Démarrer la caméra</button>
         <button id="calibrate" type="button" hidden>Calibrer mon amplitude</button>
+        <button id="new-set" type="button" hidden>Nouvelle série</button>
+        <button id="finish" type="button" hidden>Terminer la séance</button>
         <p id="status" role="status">Prêt.</p>
+      </section>
+
+      <section id="debrief-panel" hidden>
+        <h2>Débrief</h2>
+        <div id="debrief"></div>
+      </section>
+
+      <section id="progress-panel">
+        <h2>Amplitude au fil des séances</h2>
+        <div id="progress"></div>
+        <p id="sync-status" class="muted"></p>
       </section>
     </main>
 

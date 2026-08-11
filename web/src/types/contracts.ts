@@ -102,10 +102,33 @@ export interface HistoryPoint {
   mean_form: Unit;
 }
 
+export interface ProgressPoint {
+  date: string;
+  exercise: Exercise;
+  total_reps: number;
+  valid_reps: number;
+  mean_rom: Unit;
+  mean_form: Unit;
+  /** Best single-rep ROM of the session. The PR line. */
+  best_rom: Unit;
+}
+
+export interface ExerciseEntry {
+  id: string;
+  nom: string;
+  muscles: string[];
+  prerequis: string[];
+  progressions: string[];
+  regressions: string[];
+  criteres_qualite: string[];
+  tags: string[];
+}
+
 export interface CoachRequest {
   athlete: AthleteProfile;
   session: SessionSummary;
   history: HistoryPoint[];
+  catalogue: ExerciseEntry[];
 }
 
 export interface SuggestedExercise {

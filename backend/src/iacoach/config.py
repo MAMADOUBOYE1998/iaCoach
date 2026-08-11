@@ -29,6 +29,19 @@ class Settings:
         debrief is unavailable. Offline-first is a requirement, not a fallback."""
         return bool(self.anthropic_api_key)
 
+    @property
+    def database_path(self) -> Path:
+        """Filesystem path behind ``database_url``.
+
+        Only the ``sqlite:///`` form is understood. A Postgres URL is a valid
+        future setting but not a valid *path*, so it fails here rather than
+        silently creating a SQLite file named after the connection string.
+        """
+        prefix = "sqlite:///"
+        if not self.database_url.startswith(prefix):
+            raise ValueError(f"Only sqlite:/// URLs are supported in v1, got {self.database_url!r}")
+        return Path(self.database_url[len(prefix) :])
+
 
 def load_settings() -> Settings:
     return Settings(

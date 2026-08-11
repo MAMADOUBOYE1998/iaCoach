@@ -284,6 +284,53 @@ class HistoryPoint(BaseModel):
     mean_form: Unit
 
 
+class ProgressPoint(BaseModel):
+    """One point on a progression curve. Aggregated in SQL, not in Python: the
+    database is where "volume per week" belongs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    date: datetime
+    exercise: Exercise
+    total_reps: int = Field(ge=0)
+    valid_reps: int = Field(ge=0)
+    mean_rom: Unit
+    mean_form: Unit
+    best_rom: Unit = Field(description="Best single-rep ROM of the session. The PR line.")
+
+
+# --------------------------------------------------------------------------- #
+# Exercise catalogue
+# --------------------------------------------------------------------------- #
+
+
+class ExerciseEntry(BaseModel):
+    """One entry of the structured exercise database.
+
+    French field names because these strings are handed to the coach and shown to
+    the athlete verbatim; translating them at the boundary would only add a lossy
+    step. ``tags`` stays machine-readable — it is what retrieval matches on.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    nom: str
+    muscles: list[str]
+    prerequis: list[str] = Field(default_factory=list)
+    progressions: list[str] = Field(
+        default_factory=list, description="Harder variants, by entry id."
+    )
+    regressions: list[str] = Field(
+        default_factory=list, description="Easier variants, by entry id."
+    )
+    criteres_qualite: list[str]
+    tags: list[str] = Field(
+        description="Machine-readable needs this exercise addresses, e.g. "
+        "'rom_short', 'kipping', 'scapular_control'. Retrieval matches on these."
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Coaching: request to the LLM, response from the LLM
 # --------------------------------------------------------------------------- #
@@ -298,6 +345,13 @@ class CoachRequest(BaseModel):
     athlete: AthleteProfile
     session: SessionSummary
     history: list[HistoryPoint] = Field(default_factory=list, max_length=30)
+    catalogue: list[ExerciseEntry] = Field(
+        default_factory=list,
+        max_length=12,
+        description="Exercise entries retrieved for this session's detected "
+        "weaknesses. Keeps the coach's suggestions anchored to a real catalogue "
+        "instead of invented movement names.",
+    )
 
 
 class SuggestedExercise(BaseModel):
@@ -337,10 +391,12 @@ __all__ = [
     "CoachResponse",
     "Exercise",
     "ExerciseCalibration",
+    "ExerciseEntry",
     "FormScores",
     "FrameSample",
     "HistoryPoint",
     "NextSession",
+    "ProgressPoint",
     "RepEvent",
     "RepPhase",
     "SessionSummary",

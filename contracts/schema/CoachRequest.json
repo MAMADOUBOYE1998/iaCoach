@@ -161,6 +161,74 @@
       "title": "ExerciseCalibration",
       "type": "object"
     },
+    "ExerciseEntry": {
+      "additionalProperties": false,
+      "description": "One entry of the structured exercise database.\n\nFrench field names because these strings are handed to the coach and shown to\nthe athlete verbatim; translating them at the boundary would only add a lossy\nstep. ``tags`` stays machine-readable — it is what retrieval matches on.",
+      "properties": {
+        "criteres_qualite": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Criteres Qualite",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "muscles": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Muscles",
+          "type": "array"
+        },
+        "nom": {
+          "title": "Nom",
+          "type": "string"
+        },
+        "prerequis": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Prerequis",
+          "type": "array"
+        },
+        "progressions": {
+          "description": "Harder variants, by entry id.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Progressions",
+          "type": "array"
+        },
+        "regressions": {
+          "description": "Easier variants, by entry id.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Regressions",
+          "type": "array"
+        },
+        "tags": {
+          "description": "Machine-readable needs this exercise addresses, e.g. 'rom_short', 'kipping', 'scapular_control'. Retrieval matches on these.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "nom",
+        "muscles",
+        "criteres_qualite",
+        "tags"
+      ],
+      "title": "ExerciseEntry",
+      "type": "object"
+    },
     "FormScores": {
       "additionalProperties": false,
       "description": "Continuous quality scores for one repetition.\n\nEach field is a magnitude of deviation normalised to [0, 1], where 1.0 means\n\"no deviation detected\". A rule never returns a boolean: the coaching layer\nneeds to say \"tu ne descends pas assez bas\" with a degree, not \"rep invalide\".",
@@ -459,6 +527,15 @@
   "properties": {
     "athlete": {
       "$ref": "#/$defs/AthleteProfile"
+    },
+    "catalogue": {
+      "description": "Exercise entries retrieved for this session's detected weaknesses. Keeps the coach's suggestions anchored to a real catalogue instead of invented movement names.",
+      "items": {
+        "$ref": "#/$defs/ExerciseEntry"
+      },
+      "maxItems": 12,
+      "title": "Catalogue",
+      "type": "array"
     },
     "history": {
       "items": {

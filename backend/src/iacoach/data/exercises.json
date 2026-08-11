@@ -1,0 +1,514 @@
+[
+  {
+    "id": "traction_stricte",
+    "nom": "Traction stricte",
+    "muscles": [
+      "grand dorsal",
+      "biceps",
+      "trapèzes moyens",
+      "rhomboïdes"
+    ],
+    "prerequis": [
+      "suspension_barre",
+      "tirage_scapulaire"
+    ],
+    "progressions": [
+      "traction_lestee",
+      "muscle_up"
+    ],
+    "regressions": [
+      "traction_negative",
+      "traction_elastique",
+      "traction_australienne"
+    ],
+    "criteres_qualite": [
+      "Départ bras tendus, épaules engagées",
+      "Menton au-dessus de la barre sans tendre le cou",
+      "Aucun élan des jambes",
+      "Descente contrôlée jusqu'à l'extension complète"
+    ],
+    "tags": [
+      "traction",
+      "amplitude",
+      "force_tirage"
+    ]
+  },
+  {
+    "id": "traction_negative",
+    "nom": "Traction négative",
+    "muscles": [
+      "grand dorsal",
+      "biceps"
+    ],
+    "prerequis": [
+      "suspension_barre"
+    ],
+    "progressions": [
+      "traction_stricte"
+    ],
+    "regressions": [
+      "traction_australienne"
+    ],
+    "criteres_qualite": [
+      "Départ menton au-dessus de la barre",
+      "Descente de 5 secondes minimum, vitesse constante",
+      "Extension complète des coudes en bas"
+    ],
+    "tags": [
+      "traction",
+      "amplitude",
+      "force_bas",
+      "tempo",
+      "controle"
+    ]
+  },
+  {
+    "id": "traction_elastique",
+    "nom": "Traction assistée à l'élastique",
+    "muscles": [
+      "grand dorsal",
+      "biceps"
+    ],
+    "prerequis": [
+      "suspension_barre"
+    ],
+    "progressions": [
+      "traction_stricte"
+    ],
+    "regressions": [
+      "traction_australienne"
+    ],
+    "criteres_qualite": [
+      "L'élastique assiste le bas du mouvement, pas le haut",
+      "Amplitude complète malgré l'assistance",
+      "Réduire la tension de l'élastique à mesure des progrès"
+    ],
+    "tags": [
+      "traction",
+      "amplitude",
+      "force_bas"
+    ]
+  },
+  {
+    "id": "traction_australienne",
+    "nom": "Traction australienne (rowing horizontal)",
+    "muscles": [
+      "trapèzes moyens",
+      "rhomboïdes",
+      "grand dorsal",
+      "biceps"
+    ],
+    "prerequis": [],
+    "progressions": [
+      "traction_elastique",
+      "traction_negative"
+    ],
+    "regressions": [],
+    "criteres_qualite": [
+      "Corps gainé, ligne épaules-hanches-chevilles",
+      "Sternum vers la barre, omoplates serrées en fin de tirage",
+      "Bras tendus en position basse"
+    ],
+    "tags": [
+      "traction",
+      "gainage",
+      "scapulaire",
+      "force_tirage"
+    ]
+  },
+  {
+    "id": "tirage_scapulaire",
+    "nom": "Tirage scapulaire suspendu",
+    "muscles": [
+      "trapèzes inférieurs",
+      "rhomboïdes",
+      "grand dorsal"
+    ],
+    "prerequis": [
+      "suspension_barre"
+    ],
+    "progressions": [
+      "traction_stricte"
+    ],
+    "regressions": [],
+    "criteres_qualite": [
+      "Bras restent tendus : seules les omoplates bougent",
+      "Descente et remontée des épaules lentes et complètes",
+      "Aucune flexion de coude"
+    ],
+    "tags": [
+      "scapulaire",
+      "amplitude",
+      "force_bas",
+      "controle"
+    ]
+  },
+  {
+    "id": "suspension_barre",
+    "nom": "Suspension bras tendus",
+    "muscles": [
+      "avant-bras",
+      "ceinture scapulaire"
+    ],
+    "prerequis": [],
+    "progressions": [
+      "tirage_scapulaire"
+    ],
+    "regressions": [],
+    "criteres_qualite": [
+      "Bras complètement tendus, épaules relâchées puis engagées",
+      "Corps immobile, pas de balancement",
+      "Respiration régulière"
+    ],
+    "tags": [
+      "grip",
+      "amplitude",
+      "gainage"
+    ]
+  },
+  {
+    "id": "hollow_body",
+    "nom": "Hollow body hold",
+    "muscles": [
+      "abdominaux",
+      "fléchisseurs de hanche"
+    ],
+    "prerequis": [],
+    "progressions": [
+      "hollow_body_suspendu"
+    ],
+    "regressions": [],
+    "criteres_qualite": [
+      "Bas du dos plaqué au sol en permanence",
+      "Épaules et talons décollés",
+      "Aucune apnée : respiration continue"
+    ],
+    "tags": [
+      "gainage",
+      "strict",
+      "anti_kipping"
+    ]
+  },
+  {
+    "id": "hollow_body_suspendu",
+    "nom": "Hollow hold suspendu à la barre",
+    "muscles": [
+      "abdominaux",
+      "fléchisseurs de hanche",
+      "ceinture scapulaire"
+    ],
+    "prerequis": [
+      "hollow_body",
+      "suspension_barre"
+    ],
+    "progressions": [
+      "l_sit_barre"
+    ],
+    "regressions": [
+      "hollow_body"
+    ],
+    "criteres_qualite": [
+      "Bassin en rétroversion, côtes basses",
+      "Corps parfaitement immobile sous la barre",
+      "Épaules engagées, pas de suspension passive"
+    ],
+    "tags": [
+      "gainage",
+      "anti_kipping",
+      "strict"
+    ]
+  },
+  {
+    "id": "traction_tempo",
+    "nom": "Traction à tempo imposé (3-1-3)",
+    "muscles": [
+      "grand dorsal",
+      "biceps"
+    ],
+    "prerequis": [
+      "traction_stricte"
+    ],
+    "progressions": [
+      "traction_lestee"
+    ],
+    "regressions": [
+      "traction_negative"
+    ],
+    "criteres_qualite": [
+      "3 s de montée, 1 s de pause haute, 3 s de descente",
+      "Vitesse constante sur chaque phase, sans à-coup",
+      "Arrêter la série dès que le tempo n'est plus tenu"
+    ],
+    "tags": [
+      "tempo",
+      "controle",
+      "strict",
+      "anti_kipping"
+    ]
+  },
+  {
+    "id": "traction_archer",
+    "nom": "Traction archer",
+    "muscles": [
+      "grand dorsal",
+      "biceps"
+    ],
+    "prerequis": [
+      "traction_stricte"
+    ],
+    "progressions": [
+      "traction_un_bras_assistee"
+    ],
+    "regressions": [
+      "traction_stricte"
+    ],
+    "criteres_qualite": [
+      "Un bras tire, l'autre reste tendu en appui",
+      "Alterner strictement le même nombre de reps de chaque côté",
+      "Pas de rotation du buste"
+    ],
+    "tags": [
+      "symetrie",
+      "unilateral",
+      "force_tirage"
+    ]
+  },
+  {
+    "id": "traction_un_bras_assistee",
+    "nom": "Traction à un bras assistée",
+    "muscles": [
+      "grand dorsal",
+      "biceps",
+      "avant-bras"
+    ],
+    "prerequis": [
+      "traction_archer"
+    ],
+    "progressions": [],
+    "regressions": [
+      "traction_archer"
+    ],
+    "criteres_qualite": [
+      "La main d'assistance tient le poignet, pas la barre",
+      "Amplitude complète du côté travaillé",
+      "Volume identique des deux côtés"
+    ],
+    "tags": [
+      "symetrie",
+      "unilateral",
+      "force_tirage"
+    ]
+  },
+  {
+    "id": "rowing_unilateral",
+    "nom": "Rowing australien à un bras",
+    "muscles": [
+      "grand dorsal",
+      "rhomboïdes",
+      "biceps"
+    ],
+    "prerequis": [
+      "traction_australienne"
+    ],
+    "progressions": [
+      "traction_archer"
+    ],
+    "regressions": [
+      "traction_australienne"
+    ],
+    "criteres_qualite": [
+      "Épaules parallèles au sol, pas de rotation",
+      "Amplitude complète, omoplate rétractée en fin de tirage",
+      "Même nombre de reps des deux côtés"
+    ],
+    "tags": [
+      "symetrie",
+      "unilateral",
+      "scapulaire"
+    ]
+  },
+  {
+    "id": "traction_lestee",
+    "nom": "Traction lestée",
+    "muscles": [
+      "grand dorsal",
+      "biceps"
+    ],
+    "prerequis": [
+      "traction_stricte"
+    ],
+    "progressions": [
+      "muscle_up"
+    ],
+    "regressions": [
+      "traction_stricte"
+    ],
+    "criteres_qualite": [
+      "Amplitude complète avant d'ajouter du lest",
+      "Aucun élan : si le lest force le kipping, il est trop lourd",
+      "Progression du lest par petits paliers"
+    ],
+    "tags": [
+      "traction",
+      "force_tirage",
+      "surcharge"
+    ]
+  },
+  {
+    "id": "dead_hang_lourd",
+    "nom": "Suspension lestée",
+    "muscles": [
+      "avant-bras",
+      "ceinture scapulaire"
+    ],
+    "prerequis": [
+      "suspension_barre"
+    ],
+    "progressions": [],
+    "regressions": [
+      "suspension_barre"
+    ],
+    "criteres_qualite": [
+      "Prise ferme, poignets neutres",
+      "Épaules engagées pendant toute la suspension",
+      "Arrêter avant que la prise ne lâche brutalement"
+    ],
+    "tags": [
+      "grip",
+      "surcharge"
+    ]
+  },
+  {
+    "id": "muscle_up",
+    "nom": "Muscle-up strict",
+    "muscles": [
+      "grand dorsal",
+      "pectoraux",
+      "triceps",
+      "ceinture scapulaire"
+    ],
+    "prerequis": [
+      "traction_lestee",
+      "dips_strictes"
+    ],
+    "progressions": [],
+    "regressions": [
+      "traction_lestee",
+      "dips_strictes"
+    ],
+    "criteres_qualite": [
+      "Transition sans élan de jambes",
+      "Poignets qui passent au-dessus de la barre en un mouvement continu",
+      "Verrouillage des coudes en fin de mouvement"
+    ],
+    "tags": [
+      "traction",
+      "force_tirage",
+      "strict"
+    ]
+  },
+  {
+    "id": "dips_strictes",
+    "nom": "Dips strictes aux barres parallèles",
+    "muscles": [
+      "pectoraux",
+      "triceps",
+      "deltoïdes antérieurs"
+    ],
+    "prerequis": [],
+    "progressions": [
+      "dips_lestees"
+    ],
+    "regressions": [
+      "dips_elastique"
+    ],
+    "criteres_qualite": [
+      "Épaules descendues sous le niveau des coudes",
+      "Buste stable, pas de balancement",
+      "Verrouillage complet des coudes en haut"
+    ],
+    "tags": [
+      "poussee",
+      "amplitude",
+      "gainage"
+    ]
+  },
+  {
+    "id": "l_sit_barre",
+    "nom": "L-sit suspendu à la barre",
+    "muscles": [
+      "abdominaux",
+      "fléchisseurs de hanche",
+      "grand dorsal"
+    ],
+    "prerequis": [
+      "hollow_body_suspendu"
+    ],
+    "progressions": [],
+    "regressions": [
+      "hollow_body_suspendu"
+    ],
+    "criteres_qualite": [
+      "Jambes tendues à l'horizontale, pointes tirées",
+      "Épaules engagées, pas de suspension passive",
+      "Bassin stable, aucun balancement"
+    ],
+    "tags": [
+      "gainage",
+      "anti_kipping",
+      "strict"
+    ]
+  },
+  {
+    "id": "dips_elastique",
+    "nom": "Dips assistées à l'élastique",
+    "muscles": [
+      "pectoraux",
+      "triceps",
+      "deltoïdes antérieurs"
+    ],
+    "prerequis": [],
+    "progressions": [
+      "dips_strictes"
+    ],
+    "regressions": [],
+    "criteres_qualite": [
+      "Amplitude complète malgré l'assistance",
+      "Épaules sous le niveau des coudes en position basse",
+      "Réduire la tension de l'élastique à mesure des progrès"
+    ],
+    "tags": [
+      "poussee",
+      "amplitude",
+      "force_bas"
+    ]
+  },
+  {
+    "id": "dips_lestees",
+    "nom": "Dips lestées",
+    "muscles": [
+      "pectoraux",
+      "triceps",
+      "deltoïdes antérieurs"
+    ],
+    "prerequis": [
+      "dips_strictes"
+    ],
+    "progressions": [
+      "muscle_up"
+    ],
+    "regressions": [
+      "dips_strictes"
+    ],
+    "criteres_qualite": [
+      "Amplitude complète avant d'ajouter du lest",
+      "Buste stable, pas de balancement compensatoire",
+      "Progression du lest par petits paliers"
+    ],
+    "tags": [
+      "poussee",
+      "surcharge",
+      "force_tirage"
+    ]
+  }
+]
