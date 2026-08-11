@@ -57,6 +57,26 @@ body {
   transform: scaleX(-1);
 }
 
+#diag-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Wraps rather than scrolls: a report you have to scroll sideways cannot be
+   captured in one screenshot, which is the whole point of this panel. */
+#diag {
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #0b0d10;
+  border: 1px solid #1e242c;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 #hud {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));

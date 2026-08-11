@@ -27,6 +27,13 @@ import { SessionRecorder, newSessionId } from "./session/recorder";
 import { SessionSync } from "./session/sync";
 import { renderDebrief, renderDebriefUnavailable } from "./ui/debrief";
 import { feedbackFor, formatPercent, scoreLines } from "./ui/feedback";
+import {
+  captureConsole,
+  formatReport,
+  summarise,
+  type Sample,
+  type Summary,
+} from "./ui/diagnostics";
 import { clear, drawSkeleton, resizeToVideo } from "./ui/overlay";
 import { renderProgress } from "./ui/progress";
 import type { ExerciseCalibration, ProgressPoint, RepEvent } from "./types/contracts";
@@ -58,6 +65,16 @@ const debriefPanel = el<HTMLElement>("debrief-panel");
 const debriefOut = el<HTMLDivElement>("debrief");
 const progressOut = el<HTMLDivElement>("progress");
 const syncStatus = el<HTMLParagraphElement>("sync-status");
+const measureButton = el<HTMLButtonElement>("measure");
+const diagToggle = el<HTMLButtonElement>("diag-toggle");
+const diagCopy = el<HTMLButtonElement>("diag-copy");
+const diagOut = el<HTMLPreElement>("diag");
+
+// Installed before anything else runs: MediaPipe reports the GL context it got
+// on the console during initialisation, and that line is the only evidence of
+// whether the GPU delegate was really used. Miss it and a latency figure cannot
+// be interpreted.
+const consoleLines = captureConsole();
 
 // Extracted so the non-null result is carried into the closures below; a
 // narrowed `const` does not survive the function boundary.
@@ -94,6 +111,27 @@ class Rolling {
     return this.samples.reduce((a, b) => a + b, 0) / this.samples.length;
   }
 }
+
+/**
+ * A timed measurement run.
+ *
+ * `WARMUP_MS` is dropped from the result: the first seconds after the graph
+ * starts are dominated by shader compilation and texture allocation, and a
+ * phone throttles down later — averaging the two together describes no state
+ * the device is ever actually in.
+ */
+const WARMUP_MS = 5_000;
+const MEASURE_MS = 60_000;
+
+interface Measurement {
+  startedAt: number;
+  samples: Sample[];
+}
+
+let measurement: Measurement | null = null;
+let lastSummary: Summary | null = null;
+/** Resolved at startup; reported because it changes what offline means. */
+let assetSource: "local" | "cdn" = "cdn";
 
 type Mode =
   | { kind: "idle" }
@@ -267,6 +305,19 @@ function loop(state: RunState): void {
     fpsOut.textContent = fps.mean.toFixed(0);
     latencyOut.textContent = latency.mean.toFixed(1);
 
+    if (measurement && detection) {
+      const elapsed = now - measurement.startedAt;
+      if (elapsed >= WARMUP_MS) {
+        measurement.samples.push({ fps: 1000 / delta, latencyMs: detection.inferenceMs });
+      }
+      if (elapsed >= WARMUP_MS + MEASURE_MS) finishMeasurement();
+      else {
+        const left = Math.ceil((WARMUP_MS + MEASURE_MS - elapsed) / 1000);
+        measureButton.textContent =
+          elapsed < WARMUP_MS ? "Échauffement…" : `Mesure — ${left} s`;
+      }
+    }
+
     state.rafId = requestAnimationFrame(tick);
   };
 
@@ -324,8 +375,9 @@ async function start(): Promise<void> {
   let landmarker: PoseLandmarker;
   try {
     const assets = await resolveAssets();
-    // Logged rather than shown: the athlete finds out from the offline banner
-    // below, and the console line is what makes a failed vendoring diagnosable.
+    assetSource = assets.source;
+    // Also logged, so it lands in the captured console lines alongside
+    // MediaPipe's own output.
     console.info(assetsLabel(assets));
     landmarker = await createLandmarker(assets);
   } catch (error) {
@@ -361,11 +413,57 @@ async function start(): Promise<void> {
   startButton.disabled = false;
   calibrateButton.hidden = false;
   applyCamera(camera);
+  measureButton.hidden = false;
   // Only meaningful once permission is granted: before that the browser hides
   // the device list, so asking earlier would always answer "one camera".
   flipButton.hidden = !(await hasMultipleCameras());
   setStatus("Place-toi de profil, corps entier dans le cadre, puis calibre ton amplitude.");
   loop(running);
+}
+
+function startMeasurement(): void {
+  if (!running) return;
+  measurement = { startedAt: performance.now(), samples: [] };
+  measureButton.disabled = true;
+  measureButton.textContent = "Échauffement…";
+  setStatus("Mesure en cours : garde le cadrage et ne touche à rien.");
+}
+
+function finishMeasurement(): void {
+  if (!measurement) return;
+  lastSummary = summarise(measurement.samples, MEASURE_MS / 1000);
+  measurement = null;
+  measureButton.disabled = false;
+  measureButton.textContent = "Mesurer 60 s";
+  showDiagnostics(true);
+  setStatus("Mesure terminée. Capture le panneau Diagnostic.");
+}
+
+/**
+ * Builds the report from the live state.
+ *
+ * Regenerated on each display rather than cached: a report describing a camera
+ * that has since been switched would be worse than none.
+ */
+function report(): string {
+  const track = running?.camera.stream.getVideoTracks()[0];
+  const settings = track?.getSettings();
+  return formatReport({
+    modelSource: assetSource,
+    facing: running?.camera.facing ?? "—",
+    videoWidth: video.videoWidth,
+    videoHeight: video.videoHeight,
+    trackFrameRate: settings?.frameRate ?? null,
+    summary: lastSummary,
+    consoleLines: consoleLines(),
+  });
+}
+
+function showDiagnostics(visible: boolean): void {
+  diagOut.hidden = !visible;
+  diagCopy.hidden = !visible;
+  diagToggle.textContent = visible ? "Masquer le diagnostic" : "Diagnostic";
+  if (visible) diagOut.textContent = report();
 }
 
 /** Reflect the open camera in the UI: mirror the preview, label the switch. */
@@ -427,9 +525,12 @@ function stop(): void {
   for (const out of [repsOut, confidenceOut, fpsOut, latencyOut]) out.textContent = "—";
   confidenceOut.classList.remove("warn");
   lastRepPanel.hidden = true;
-  for (const button of [calibrateButton, newSetButton, finishButton, flipButton]) {
+  for (const button of [calibrateButton, newSetButton, finishButton, flipButton, measureButton]) {
     button.hidden = true;
   }
+  measurement = null;
+  measureButton.disabled = false;
+  measureButton.textContent = "Mesurer 60 s";
   stage.classList.remove("mirrored");
   startButton.textContent = "Démarrer la caméra";
   setStatus("Arrêté.");
@@ -441,6 +542,27 @@ startButton.addEventListener("click", () => {
 });
 
 flipButton.addEventListener("click", () => void flipCamera());
+
+measureButton.addEventListener("click", startMeasurement);
+
+diagToggle.addEventListener("click", () => showDiagnostics(diagOut.hidden));
+
+diagCopy.addEventListener("click", () => {
+  const text = report();
+  diagOut.textContent = text;
+  // The clipboard is a convenience; the panel is the guarantee. If copying is
+  // refused — no permission, no secure context — the text is still on screen
+  // and a screenshot carries it.
+  void navigator.clipboard
+    ?.writeText(text)
+    .then(() => {
+      diagCopy.textContent = "Copié";
+      setTimeout(() => (diagCopy.textContent = "Copier"), 1500);
+    })
+    .catch(() => {
+      diagCopy.textContent = "Copie refusée — capture l'écran";
+    });
+});
 
 calibrateButton.addEventListener("click", () => {
   if (!running) return;

@@ -107,10 +107,16 @@ pointer `VITE_API_BASE` dessus.
 
 Une fois la PWA ouverte sur le téléphone, le HUD affiche `fps` et `ms / frame`.
 
-Sans DevTools (option 0), la console n'est pas accessible, donc le **delegate
-effectif** ne l'est pas non plus. Ça n'invalide pas la mesure de latence : un
-repli CPU se voit de toute façon dans le chiffre. Mais il faudra le confirmer un
-jour avec `chrome://inspect` avant d'inscrire la ligne comme définitive.
+Sans ordinateur il n'y a pas de DevTools, donc pas de console — et la console
+contient justement ce qui rend une latence interprétable. C'est pourquoi le
+panneau **Diagnostic** existe : il capture les lignes de console au vol
+(y compris le `GL version: … renderer: …` de MediaPipe, seule preuve directe du
+delegate réellement utilisé) et les affiche dans la page.
+
+Une capture d'écran de ce panneau, après « Mesurer 60 s », suffit à remplir une
+ligne de `BENCHMARKS.md` **et** à savoir qu'elle est fiable. Le bouton
+« Copier » met le même contenu en texte dans le presse-papier, ce qui évite
+l'aller-retour par l'image.
 
 Protocole de mesure et tableau à remplir : [`BENCHMARKS.md`](BENCHMARKS.md).
 

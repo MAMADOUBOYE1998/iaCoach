@@ -51,9 +51,27 @@ plancher : si le pipeline ne tournait pas du tout, ce test le dirait.
 **Protocole** (à appliquer identiquement à chaque mesure) :
 1. Téléphone en charge, luminosité fixe, application seule au premier plan.
 2. Sujet cadré en pied, 2–3 m de la caméra, éclairage intérieur constant.
-3. Laisser tourner 60 s, relever la moyenne affichée après stabilisation.
-4. Noter le modèle exact (`pose_landmarker_lite` / `_full` / `_heavy`) et le
-   delegate effectif (GPU ou repli CPU).
+3. Démarrer la caméra, puis **« Mesurer 60 s »**. Les 5 premières secondes sont
+   écartées : compilation des shaders et allocation des textures y dominent, et
+   les moyenner avec la suite décrit un état où l'appareil n'est jamais.
+4. Ouvrir **« Diagnostic »** et capturer le panneau, ou « Copier ».
+
+Le panneau donne p50 et p95 plutôt qu'une moyenne. Un décrochage toutes les
+vingt frames est ce que l'athlète perçoit comme un à-coup, et une moyenne
+l'efface complètement.
+
+Il donne aussi ce qui rend le chiffre interprétable, et qui n'est visible nulle
+part ailleurs sans DevTools :
+
+- la ligne `GL version: … renderer: …` que MediaPipe écrit dans la console au
+  démarrage du graphe — **la seule preuve directe** que le delegate GPU a
+  effectivement servi, et non un repli CPU silencieux ;
+- le renderer que le navigateur déclare, indépendamment de MediaPipe : un écart
+  entre les deux est précisément la panne à attraper ;
+- la source du modèle (local ou CDN), la résolution réellement obtenue, le
+  modèle d'appareil, et le commit du build.
+
+Une ligne de ce tableau sans ces informations n'est pas une mesure.
 
 ## Précision de comptage — footage propre
 

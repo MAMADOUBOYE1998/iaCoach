@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +17,20 @@ const HERE = fileURLToPath(new URL(".", import.meta.url));
 const tasksVisionVersion: string = JSON.parse(
   readFileSync(resolve(HERE, "node_modules/@mediapipe/tasks-vision/package.json"), "utf8"),
 ).version;
+
+/**
+ * Which commit a build came from.
+ *
+ * Shown in the on-screen diagnostics: a latency figure reported from a phone is
+ * worthless if nobody can tell which code produced it.
+ */
+function buildSha(): string {
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return "inconnu";
+  }
+}
 
 /**
  * Emits `asset-manifest.json`: the hashed JS and CSS of this build, for the
@@ -52,6 +67,7 @@ export default defineConfig({
   plugins: [assetManifest()],
   define: {
     __TASKS_VISION_VERSION__: JSON.stringify(tasksVisionVersion),
+    __BUILD_SHA__: JSON.stringify(buildSha()),
   },
   server: {
     // getUserMedia requires a secure context. localhost counts as secure, so
