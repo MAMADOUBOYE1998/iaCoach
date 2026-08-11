@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { strategyFor, type RoutedRequest } from "./policy";
+import { assetManifestUrl, precacheUrls, strategyFor, type RoutedRequest } from "./policy";
 
 const ORIGIN = "https://coach.local";
 
@@ -60,5 +60,39 @@ describe("strategyFor", () => {
 
   it("does not throw on a malformed url", () => {
     expect(strategyFor({ url: "http://[::1", method: "GET" }, ORIGIN)).toBe("network-only");
+  });
+});
+
+describe("under a sub-path base", () => {
+  // GitHub Pages serves the app from /iaCoach/. A worker that only knew about
+  // the root would match nothing there and cache nothing, while every check
+  // still passed.
+  const BASE = "/iaCoach/";
+
+  it("routes the based paths", () => {
+    expect(strategyFor(get(`${ORIGIN}/iaCoach/assets/main-abc.js`), ORIGIN, BASE)).toBe(
+      "cache-first",
+    );
+    expect(strategyFor(get(`${ORIGIN}/iaCoach/models/pose.task`), ORIGIN, BASE)).toBe(
+      "cache-first",
+    );
+    expect(strategyFor(get(`${ORIGIN}/iaCoach/`, "navigate"), ORIGIN, BASE)).toBe("network-first");
+  });
+
+  it("ignores the same paths at the root", () => {
+    // Another app on the same host is not ours to cache.
+    expect(strategyFor(get(`${ORIGIN}/assets/main-abc.js`), ORIGIN, BASE)).toBe("network-only");
+  });
+
+  it("is not fooled by a sibling path sharing the prefix", () => {
+    expect(strategyFor(get(`${ORIGIN}/iaCoach-old/assets/main.js`), ORIGIN, BASE)).toBe(
+      "network-only",
+    );
+  });
+
+  it("builds based precache and manifest urls", () => {
+    expect(precacheUrls(BASE)).toEqual(["/iaCoach/", "/iaCoach/manifest.webmanifest"]);
+    expect(assetManifestUrl(BASE)).toBe("/iaCoach/asset-manifest.json");
+    expect(precacheUrls("/")).toEqual(["/", "/manifest.webmanifest"]);
   });
 });

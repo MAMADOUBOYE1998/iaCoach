@@ -23,12 +23,16 @@ const tasksVisionVersion: string = JSON.parse(
  * content-hashed filenames is wrong the moment anything is edited.
  */
 function assetManifest(): Plugin {
+  let base = "/";
   return {
     name: "iacoach-asset-manifest",
+    configResolved(config) {
+      base = config.base;
+    },
     generateBundle(_options, bundle) {
       const files = Object.keys(bundle)
         .filter((name) => name.startsWith("assets/") && /\.(js|css)$/.test(name))
-        .map((name) => `/${name}`)
+        .map((name) => `${base}${name}`)
         .sort();
       this.emitFile({
         type: "asset",
@@ -40,6 +44,11 @@ function assetManifest(): Plugin {
 }
 
 export default defineConfig({
+  // `/` locally, `/iaCoach/` when GitHub Pages serves it from a repository
+  // sub-path. Everything that builds a URL — the worker's scope, the vendored
+  // asset paths, the precache list — derives from this rather than assuming the
+  // root, because on Pages the root belongs to another site entirely.
+  base: process.env["BASE_PATH"] ?? "/",
   plugins: [assetManifest()],
   define: {
     __TASKS_VISION_VERSION__: JSON.stringify(tasksVisionVersion),

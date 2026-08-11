@@ -5,12 +5,41 @@ partie, donc `npm run dev` suffit. Depuis un téléphone, l'adresse LAN
 (`http://192.168.x.x:5173`) n'est **pas** un contexte sécurisé : la caméra sera
 refusée avant même la demande de permission.
 
-Deux façons de contourner ça. La première est la plus simple et ne demande aucun
-certificat.
+Trois façons de contourner ça. **L'option 0 est la seule qui ne demande aucun
+ordinateur** — c'est celle à prendre si le téléphone est le seul appareil
+disponible.
 
 ---
 
-## Option 1 — Port forwarding via Chrome DevTools (Android, recommandé)
+## Option 0 — GitHub Pages (aucun ordinateur requis)
+
+GitHub construit la PWA et la sert en HTTPS, ce qui suffit comme contexte
+sécurisé. Le workflow `.github/workflows/pages.yml` fait tout : `npm ci`,
+vendoring des assets, build sous le bon sous-chemin, déploiement.
+
+**Activation, une seule fois, faisable depuis le navigateur du téléphone :**
+
+1. `github.com/MAMADOUBOYE1998/iaCoach` → Settings → Pages
+2. **Source : GitHub Actions**
+3. Onglet Actions → « Deploy PWA to Pages » → Run workflow (ou pousser un
+   commit touchant `web/`)
+4. Ouvrir `https://mamadouboye1998.github.io/iaCoach/` dans Chrome sur le
+   téléphone.
+
+Tant que Pages n'est pas activé, le workflow échoue à l'étape de déploiement :
+il ne publie rien tant que personne ne l'a autorisé.
+
+**Ce qui marche sans backend** : caméra, pose, calibration, comptage, scores,
+file d'attente locale des séances. **Ce qui ne marche pas** : le débrief coach,
+qui a besoin de l'API — la page l'annonce au lieu de faire semblant. Pour la
+mesure fps, c'est sans importance : rien de la boucle temps réel ne dépend du
+réseau.
+
+Le site est public, comme le dépôt. Il ne contient aucune clé (la clé Anthropic
+vit côté backend, qui n'est pas déployé) et aucune donnée d'entraînement : tout
+ce que l'app enregistre reste dans le navigateur du téléphone.
+
+## Option 1 — Port forwarding via Chrome DevTools (Android, avec un PC)
 
 Le forwarding fait apparaître le serveur de dev **comme `localhost` sur le
 téléphone**, ce qui en fait un contexte sécurisé. Pas de certificat, pas
@@ -63,6 +92,12 @@ pointer `VITE_API_BASE` dessus.
 ## Ce qu'il faut relever
 
 Une fois la PWA ouverte sur le téléphone, le HUD affiche `fps` et `ms / frame`.
+
+Sans DevTools (option 0), la console n'est pas accessible, donc le **delegate
+effectif** ne l'est pas non plus. Ça n'invalide pas la mesure de latence : un
+repli CPU se voit de toute façon dans le chiffre. Mais il faudra le confirmer un
+jour avec `chrome://inspect` avant d'inscrire la ligne comme définitive.
+
 Protocole de mesure et tableau à remplir : [`BENCHMARKS.md`](BENCHMARKS.md).
 
 Relever aussi :

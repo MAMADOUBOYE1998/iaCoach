@@ -62,7 +62,10 @@ const registration = await page.evaluate(async () => {
   const reg = await navigator.serviceWorker.ready;
   return { scope: reg.scope, state: reg.active?.state ?? null };
 });
-check(registration.scope === BASE, `service worker controls the root scope (${registration.scope})`);
+check(
+  registration.scope === BASE,
+  `service worker scope matches the serving root (${registration.scope})`,
+);
 
 const startedAt = Date.now();
 await page.click("#start");
@@ -82,17 +85,21 @@ for (let i = 0; i < SAMPLES; i += 1) {
 console.log("  (this machine, not a phone — see the header of this file)\n");
 
 const origin = new URL(BASE).origin;
+// Everything below is checked relative to the serving root: the app is deployed
+// at `/` locally and at `/<repo>/` on GitHub Pages, and assertions pinned to `/`
+// would pass on one and fail on the other while the app itself was fine.
+const basePath = new URL(BASE).pathname;
 const foreign = [...new Set(requested.map((u) => new URL(u).origin))].filter(
   // The API origin is expected and unrelated to asset loading.
   (o) => o !== origin && !o.includes("localhost:8000"),
 );
 check(foreign.length === 0, `no third-party origin fetched${foreign.length ? `: ${foreign}` : ""}`);
 check(
-  requested.some((u) => u.startsWith(`${origin}/models/`)),
+  requested.some((u) => u.startsWith(`${origin}${basePath}models/`)),
   "pose model served from our own origin",
 );
 check(
-  requested.some((u) => u.startsWith(`${origin}/vendor/tasks-vision/`)),
+  requested.some((u) => u.startsWith(`${origin}${basePath}vendor/tasks-vision/`)),
   "WASM runtime served from our own origin",
 );
 
@@ -104,9 +111,9 @@ const cached = await page.evaluate(async () => {
 console.log(`\ncache ${cached.names.join(", ")}:`);
 for (const path of cached.paths) console.log(`  ${path}`);
 check(cached.names.length === 1, "exactly one cache version is live");
-check(cached.paths.includes("/"), "app shell cached");
+check(cached.paths.includes(basePath), "app shell cached");
 check(
-  cached.paths.some((p) => p.startsWith("/assets/") && p.endsWith(".js")),
+  cached.paths.some((p) => p.startsWith(`${basePath}assets/`) && p.endsWith(".js")),
   "hashed build assets cached on install",
 );
 check(
@@ -114,7 +121,9 @@ check(
   "pose model cached",
 );
 check(
-  cached.paths.every((p) => !p.startsWith("/sessions") && !p.startsWith("/athletes")),
+  cached.paths.every(
+    (p) => !p.startsWith(`${basePath}sessions`) && !p.startsWith(`${basePath}athletes`),
+  ),
   "no training data cached",
 );
 

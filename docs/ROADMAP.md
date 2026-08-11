@@ -29,9 +29,12 @@ mesure inscrite dans `BENCHMARKS.md` quand le jalon revendique une performance.
 **Reste à faire dans M0, avant de le déclarer clos :**
 
 1. **Mesurer sur un vrai téléphone.** L'environnement de dev ici n'a pas de
-   caméra ni de GPU : les cibles fps/latence ne sont pas mesurées. Procédure
-   complète dans `docs/PHONE_TESTING.md` (port forwarding Chrome DevTools : pas
-   de certificat à gérer).
+   caméra ni de GPU : les cibles fps/latence ne sont pas mesurées.
+   `docs/PHONE_TESTING.md` décrit trois chemins, dont un qui ne demande **aucun
+   ordinateur** : GitHub Pages construit et sert la PWA en HTTPS, ce qui suffit
+   comme contexte sécurisé pour la caméra. Reste une action manuelle, à faire
+   depuis le navigateur du téléphone : Settings → Pages → Source « GitHub
+   Actions ».
 
 **Vérifié, mais pas mesuré** : `web/scripts/smoke.mjs` fait tourner la chaîne
 complète dans un Chromium headless avec caméra factice — service worker installé
@@ -40,7 +43,16 @@ exécute réellement le bundle (et pas seulement le HTML statique). Ses chiffres
 latence viennent d'un rasteriseur logiciel et ne transposent pas : voir
 `BENCHMARKS.md`.
 
-Deux défauts trouvés par ce test, qui ne se voyaient dans aucun test unitaire :
+Trois défauts trouvés par ce test, qui ne se voyaient dans aucun test unitaire :
+
+0. **Le mode hors-ligne était mort en silence sous sous-chemin.** Le serveur
+   renvoie `Vary: Origin` sur les fichiers statiques ; les requêtes de precache
+   émises par le worker ne portent pas le même `Origin` que celles du `<script>`
+   de la page, donc `cache.match` échouait à chaque fois. Le fichier était bien
+   en cache, l'inspection le confirmait, et la requête partait quand même sur le
+   réseau. Recherche faite en ignorant `Vary` — tout ce qui est mis en cache est
+   un fichier statique adressé par son hash, sans négociation de contenu.
+
 
 1. La latence d'inférence n'était accumulée que sur les frames où une pose est
    trouvée. Une frame vide coûte pourtant une inférence complète : la moyenne

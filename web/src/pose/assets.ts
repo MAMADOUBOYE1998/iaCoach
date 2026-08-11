@@ -24,8 +24,11 @@
  */
 declare const __TASKS_VISION_VERSION__: string;
 
-export const LOCAL_WASM_BASE = "/vendor/tasks-vision";
-export const LOCAL_MODEL_URL = "/models/pose_landmarker_full.task";
+/** Serving root: `/` locally, `/iaCoach/` on GitHub Pages. */
+const BASE = import.meta.env.BASE_URL;
+
+export const LOCAL_WASM_BASE = `${BASE}vendor/tasks-vision`;
+export const LOCAL_MODEL_URL = `${BASE}models/pose_landmarker_full.task`;
 
 export const CDN_WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${__TASKS_VISION_VERSION__}/wasm`;
 export const CDN_MODEL_URL =

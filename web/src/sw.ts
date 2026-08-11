@@ -12,7 +12,7 @@
  * session finished offline is held by the sync queue and sent later.
  */
 
-import { ASSET_MANIFEST, CACHE_NAME, PRECACHE, strategyFor } from "./pwa/policy";
+import { assetManifestUrl, CACHE_NAME, precacheUrls, strategyFor } from "./pwa/policy";
 
 // The DOM lib is what the rest of the app compiles against, and pulling in the
 // WebWorker lib alongside it collides on the shared globals. The handful of
@@ -36,14 +36,39 @@ interface WorkerScope {
 
 const worker = self as unknown as WorkerScope;
 
+/**
+ * Where the app is mounted, read from the worker's own URL rather than injected
+ * at build time: `/sw.js` → `/`, `/iaCoach/sw.js` → `/iaCoach/`. A worker can
+ * only control pages at or below its own path, so this is by construction the
+ * scope it governs.
+ */
+const BASE = new URL("./", worker.location.href).pathname;
+
 /** Only a fresh, non-opaque, same-origin 200 is worth storing. */
 function isCacheable(response: Response): boolean {
   return response.status === 200 && response.type === "basic";
 }
 
+/**
+ * `Vary` is ignored on lookup, and that is not laziness.
+ *
+ * Servers routinely send `Vary: Origin` or `Vary: Accept-Encoding` on static
+ * files.
+ * The precache requests are issued by this worker and carry different headers
+ * from the page's own script and stylesheet requests, so an honest `Vary` match
+ * misses every single time — the file sits in the cache, the lookup fails, the
+ * fetch goes to the network, and offline mode is silently dead while every
+ * check still says the asset is cached. Observed exactly that against a dev
+ * server sending `Vary: Origin`.
+ *
+ * Safe here because everything cached is a static, content-hashed, same-origin
+ * file with no meaningful content negotiation.
+ */
+const MATCH: CacheQueryOptions = { ignoreVary: true };
+
 async function cacheFirst(request: Request): Promise<Response> {
   const cache = await caches.open(CACHE_NAME);
-  const hit = await cache.match(request);
+  const hit = await cache.match(request, MATCH);
   if (hit) return hit;
 
   const response = await fetch(request);
@@ -58,7 +83,7 @@ async function networkFirst(request: Request): Promise<Response> {
     if (isCacheable(response)) await cache.put(request, response.clone());
     return response;
   } catch (error) {
-    const hit = (await cache.match(request)) ?? (await cache.match("/"));
+    const hit = (await cache.match(request, MATCH)) ?? (await cache.match(BASE, MATCH));
     if (hit) return hit;
     throw error;
   }
@@ -74,10 +99,10 @@ async function networkFirst(request: Request): Promise<Response> {
  */
 async function precache(): Promise<void> {
   const cache = await caches.open(CACHE_NAME);
-  await cache.addAll([...PRECACHE]);
+  await cache.addAll(precacheUrls(BASE));
 
   try {
-    const response = await fetch(ASSET_MANIFEST, { cache: "no-cache" });
+    const response = await fetch(assetManifestUrl(BASE), { cache: "no-cache" });
     if (!response.ok) return;
     const listed: unknown = await response.json();
     if (!Array.isArray(listed)) return;
@@ -109,6 +134,7 @@ worker.addEventListener("fetch", (event) => {
   const strategy = strategyFor(
     { url: event.request.url, method: event.request.method, mode: event.request.mode },
     worker.location.origin,
+    BASE,
   );
   // `network-only` is handled by not responding at all: the browser performs the
   // request exactly as it would with no worker installed.

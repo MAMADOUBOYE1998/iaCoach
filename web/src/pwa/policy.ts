@@ -15,12 +15,18 @@
  *    copy when there is not.
  *  - `network-only` — everything else, and every non-GET. The worker does not
  *    intercept these at all.
+ *
+ * Every path is relative to a **base**: the app is served from `/` locally and
+ * from `/iaCoach/` on GitHub Pages, and a worker that only knows about `/` would
+ * cache nothing there while reporting success.
  */
 
 export const CACHE_NAME = "iacoach-v1";
 
 /** Cached on install so the shell exists before the first offline visit. */
-export const PRECACHE: readonly string[] = ["/", "/manifest.webmanifest"];
+export function precacheUrls(base: string): string[] {
+  return [base, `${base}manifest.webmanifest`];
+}
 
 /**
  * Written by the build; lists the hashed JS and CSS of this exact bundle.
@@ -30,7 +36,9 @@ export const PRECACHE: readonly string[] = ["/", "/manifest.webmanifest"];
  * *second* visit on — "works offline" would quietly mean "works offline from the
  * third visit". The worker fetches this list on install instead.
  */
-export const ASSET_MANIFEST = "/asset-manifest.json";
+export function assetManifestUrl(base: string): string {
+  return `${base}asset-manifest.json`;
+}
 
 export type CacheStrategy = "cache-first" | "network-first" | "network-only";
 
@@ -41,8 +49,8 @@ export interface RoutedRequest {
   mode?: string;
 }
 
-/** Same-origin prefixes holding content-addressed or immutable bytes. */
-const IMMUTABLE_PREFIXES = ["/assets/", "/models/", "/vendor/", "/icons/"];
+/** Sub-paths holding content-addressed or immutable bytes. */
+const IMMUTABLE = ["assets/", "models/", "vendor/", "icons/"];
 
 /**
  * Backend routes, listed even though the API normally lives on another origin.
@@ -52,9 +60,13 @@ const IMMUTABLE_PREFIXES = ["/assets/", "/models/", "/vendor/", "/icons/"];
  * debriefs from being served stale. Offline session handling is the sync
  * queue's job (`session/sync.ts`), and it is deliberately not the cache's.
  */
-const API_PREFIXES = ["/sessions", "/athletes", "/coach", "/health"];
+const API = ["sessions", "athletes", "coach", "health"];
 
-export function strategyFor(request: RoutedRequest, origin: string): CacheStrategy {
+export function strategyFor(
+  request: RoutedRequest,
+  origin: string,
+  base = "/",
+): CacheStrategy {
   if (request.method !== "GET") return "network-only";
 
   let url: URL;
@@ -69,13 +81,17 @@ export function strategyFor(request: RoutedRequest, origin: string): CacheStrate
   // way to be offline-capable. Caching it would half-work and hide the gap.
   if (url.origin !== origin) return "network-only";
 
-  if (API_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))) return "network-only";
+  // Outside our own base is someone else's app on the same host.
+  if (!url.pathname.startsWith(base)) return "network-only";
+  const path = url.pathname.slice(base.length);
 
-  if (IMMUTABLE_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))) return "cache-first";
+  if (API.some((prefix) => path.startsWith(prefix))) return "network-only";
+
+  if (IMMUTABLE.some((prefix) => path.startsWith(prefix))) return "cache-first";
 
   if (request.mode === "navigate") return "network-first";
 
-  if (url.pathname === "/manifest.webmanifest") return "network-first";
+  if (path === "manifest.webmanifest") return "network-first";
 
   return "network-only";
 }
