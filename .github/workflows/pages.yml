@@ -11,9 +11,9 @@ name: Deploy PWA to Pages
 # the debrief simply reports itself unavailable. No API key is involved anywhere
 # in this job.
 #
-# Requires Settings → Pages → Source: "GitHub Actions" (one-time, and until it is
-# set this workflow fails at the deploy step by design rather than publishing
-# anything unasked).
+# Publishing is opt-in by running this workflow: it never fires on its own for a
+# repository that has not run it. The first run enables Pages itself
+# (`enablement: true`), so there is no settings toggle to find on a phone.
 
 on:
   push:
@@ -55,7 +55,13 @@ jobs:
         env:
           # The repository name: Pages serves the site from /<repo>/.
           BASE_PATH: /${{ github.event.repository.name }}/
+      # `enablement` creates the Pages site itself (build_type: workflow) instead
+      # of failing when it does not exist yet. Without it the first run dies on
+      # "Get Pages site failed — Not Found", which is a settings toggle nobody
+      # can guess from that message.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist

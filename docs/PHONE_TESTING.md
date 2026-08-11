@@ -17,17 +17,18 @@ GitHub construit la PWA et la sert en HTTPS, ce qui suffit comme contexte
 sécurisé. Le workflow `.github/workflows/pages.yml` fait tout : `npm ci`,
 vendoring des assets, build sous le bon sous-chemin, déploiement.
 
-**Activation, une seule fois, faisable depuis le navigateur du téléphone :**
+**Rien à activer à la main** : la première exécution active Pages elle-même
+(`enablement: true` sur `actions/configure-pages`). Sans ça, elle échoue sur
+`Get Pages site failed — Not Found`, message qui ne dit pas quel réglage
+chercher.
 
-1. `github.com/MAMADOUBOYE1998/iaCoach` → Settings → Pages
-2. **Source : GitHub Actions**
-3. Onglet Actions → « Deploy PWA to Pages » → Run workflow (ou pousser un
+1. Onglet Actions → « Deploy PWA to Pages » → Run workflow (ou pousser un
    commit touchant `web/`)
-4. Ouvrir `https://mamadouboye1998.github.io/iaCoach/` dans Chrome sur le
+2. Ouvrir `https://mamadouboye1998.github.io/iaCoach/` dans Chrome sur le
    téléphone.
 
-Tant que Pages n'est pas activé, le workflow échoue à l'étape de déploiement :
-il ne publie rien tant que personne ne l'a autorisé.
+Le premier déploiement met une à deux minutes à être servi après la fin du
+workflow.
 
 **Ce qui marche sans backend** : caméra, pose, calibration, comptage, scores,
 file d'attente locale des séances. **Ce qui ne marche pas** : le débrief coach,
