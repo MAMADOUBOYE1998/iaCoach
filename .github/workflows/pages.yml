@@ -11,9 +11,16 @@ name: Deploy PWA to Pages
 # the debrief simply reports itself unavailable. No API key is involved anywhere
 # in this job.
 #
-# Publishing is opt-in by running this workflow: it never fires on its own for a
-# repository that has not run it. The first run enables Pages itself
-# (`enablement: true`), so there is no settings toggle to find on a phone.
+# One manual step, once: Settings → Pages → Source: "GitHub Actions".
+# Direct link: https://github.com/MAMADOUBOYE1998/iaCoach/settings/pages
+# (the GitHub mobile app has no Pages screen — open it in a browser.)
+#
+# `enablement: true` below asks the action to create the site itself. It is kept
+# because it turns an opaque "Not Found" into an explicit permission error, but
+# it does not remove the manual step: the workflow token is refused with
+# "Resource not accessible by integration", and no permission that a workflow can
+# declare grants site creation. Until the setting is flipped, this job fails
+# instead of publishing.
 
 on:
   push:
