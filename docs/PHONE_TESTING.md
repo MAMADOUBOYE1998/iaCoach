@@ -129,16 +129,27 @@ personne ne relancera n'est pas un marché honnête.
 C'est une mesure, pas une préférence : `lite` est plus rapide et moins précis,
 et rien d'autre qu'un chiffre sur l'appareil réel ne dit lequel il faut.
 
-### Chrome plutôt que Firefox pour la mesure de référence
+### Identifier l'appareil : c'est le GPU, pas l'UA
 
-Firefox Android n'expose ni le modèle d'appareil dans son UA, ni le vrai
-renderer WebGL (il renvoie une approximation, reconnaissable au `, or similar`).
-Une ligne de benchmark mesurée sous Firefox ne permet donc pas de dire **sur
-quel téléphone** elle a été prise. Le chemin WebGL/WASM de MediaPipe y diffère
-aussi de celui de Chrome.
+**Aucun navigateur ne donne plus le modèle du téléphone.** Chrome gèle son UA
+(`Android 10; K`, quelle que soit la version réelle) ; Firefox n'annonce pas de
+modèle non plus. La ligne `appareil` du panneau ne sert donc qu'à identifier le
+navigateur.
 
-Mesurer sous les deux est utile ; mais la ligne de référence, celle qui décide
-si la cible est tenue, se prend sous Chrome.
+C'est la chaîne **gpu** qui identifie le matériel : `Samsung Xclipse 960` situe
+un Galaxy S26 sans ambiguïté. Attention toutefois, Firefox l'assainit — il a
+renvoyé `Xclipse 920, or similar` sur le même appareil, soit une génération de
+retard. Le `, or similar` est sa signature d'approximation, à ne pas lire comme
+une lecture matérielle.
+
+**Prendre la ligne de référence sous Chrome** : c'est le seul des deux qui
+rapporte le GPU réel.
+
+### Comparer deux navigateurs demande la même résolution de capture
+
+Firefox et Chrome n'ont pas choisi le même format sur le même appareil
+(720×720 contre 720×1280) à contrainte identique. Comparer leurs latences sans
+le noter revient à comparer deux charges de travail différentes.
 
 Protocole de mesure et tableau à remplir : [`BENCHMARKS.md`](BENCHMARKS.md).
 

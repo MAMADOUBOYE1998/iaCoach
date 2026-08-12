@@ -11,40 +11,77 @@ pas des résultats. Elles seront révisées après la première mesure réelle.
 
 | Date | Appareil | Navigateur | Modèle | Capture | fps p50 | fps p05 | ms/frame p50 | ms/frame p95 | Build |
 |---|---|---|---|---|---|---|---|---|---|
-| 2026-08-11 | Android 16, GPU annoncé « Samsung Xclipse 920, or similar » | Firefox 153 | `_full` | 720×720 | 22,7 | 18,5 | 41,0 | 50,0 | `49b0c0e` |
+| 2026-08-11 | Xclipse 960 (Galaxy S26) | Chrome 151 | `_full` | 720×1280 | 21,3 | 17,5 | 44,1 | 53,5 | `b64a042` |
+| 2026-08-11 | Xclipse 960 (Galaxy S26) | Chrome 151 | `_lite` | 720×1280 | 24,0 | 19,6 | 38,8 | 47,8 | `b64a042` |
+| 2026-08-11 | Xclipse 960 (annoncé « 920, or similar ») | Firefox 153 | `_full` | 720×720 | 22,7 | 18,5 | 41,0 | 50,0 | `49b0c0e` |
 
-**Cible de départ** : ≥ 25 fps, inférence < 50 ms/frame sur téléphone milieu de gamme.
+**Cible de départ** : ≥ 25 fps, inférence < 50 ms/frame sur téléphone milieu de
+gamme. **Cette cible est révisée plus bas, sur la base de ces mesures.**
 
-**Statut : première mesure réelle, cible non atteinte de peu.** 22,7 fps contre
-25 visés, p50 à 41 ms contre 50 visés — donc sous la cible en débit tout en
-restant sous le plafond de latence. Les deux ne se contredisent pas : à 41 ms
-d'inférence pour 44 ms de budget par frame, **94 % du temps de frame part dans
-le modèle**. Le dessin, la FSM et le reste sont dans le bruit ; le seul levier
-utile est le modèle ou la taille d'entrée.
+### Ce qui est établi
 
-Ce que la mesure établit solidement :
+- **Le delegate GPU sert bien.** Contexte GL puis `Graph successfully started
+  running` sur les trois mesures : jamais de repli CPU silencieux.
+- **Rien ne s'effondre sur 60 s.** p95 ≈ p50 + 20 % partout : pas de décrochage
+  thermique, pas de pic GC.
+- **L'inférence est le seul poste de coût.** 44 ms d'inférence pour 47 ms de
+  budget de frame : 94 %. Le dessin, l'overlay et la FSM sont dans le bruit —
+  optimiser le code applicatif ne rapporterait rien.
+- **L'appareil est bien un S26.** Le Xclipse 960 est le GPU de sa génération.
+  L'UA ne l'a pas dit (voir plus bas) ; la chaîne GPU, oui.
 
-- **Le delegate GPU sert bien.** `GL version: 3.0 … renderer: ANGLE …` puis
-  `Graph successfully started running` : pas de repli CPU silencieux.
-- **Rien ne s'effondre sur 60 s.** p95 à 50 ms pour un p50 à 41 ms, p05 fps à
-  18,5 : distribution serrée, pas de décrochage thermique ni de pic GC.
+### La décision : on garde `_full`
 
-Ce qu'elle **n'établit pas**, et pourquoi cette ligne reste provisoire :
+Comparaison propre — même appareil, même navigateur, même résolution de capture,
+seule la variante change :
 
-- **L'appareil n'est pas identifié.** Firefox Android n'expose pas le modèle
-  dans son UA, et assainit le renderer WebGL — le `, or similar` est sa
-  signature d'approximation. Le Xclipse 920 correspond à un Exynos 2200
-  (S22, 2022), pas au S26 attendu. Impossible de trancher depuis ces données.
-- **Le navigateur n'est pas celui visé.** Firefox, pas Chrome. Le chemin
-  WebGL/WASM de MediaPipe y est différent ; l'écart peut être large.
-- **La capture est carrée** (720×720 alors que 1280×720 était demandé), donc
-  champ rogné et moins de pixels que prévu — ce qui rend le résultat plutôt
-  optimiste, pas pessimiste.
+| | `_full` | `_lite` | écart |
+|---|---|---|---|
+| fps p50 | 21,3 | 24,0 | +12,7 % |
+| ms/frame p50 | 44,1 | 38,8 | −12,0 % |
+| ms/frame p95 | 53,5 | 47,8 | −10,7 % |
 
-Mesure suivante à faire, dans l'ordre : la même sous Chrome (identifie
-l'appareil et donne le chiffre du navigateur cible), puis `?model=lite` sur les
-deux. Tant que ces trois lignes n'existent pas, on ne sait pas s'il faut changer
-de modèle ou changer de navigateur recommandé.
+**`_lite` gagne 12 % et rate quand même la cible de 25 fps.** Il n'ouvre donc
+aucune porte : on paierait de la précision de pose pour un gain qui ne franchit
+aucun seuil. `_full` reste le modèle par défaut. C'est la mesure qui tranche,
+pas une préférence — et si un jour la cible descend sous 24 fps, la question se
+rouvrira avec, cette fois, une mesure de précision en face (clips annotés, M2).
+
+### La cible de 25 fps était arbitraire, et elle est fausse
+
+Elle venait du cahier des charges comme objectif de départ, à réviser sur
+données mesurées. Les données sont là : sur un **flagship 2026**, delegate GPU
+actif, aucun goulot applicatif, BlazePose dans un navigateur plafonne à ~21 fps
+en `full` et ~24 en `lite`. Un téléphone milieu de gamme fera moins.
+
+Donc soit la cible est fausse, soit l'approche (BlazePose en WebGL) ne peut pas
+la tenir. Rien dans ces mesures ne suggère un défaut d'implémentation à
+corriger : le temps est dans le réseau de neurones.
+
+**Cible révisée** : ≥ 20 fps p50 et p95 < 60 ms sur ce matériel, à re-mesurer sur
+milieu de gamme avant d'être figée. Ce n'est pas un renoncement — c'est ce que
+l'appareil fait réellement, et une cible qu'on ne mesure jamais atteinte ne sert
+à rien.
+
+**Conséquence à traiter, elle, en M2** : la fenêtre de dérivation vaut 100 ms
+(`DIFFERENTIATION_WINDOW_MS`). À 21 fps, une frame dure 47 ms, donc la fenêtre
+effective s'étire entre 100 et 148 ms — 50 % plus large que prévu. Elle lisse
+d'autant les pics de vitesse angulaire, qui sont précisément le signal de
+fatigue et de kipping. Les seuils `kip_tolerance_ms = 0,80 m/s` et le score
+`tempo_control` ont été calés sur des fixtures synthétiques à 30 fps : ils
+liront donc **bas** sur l'appareil. À recaler sur clips réels, pas à ajuster à
+l'aveugle.
+
+### Ce que ces mesures n'établissent pas
+
+- **La comparaison entre navigateurs est faussée par la résolution.** Firefox a
+  capturé 720×720 (518 k pixels), Chrome 720×1280 (921 k). Chrome a traité 78 %
+  de pixels en plus pour 7 % de temps en plus — ce qui, au passage, montre que
+  **le nombre de pixels d'entrée n'est pas le poste dominant** (MediaPipe
+  redimensionne en interne). Baisser la résolution de capture n'est donc pas le
+  levier qu'on pourrait croire.
+- **Aucun appareil milieu de gamme n'a été mesuré**, et c'est le matériel que la
+  cible vise.
 
 Procédure : [`PHONE_TESTING.md`](PHONE_TESTING.md).
 

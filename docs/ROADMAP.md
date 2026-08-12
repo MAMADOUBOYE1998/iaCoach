@@ -97,6 +97,13 @@ Trois défauts trouvés par ce test, qui ne se voyaient dans aucun test unitaire
 3. Les fixtures sont **synthétiques**. Elles verrouillent le comportement et la
    conformance, mais ne disent rien de la précision sur du vrai footage — c'est
    la mesure qui manque, et elle vient avec les clips réels.
+4. **Les fixtures tournent à 30 fps, l'appareil à 21.** Mesuré, pas supposé
+   (`BENCHMARKS.md`). À 47 ms par frame, la fenêtre de dérivation de 100 ms
+   s'étire en pratique jusqu'à 148 ms et lisse les pics de vitesse angulaire —
+   exactement le signal que `kip_tolerance_ms` et `tempo_control` exploitent.
+   Ces deux-là liront donc **bas** sur le téléphone. Le recalage se fait sur
+   clips réels enregistrés au débit réel de l'appareil, pas en ajustant la
+   constante à l'aveugle.
 
 Sortie mesurée : précision de comptage sur footage propre. **Non mesurée** —
 bloquée sur l'acquisition de clips annotés.
