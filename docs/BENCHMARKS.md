@@ -9,16 +9,44 @@ pas des résultats. Elles seront révisées après la première mesure réelle.
 
 ## Latence temps réel
 
-| Date | Appareil | Modèle pose | fps moyen | ms/frame (p50) | ms/frame (p95) |
-|---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| Date | Appareil | Navigateur | Modèle | Capture | fps p50 | fps p05 | ms/frame p50 | ms/frame p95 | Build |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-08-11 | Android 16, GPU annoncé « Samsung Xclipse 920, or similar » | Firefox 153 | `_full` | 720×720 | 22,7 | 18,5 | 41,0 | 50,0 | `49b0c0e` |
 
 **Cible de départ** : ≥ 25 fps, inférence < 50 ms/frame sur téléphone milieu de gamme.
 
-**Statut : non mesuré.** L'environnement de développement de ce dépôt n'a pas de
-caméra. Le M0 instrumente fps et latence à l'écran ; il faut ouvrir la PWA depuis
-un vrai téléphone pour remplir ce tableau. Procédure :
-[`PHONE_TESTING.md`](PHONE_TESTING.md).
+**Statut : première mesure réelle, cible non atteinte de peu.** 22,7 fps contre
+25 visés, p50 à 41 ms contre 50 visés — donc sous la cible en débit tout en
+restant sous le plafond de latence. Les deux ne se contredisent pas : à 41 ms
+d'inférence pour 44 ms de budget par frame, **94 % du temps de frame part dans
+le modèle**. Le dessin, la FSM et le reste sont dans le bruit ; le seul levier
+utile est le modèle ou la taille d'entrée.
+
+Ce que la mesure établit solidement :
+
+- **Le delegate GPU sert bien.** `GL version: 3.0 … renderer: ANGLE …` puis
+  `Graph successfully started running` : pas de repli CPU silencieux.
+- **Rien ne s'effondre sur 60 s.** p95 à 50 ms pour un p50 à 41 ms, p05 fps à
+  18,5 : distribution serrée, pas de décrochage thermique ni de pic GC.
+
+Ce qu'elle **n'établit pas**, et pourquoi cette ligne reste provisoire :
+
+- **L'appareil n'est pas identifié.** Firefox Android n'expose pas le modèle
+  dans son UA, et assainit le renderer WebGL — le `, or similar` est sa
+  signature d'approximation. Le Xclipse 920 correspond à un Exynos 2200
+  (S22, 2022), pas au S26 attendu. Impossible de trancher depuis ces données.
+- **Le navigateur n'est pas celui visé.** Firefox, pas Chrome. Le chemin
+  WebGL/WASM de MediaPipe y est différent ; l'écart peut être large.
+- **La capture est carrée** (720×720 alors que 1280×720 était demandé), donc
+  champ rogné et moins de pixels que prévu — ce qui rend le résultat plutôt
+  optimiste, pas pessimiste.
+
+Mesure suivante à faire, dans l'ordre : la même sous Chrome (identifie
+l'appareil et donne le chiffre du navigateur cible), puis `?model=lite` sur les
+deux. Tant que ces trois lignes n'existent pas, on ne sait pas s'il faut changer
+de modèle ou changer de navigateur recommandé.
+
+Procédure : [`PHONE_TESTING.md`](PHONE_TESTING.md).
 
 > ⚠️ **Le Galaxy S26 (SM-S942B/DS) ne valide pas la cible.** La cible de départ
 > est « ≥ 25 fps sur téléphone **milieu de gamme** ». Un flagship 2026 devrait

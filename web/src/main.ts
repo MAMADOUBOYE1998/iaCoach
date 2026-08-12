@@ -20,7 +20,7 @@ import {
   type CameraHandle,
   type Facing,
 } from "./pose/camera";
-import { assetsLabel, resolveAssets } from "./pose/assets";
+import { assetsLabel, modelVariant, resolveAssets, type ModelVariant } from "./pose/assets";
 import { createLandmarker, detect, type Detection } from "./pose/landmarker";
 import { registerServiceWorker } from "./pwa/register";
 import { SessionRecorder, newSessionId } from "./session/recorder";
@@ -132,6 +132,7 @@ let measurement: Measurement | null = null;
 let lastSummary: Summary | null = null;
 /** Resolved at startup; reported because it changes what offline means. */
 let assetSource: "local" | "cdn" = "cdn";
+let assetVariant: ModelVariant = "full";
 
 type Mode =
   | { kind: "idle" }
@@ -374,8 +375,9 @@ async function start(): Promise<void> {
 
   let landmarker: PoseLandmarker;
   try {
-    const assets = await resolveAssets();
+    const assets = await resolveAssets(modelVariant(location.search));
     assetSource = assets.source;
+    assetVariant = assets.variant;
     // Also logged, so it lands in the captured console lines alongside
     // MediaPipe's own output.
     console.info(assetsLabel(assets));
@@ -449,6 +451,7 @@ function report(): string {
   const track = running?.camera.stream.getVideoTracks()[0];
   const settings = track?.getSettings();
   return formatReport({
+    modelVariant: assetVariant,
     modelSource: assetSource,
     facing: running?.camera.facing ?? "—",
     videoWidth: video.videoWidth,

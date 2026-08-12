@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  CDN_MODEL_URL,
-  LOCAL_MODEL_URL,
+  DEFAULT_VARIANT,
   LOCAL_WASM_BASE,
   assetsLabel,
+  cdnModelUrl,
+  localModelUrl,
+  modelVariant,
   resolveAssets,
 } from "./assets";
+
+const LOCAL_MODEL_URL = localModelUrl(DEFAULT_VARIANT);
+const CDN_MODEL_URL = cdnModelUrl(DEFAULT_VARIANT);
 
 type Reply = { status: number; contentType: string };
 
@@ -29,6 +34,7 @@ const SPA_FALLBACK = { status: 200, contentType: "text/html; charset=utf-8" };
 describe("resolveAssets", () => {
   it("prefers vendored assets when both are present", async () => {
     const assets = await resolveAssets(
+      DEFAULT_VARIANT,
       fakeFetch({
         [LOCAL_MODEL_URL]: OK_BINARY,
         [`${LOCAL_WASM_BASE}/vision_wasm_internal.wasm`]: OK_BINARY,
@@ -40,19 +46,20 @@ describe("resolveAssets", () => {
   });
 
   it("falls back to the CDN when nothing is vendored", async () => {
-    const assets = await resolveAssets(fakeFetch({}));
+    const assets = await resolveAssets(DEFAULT_VARIANT, fakeFetch({}));
     expect(assets.source).toBe("cdn");
     expect(assets.modelUrl).toBe(CDN_MODEL_URL);
   });
 
   it("falls back to the CDN when only the model is vendored", async () => {
     // Half-vendored is not offline-capable: the runtime still needs network.
-    const assets = await resolveAssets(fakeFetch({ [LOCAL_MODEL_URL]: OK_BINARY }));
+    const assets = await resolveAssets(DEFAULT_VARIANT, fakeFetch({ [LOCAL_MODEL_URL]: OK_BINARY }));
     expect(assets.source).toBe("cdn");
   });
 
   it("falls back to the CDN when only the runtime is vendored", async () => {
     const assets = await resolveAssets(
+      DEFAULT_VARIANT,
       fakeFetch({ [`${LOCAL_WASM_BASE}/vision_wasm_internal.wasm`]: OK_BINARY }),
     );
     expect(assets.source).toBe("cdn");
@@ -61,6 +68,7 @@ describe("resolveAssets", () => {
   it("is not fooled by an SPA fallback answering 200 with HTML", async () => {
     // The failure this prevents: MediaPipe being handed index.html as a model.
     const assets = await resolveAssets(
+      DEFAULT_VARIANT,
       fakeFetch({
         [LOCAL_MODEL_URL]: SPA_FALLBACK,
         [`${LOCAL_WASM_BASE}/vision_wasm_internal.wasm`]: SPA_FALLBACK,
@@ -71,14 +79,52 @@ describe("resolveAssets", () => {
 
   it("falls back to the CDN when the probe itself throws", async () => {
     const throwing = (() => Promise.reject(new TypeError("offline"))) as unknown as typeof fetch;
-    const assets = await resolveAssets(throwing);
+    const assets = await resolveAssets(DEFAULT_VARIANT, throwing);
     expect(assets.source).toBe("cdn");
+  });
+});
+
+describe("modelVariant", () => {
+  it("defaults when nothing is asked for", () => {
+    expect(modelVariant("")).toBe(DEFAULT_VARIANT);
+    expect(modelVariant("?other=1")).toBe(DEFAULT_VARIANT);
+  });
+
+  it("reads the requested variant", () => {
+    expect(modelVariant("?model=lite")).toBe("lite");
+    expect(modelVariant("?model=heavy")).toBe("heavy");
+  });
+
+  it("ignores a value it does not know", () => {
+    // A typo must not send MediaPipe after a URL that does not exist.
+    expect(modelVariant("?model=turbo")).toBe(DEFAULT_VARIANT);
+  });
+});
+
+describe("model urls", () => {
+  it("points each variant at its own file", () => {
+    expect(localModelUrl("lite")).toContain("pose_landmarker_lite.task");
+    expect(cdnModelUrl("lite")).toContain("/pose_landmarker_lite/float16/1/");
+  });
+
+  it("goes to the CDN for the variant that is not vendored", async () => {
+    // `heavy` is 29 MB; shipping it to make a comparison point available
+    // offline would cost every athlete for a measurement run by nobody.
+    const assets = await resolveAssets(
+      "heavy",
+      fakeFetch({
+        [localModelUrl("heavy")]: OK_BINARY,
+        [`${LOCAL_WASM_BASE}/vision_wasm_internal.wasm`]: OK_BINARY,
+      }),
+    );
+    expect(assets.source).toBe("cdn");
+    expect(assets.modelUrl).toBe(cdnModelUrl("heavy"));
   });
 });
 
 describe("assetsLabel", () => {
   it("says plainly that a CDN load will not survive going offline", async () => {
-    const cdn = assetsLabel(await resolveAssets(fakeFetch({})));
+    const cdn = assetsLabel(await resolveAssets(DEFAULT_VARIANT, fakeFetch({})));
     expect(cdn).toContain("hors-ligne");
   });
 });

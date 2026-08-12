@@ -158,6 +158,7 @@ export function gpuRenderer(): string {
 }
 
 export interface ReportInput {
+  modelVariant: string;
   modelSource: "local" | "cdn";
   facing: string;
   videoWidth: number;
@@ -174,7 +175,7 @@ export interface ReportInput {
 export function formatReport(input: ReportInput): string {
   const lines: string[] = [];
   lines.push(`build      ${__BUILD_SHA__}`);
-  lines.push(`modèle     pose_landmarker_full (${input.modelSource})`);
+  lines.push(`modèle     pose_landmarker_${input.modelVariant} (${input.modelSource})`);
   lines.push(`caméra     ${input.facing} · ${input.videoWidth}×${input.videoHeight}`
     + (input.trackFrameRate === null ? "" : ` · ${input.trackFrameRate} i/s`));
   lines.push(`gpu        ${gpuRenderer()}`);

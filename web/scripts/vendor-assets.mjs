@@ -32,10 +32,14 @@ const PACKAGE = join(WEB, "node_modules", "@mediapipe", "tasks-vision");
 const WASM_SRC = join(PACKAGE, "wasm");
 const WASM_OUT = join(WEB, "public", "vendor", "tasks-vision");
 const MODEL_OUT = join(WEB, "public", "models");
-const MODEL_FILE = "pose_landmarker_full.task";
-const MODEL_URL =
+// Both sizes ship: which one to run is decided by measuring on the device
+// (`?model=lite`), and a comparison you cannot run offline is a comparison
+// nobody runs. `heavy` is left out — 29 MB for a point of reference on a phone
+// is not a trade worth making; it loads from the CDN if ever needed.
+const MODEL_VARIANTS = ["lite", "full"];
+const modelUrl = (variant) =>
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker" +
-  "/pose_landmarker_full/float16/1/pose_landmarker_full.task";
+  `/pose_landmarker_${variant}/float16/1/pose_landmarker_${variant}.task`;
 
 const force = process.argv.includes("--force");
 
@@ -81,34 +85,32 @@ async function copyWasm() {
   );
 }
 
-async function fetchModel() {
-  const target = join(MODEL_OUT, MODEL_FILE);
-  if (!force && (await exists(target))) {
-    const { size } = await stat(target);
-    console.log(`Model already present: ${target} (${size} bytes)`);
-    return target;
+/** @param {string} variant */
+async function fetchModel(variant) {
+  const target = join(MODEL_OUT, `pose_landmarker_${variant}.task`);
+  if (force || !(await exists(target))) {
+    await mkdir(MODEL_OUT, { recursive: true });
+    const url = modelUrl(variant);
+    console.log(`Downloading ${url}`);
+    const response = await fetch(url);
+    if (!response.ok || !response.body) {
+      console.error(`Download failed: HTTP ${response.status}`);
+      process.exit(1);
+    }
+    await pipeline(Readable.fromWeb(response.body), createWriteStream(target));
   }
 
-  await mkdir(MODEL_OUT, { recursive: true });
-  console.log(`Downloading ${MODEL_URL}`);
-  const response = await fetch(MODEL_URL);
-  if (!response.ok || !response.body) {
-    console.error(`Download failed: HTTP ${response.status}`);
-    process.exit(1);
-  }
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(target));
-  return target;
+  // No digest is pinned: the upstream file carries no published checksum, so a
+  // hash computed from the download we just made would prove nothing about it.
+  // Printing it lets a first-run digest be recorded and compared later, which
+  // is the honest version of the same guarantee.
+  const bytes = await readFile(target);
+  const digest = createHash("sha256").update(bytes).digest("hex");
+  console.log(`Model → ${target} (${bytes.length} bytes)`);
+  console.log(`  sha256 ${digest}`);
 }
 
 await copyWasm();
-const model = await fetchModel();
+for (const variant of MODEL_VARIANTS) await fetchModel(variant);
 
-// No digest is pinned: the upstream file carries no published checksum, so a
-// hash computed from the download we just made would prove nothing about it.
-// Printing it lets a first-run digest be recorded and compared later, which is
-// the honest version of the same guarantee.
-const digest = createHash("sha256").update(await readFile(model)).digest("hex");
-const { size } = await stat(model);
-console.log(`Model → ${model} (${size} bytes)`);
-console.log(`sha256 ${digest}`);
 console.log("\nAssets vendored. The app now loads them from the same origin.");

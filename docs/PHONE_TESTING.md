@@ -118,6 +118,28 @@ ligne de `BENCHMARKS.md` **et** à savoir qu'elle est fiable. Le bouton
 « Copier » met le même contenu en texte dans le presse-papier, ce qui évite
 l'aller-retour par l'image.
 
+### Variante de modèle
+
+`?model=lite` et `?model=full` (défaut) choisissent la taille du réseau, par
+exemple `https://mamadouboye1998.github.io/iaCoach/?model=lite`. Les deux sont
+embarqués, donc la comparaison se fait hors-ligne comme le reste. `?model=heavy`
+existe mais vient du CDN : 29 Mo embarqués pour un point de comparaison que
+personne ne relancera n'est pas un marché honnête.
+
+C'est une mesure, pas une préférence : `lite` est plus rapide et moins précis,
+et rien d'autre qu'un chiffre sur l'appareil réel ne dit lequel il faut.
+
+### Chrome plutôt que Firefox pour la mesure de référence
+
+Firefox Android n'expose ni le modèle d'appareil dans son UA, ni le vrai
+renderer WebGL (il renvoie une approximation, reconnaissable au `, or similar`).
+Une ligne de benchmark mesurée sous Firefox ne permet donc pas de dire **sur
+quel téléphone** elle a été prise. Le chemin WebGL/WASM de MediaPipe y diffère
+aussi de celui de Chrome.
+
+Mesurer sous les deux est utile ; mais la ligne de référence, celle qui décide
+si la cible est tenue, se prend sous Chrome.
+
 Protocole de mesure et tableau à remplir : [`BENCHMARKS.md`](BENCHMARKS.md).
 
 Relever aussi :
