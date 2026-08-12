@@ -1,0 +1,12 @@
+{
+  "_comment": [
+    "Copier vers fixtures/clips/manifest.json (répertoire gitignoré : les vidéos",
+    "d'entraînement sont des données personnelles et ne remontent pas dans le dépôt).",
+    "`reps` est le nombre vrai de répétitions, compté à la main sur la vidéo.",
+    "Les chemins sont résolus relativement au manifeste."
+  ],
+  "clips": [
+    { "path": "pullup_01.mp4", "reps": 8, "exercise": "pull_up" },
+    { "path": "pullup_02.mp4", "reps": 5, "exercise": "pull_up" }
+  ]
+}

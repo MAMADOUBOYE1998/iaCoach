@@ -16,6 +16,12 @@ dev = [
     "httpx>=0.27",
     "ruff>=0.7",
 ]
+# Offline evaluation over recorded video (`vision/eval/`). Kept out of `dev`
+# because it pulls ~200 MB that the API and the test suite never touch.
+eval = [
+    "mediapipe>=1.0",
+    "opencv-python-headless>=4.10",
+]
 
 [build-system]
 requires = ["hatchling"]

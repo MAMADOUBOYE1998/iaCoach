@@ -108,6 +108,26 @@ Trois défauts trouvés par ce test, qui ne se voyaient dans aucun test unitaire
 Sortie mesurée : précision de comptage sur footage propre. **Non mesurée** —
 bloquée sur l'acquisition de clips annotés.
 
+## Évaluation hors-ligne (préalable à M2/M4) ✅ livré
+
+Le blocage « clips annotés » n'était pas la disponibilité des données : c'était
+que rien ici ne savait transformer une vidéo en `RepEvent`.
+
+- `iacoach.frame` — `FrameSampler` et `CalibrationRecorder` portés en Python,
+  miroirs du TypeScript. Conformance bloquante en CI sur
+  `fixtures/landmarks/`, au niveau des landmarks cette fois, pas des
+  `FrameSample` : c'est la géométrie elle-même qui est verrouillée.
+- `vision/eval/evaluate.py` — vidéo → MediaPipe → `FrameSample` → `RepCounter`,
+  puis MAE / OBO / MAPE, les métriques de la littérature sur le comptage.
+- `iacoach.evaluation` — la logique de métrique, testée : un clip non évaluable
+  part dans `skipped`, jamais dans les résultats comme un zéro.
+
+Ce qui reste vrai et qu'aucune base publique ne réglera : les scores de qualité
+sont définis **relativement à l'amplitude calibrée de l'athlète**, et une base
+publique n'a pas de calibration par sujet. Le harnais l'estime depuis le clip,
+ce qui flatte le résultat. Détail et sources utilisables :
+[`DATASETS.md`](DATASETS.md).
+
 ## M2 — Qualité fine + classifieur
 
 - ROM, kipping (accélération du bassin orthogonale à l'axe), symétrie, tempo,

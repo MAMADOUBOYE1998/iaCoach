@@ -28,6 +28,9 @@ jobs:
       # replays these exact files. A behaviour change that is not
       # regenerated here would let the two implementations diverge.
       - run: python -m iacoach.scripts.make_fixtures --check
+      # Same contract one stage earlier: the landmark fixtures pin the sampler,
+      # which the phone and the offline evaluation both implement.
+      - run: python -m iacoach.scripts.make_landmark_fixtures --check
 
   web:
     runs-on: ubuntu-latest
