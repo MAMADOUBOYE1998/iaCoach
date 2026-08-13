@@ -182,24 +182,53 @@ que les faux positifs :
 | `084_pullups_monkey_bar` | 34 | **2** | 1175/1175 |
 
 La pose est parfaite sur les trois (100 % des frames), donc le problème est
-entièrement dans le comptage. Trois causes possibles, que les résultats
-d'origine ne permettaient pas de départager :
+entièrement dans le comptage.
 
-1. la FSM ne voit pas les cycles ;
-2. elle les voit et refuse de les compter (amplitude sous `count_floor`) ;
-3. la calibration estimée est fausse — `min`/`max` sur tout le clip, donc **une
-   seule frame aberrante suffit à gonfler la plage**, et comme tous les seuils
-   sont des fractions de cette plage, une plage gonflée affame toutes les reps
-   d'un coup. Le symptôme ressemble alors à une FSM cassée.
+### Ce que la mesure a tranché — et ce qu'elle a invalidé
 
-Le harnais rapporte maintenant `events` (cycles vus, comptés ou non),
-`calibration_deg` et `peak_angles_deg` : ces trois-là départagent les
-hypothèses. `--trim-percent 2` teste la troisième en écartant les queues de
-distribution.
+Trois causes étaient possibles : la FSM ne voit pas les cycles ; elle les voit
+et refuse de les compter (`count_floor`) ; ou la calibration `min`/`max` est
+gonflée par une frame aberrante — et comme tous les seuils sont des fractions de
+la plage, une plage gonflée affame toutes les reps d'un coup.
 
-**Mesure à refaire**, sur ces trois clips, avec et sans `--trim-percent`. Tant
-qu'elle n'existe pas, la précision de comptage reste non mesurée — ces trois
-lignes disent qu'il y a un problème, pas lequel.
+| Clip | `events` | comptées | plage brute | plage à 2-98 % |
+|---|---|---|---|---|
+| `082` | 3 | 3 | 112,7-171,8° (59,1°) | **< 40° → refus** |
+| `083` | — | refus | **< 40° → refus** | < 40° → refus |
+| `084` | 3 | 2 | 117,2-172,1° (54,9°) | **< 40° → refus** |
+
+- **`count_floor` est hors de cause.** `events` ≈ `predicted` : la FSM n'émet
+  que 3 cycles, elle n'en refuse pas 6 ou 31.
+- **`--trim-percent 2` fait refuser les trois clips.** Écarter 2 % de chaque
+  queue retire ≥19° sur `082`. Le signal est donc quasi plat, avec de brèves
+  excursions — ou porteur d'une aberration franche à une extrémité.
+
+Ce qui reste indéterminé, et pourquoi : **quelle** queue porte ces 19°. Une
+flexion réelle mais brève et une hyperextension aberrante élargissent toutes
+deux l'écart `min`/`max`, et appellent des correctifs opposés.
+
+### L'instrument était en cause aussi
+
+`peak_angles_deg` a été retiré : il rapportait `max(angle)` sur la rep, c'est-à-
+dire le point le plus **tendu**. Une rep se fermant par construction au retour
+en extension, ces 166-172° étaient tautologiques. Le diagnostic construit pour
+départager la troisième hypothèse ne la mesurait pas.
+
+Remplacé par : `attempted` (toute excursion vue, même sous `rep_floor`, donc
+invisible jusqu'ici), `angle_percentiles` (p1…p99 du signal brut — dit **quelle**
+queue porte la plage, y compris quand la calibration refuse), `flexion_percentiles`
+(le signal normalisé que la FSM consomme, lisible directement contre
+`bottom_exit` 0,20 / `rep_floor` 0,50 / `count_floor` 0,75), `rep_rom` et
+`rep_min_angle_deg`. Plus `--dump-angles`, qui écrit la série temporelle : les
+percentiles disent qu'une distribution est étroite, seule la série dit si c'est
+un signal plat ou un cycle propre au mauvais décalage.
+
+`attempted` ≥ `events` ≥ `predicted` s'emboîtent, et l'étape où le nombre
+s'effondre nomme le responsable.
+
+**Mesure à refaire** avec ces diagnostics. Tant qu'elle n'existe pas, la
+précision de comptage reste non mesurée — ces lignes disent qu'il y a un
+problème et éliminent une hypothèse sur trois, pas laquelle des deux restantes.
 
 ## Précision de comptage — footage propre
 

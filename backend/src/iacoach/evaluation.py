@@ -49,14 +49,33 @@ class ClipResult:
     # causes: the state machine never saw the repetition, or it saw it and
     # declined to count it. Those need opposite fixes, and reporting only the
     # final number hides which one you have.
+    attempted: int = 0
+    """Excursions the state machine saw at all, however shallow."""
     events: int = 0
-    """Repetition cycles detected, counted or not."""
+    """Of those, the ones deep enough to emit an event (peak >= `rep_floor`)."""
     calibration_deg: tuple[float, float] | None = None
     """The range the counter was given. An outlier frame inflates it, and every
     threshold is a fraction of it, so a wrong range starves every rep at once."""
-    peak_angles_deg: list[float] = field(default_factory=list)
-    """Deepest joint angle reached per detected rep. Compared against the
-    calibrated range, this says whether reps fell short or were never seen."""
+    usable_frames: int = 0
+    """Frames above the confidence floor — the only ones calibration may use."""
+
+    # `attempted` / `events` / `predicted` nest, and the step that collapses says
+    # which stage is at fault. An earlier version of this reported the per-rep
+    # `peak_angle_deg` instead, which is `max(angle)` — the most *extended* point
+    # of the rep. Since a rep closes on the return to extension, that number is
+    # tautological and answered nothing.
+    angle_percentiles: dict[str, float] = field(default_factory=dict)
+    """Raw mean elbow angle, usable frames only. Says *which* tail carries the
+    range: a brief real flexion and a spurious hyperextension both widen the
+    min/max span, and they need opposite fixes."""
+    flexion_percentiles: dict[str, float] = field(default_factory=dict)
+    """The filtered, normalised signal the state machine actually consumes,
+    against which `bottom_exit` (0.20), `rep_floor` (0.50) and `count_floor`
+    (0.75) are read directly."""
+    rep_rom: list[float] = field(default_factory=list)
+    """Peak flexion per emitted rep, in the same units as those thresholds."""
+    rep_min_angle_deg: list[float] = field(default_factory=list)
+    """Deepest angle actually reached per emitted rep."""
 
     @property
     def error(self) -> int | None:
@@ -67,6 +86,16 @@ def _quantile(sorted_values: list[float], q: float) -> float:
     rank = (len(sorted_values) - 1) * q
     low, high = int(rank), min(int(rank) + 1, len(sorted_values) - 1)
     return sorted_values[low] + (sorted_values[high] - sorted_values[low]) * (rank - low)
+
+
+PERCENTILES = (1, 2, 5, 25, 50, 75, 95, 98, 99)
+
+
+def _percentiles(values: list[float], digits: int = 1) -> dict[str, float]:
+    if not values:
+        return {}
+    ordered = sorted(values)
+    return {f"p{p}": round(_quantile(ordered, p / 100.0), digits) for p in PERCENTILES}
 
 
 def calibration_from(
@@ -140,6 +169,10 @@ def score_samples(
         seconds=seconds,
     )
 
+    usable = [s for s in samples if s.confidence >= MIN_CONFIDENCE]
+    result.usable_frames = len(usable)
+    result.angle_percentiles = _percentiles([s.elbow_mean_deg for s in usable])
+
     calibration = calibration_from(samples, exercise, trim_percent=trim_percent)
     if calibration is None:
         # Reported, not silently counted as zero: "could not calibrate" and
@@ -147,15 +180,25 @@ def score_samples(
         result.note = "calibration impossible (amplitude ou suivi insuffisants)"
         return result
 
+    # A throwaway counter, driven through the production `flexion_of`, gives the
+    # exact signal the real one will see without reimplementing the filter and
+    # the normalisation here — a copy of those would drift and then lie.
+    probe = RepCounter(exercise, calibration)
+    result.flexion_percentiles = _percentiles(
+        [probe.flexion_of(sample, sample.t_ms) for sample in samples], digits=3
+    )
+
     counter = RepCounter(exercise, calibration)
     events = [event for sample in samples if (event := counter.push(sample)) is not None]
     result.predicted = sum(1 for event in events if event.counted)
     result.events = len(events)
+    result.attempted = counter.attempted_reps
     result.calibration_deg = (
         round(calibration.rom_min_deg, 1),
         round(calibration.rom_max_deg, 1),
     )
-    result.peak_angles_deg = [round(event.peak_angle_deg, 1) for event in events]
+    result.rep_rom = [round(event.scores.rom, 3) for event in events]
+    result.rep_min_angle_deg = [round(event.min_angle_deg, 1) for event in events]
     for event in events:
         for flag in event.flags:
             result.flags[flag] = result.flags.get(flag, 0) + 1

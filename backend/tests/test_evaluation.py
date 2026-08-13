@@ -234,5 +234,75 @@ class TestTrimmedCalibration:
         # opposite explanations and no way to choose.
         result = score_samples(pullup_cycles(5), path="c.mp4", truth=5)
         assert result.events == 5
-        assert len(result.peak_angles_deg) == 5
+        assert len(result.rep_rom) == 5
         assert result.calibration_deg is not None
+
+
+def cycles_between(
+    count: int,
+    high_deg: float,
+    low_deg: float,
+    *,
+    fps: float = 30.0,
+    seconds_per_rep: float = 2.0,
+    start_ms: float = 0.0,
+) -> list[FrameSample]:
+    """`count` cycles from `high_deg` (extended) down to `low_deg` and back."""
+    mid, half = (high_deg + low_deg) / 2.0, (high_deg - low_deg) / 2.0
+    out: list[FrameSample] = []
+    for i in range(int(count * seconds_per_rep * fps)):
+        phase = 2.0 * math.pi * i / (seconds_per_rep * fps)
+        angle = mid + half * math.cos(phase)
+        out.append(
+            FrameSample(
+                t_ms=start_ms + i * 1000.0 / fps,
+                elbow_left_deg=angle,
+                elbow_right_deg=angle,
+                trunk_deg=3.0,
+                hip_speed=0.05,
+                confidence=0.95,
+            )
+        )
+    return out
+
+
+class TestDiagnostics:
+    """Why a count is wrong, not just that it is.
+
+    `attempted` >= `events` >= `predicted`, and the step where the number
+    collapses names the stage at fault. Reporting only the final count leaves
+    "the movement never happened", "it was too shallow to register" and "it was
+    registered and refused" indistinguishable — three failures needing three
+    different fixes.
+    """
+
+    def test_shallow_excursions_are_seen_but_emit_nothing(self) -> None:
+        deep = cycles_between(2, 175.0, 45.0)
+        shallow = cycles_between(6, 175.0, 130.0, start_ms=deep[-1].t_ms + 33.4)
+        result = score_samples(deep + shallow, path="c.mp4", truth=8)
+
+        # The state machine saw all eight; six were too shallow to become reps.
+        assert result.attempted == 8
+        assert result.events == 2
+        assert result.predicted == 2
+
+    def test_angle_distribution_survives_a_calibration_refusal(self) -> None:
+        # The refusal is exactly when the distribution matters most: it is the
+        # only evidence of whether the clip held a signal the range test missed.
+        result = score_samples(samples(60, low=100.0, high=110.0), path="f.mp4", truth=4)
+        assert result.predicted is None
+        assert result.usable_frames == 60
+        assert result.angle_percentiles["p50"] == pytest.approx(105.0, abs=1.0)
+
+    def test_low_confidence_frames_are_excluded_from_the_distribution(self) -> None:
+        good = samples(40, confidence=0.95)
+        bad = samples(20, low=10.0, high=20.0, confidence=0.2)
+        result = score_samples(good + bad, path="c.mp4", truth=1)
+        assert result.usable_frames == 40
+        assert result.angle_percentiles["p1"] > 20.0
+
+    def test_flexion_percentiles_are_read_against_the_thresholds(self) -> None:
+        result = score_samples(pullup_cycles(5), path="c.mp4", truth=5)
+        # A clip of full reps must spend part of its time above `count_floor`.
+        assert result.flexion_percentiles["p95"] > 0.75
+        assert result.flexion_percentiles["p5"] < 0.12

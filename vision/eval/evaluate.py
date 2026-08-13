@@ -31,6 +31,7 @@ Paths are resolved relative to the manifest.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import sys
 import time
@@ -48,9 +49,7 @@ from iacoach.frame import FrameSampler, Landmark
 
 
 def _landmarks(proto: Any) -> list[Landmark]:
-    return [
-        Landmark(lm.x, lm.y, lm.z, getattr(lm, "visibility", None)) for lm in proto
-    ]
+    return [Landmark(lm.x, lm.y, lm.z, getattr(lm, "visibility", None)) for lm in proto]
 
 
 def sample_video(path: Path, model_path: Path) -> tuple[list[FrameSample], int, float]:
@@ -107,11 +106,49 @@ def sample_video(path: Path, model_path: Path) -> tuple[list[FrameSample], int, 
     return samples, frames, time.perf_counter() - started
 
 
+def dump_angles(samples: list[FrameSample], destination: Path) -> None:
+    """The per-frame signal, so it can be looked at rather than inferred.
+
+    Percentiles say the distribution is narrow; only the time series says
+    whether that is a flat signal, a fast one the sampler undersamples, or a
+    clean cycle sitting at the wrong offset.
+    """
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            [
+                "t_ms",
+                "elbow_left_deg",
+                "elbow_right_deg",
+                "elbow_mean_deg",
+                "confidence",
+            ]
+        )
+        for s in samples:
+            writer.writerow(
+                [
+                    f"{s.t_ms:.1f}",
+                    f"{s.elbow_left_deg:.2f}",
+                    f"{s.elbow_right_deg:.2f}",
+                    f"{s.elbow_mean_deg:.2f}",
+                    f"{s.confidence:.3f}",
+                ]
+            )
+
+
 def evaluate_clip(
-    path: Path, truth: int, exercise: Exercise, model: Path, trim_percent: float
+    path: Path,
+    truth: int,
+    exercise: Exercise,
+    model: Path,
+    trim_percent: float,
+    dump_dir: Path | None = None,
 ) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
     samples, frames, seconds = sample_video(path, model)
+    if dump_dir is not None:
+        dump_angles(samples, dump_dir / f"{path.stem}.csv")
     return score_samples(
         samples,
         path=str(path),
@@ -156,6 +193,16 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--dump-angles",
+        type=Path,
+        default=None,
+        help=(
+            "Write the per-frame elbow angles of each clip to this directory as "
+            "CSV. Percentiles say a distribution is narrow; only the series says "
+            "whether that is a flat signal or a real cycle at the wrong offset."
+        ),
+    )
+    parser.add_argument(
         "--out-of-domain",
         action="store_true",
         help=(
@@ -191,20 +238,30 @@ def main(argv: list[str] | None = None) -> int:
         exercise = Exercise(entry.get("exercise", "pull_up"))
         if not path.exists():
             results.append(
-                ClipResult(str(path), entry["reps"], None, 0, 0, 0.0, note="fichier absent")
+                ClipResult(
+                    str(path), entry["reps"], None, 0, 0, 0.0, note="fichier absent"
+                )
             )
             print(f"absent  {path}", file=sys.stderr)
             continue
         result = evaluate_clip(
-            path, int(entry["reps"]), exercise, args.model, args.trim_percent
+            path,
+            int(entry["reps"]),
+            exercise,
+            args.model,
+            args.trim_percent,
+            args.dump_angles,
         )
         results.append(result)
-        truth_column = "hors-domaine" if args.out_of_domain else f"vrai={result.truth:3d}"
+        truth_column = (
+            "hors-domaine" if args.out_of_domain else f"vrai={result.truth:3d}"
+        )
         print(
             f"{path.name:40s} {truth_column} "
             f"prédit={'—' if result.predicted is None else result.predicted:>3} "
             f"({result.detected_frames}/{result.frames} frames, "
-            f"{result.events} cycles vus, {result.seconds:.1f}s) "
+            f"{result.attempted} excursions / {result.events} cycles, "
+            f"{result.seconds:.1f}s) "
             f"{result.note}"
         )
 
@@ -222,7 +279,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
     if missing:
-        print(f"\n⚠ {len(missing)} clips absents, exclus des métriques.", file=sys.stderr)
+        print(
+            f"\n⚠ {len(missing)} clips absents, exclus des métriques.", file=sys.stderr
+        )
 
     summary = (
         summarise_out_of_domain(results) if args.out_of_domain else summarise(results)

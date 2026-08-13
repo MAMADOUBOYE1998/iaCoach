@@ -130,6 +130,7 @@ class RepCounter:
         self._filter = OneEuroFilter()
         self._phase = RepPhase.IDLE
         self._rep_index = 0
+        self._attempts = 0
         self._window = _Window()
 
         self._bottom_since_ms: float | None = None
@@ -147,6 +148,17 @@ class RepCounter:
     @property
     def completed_reps(self) -> int:
         return self._rep_index
+
+    @property
+    def attempted_reps(self) -> int:
+        """Excursions that left the bottom and came back, whatever their depth.
+
+        Includes the ones dropped below ``rep_floor``, which emit no event. The
+        gap between this and ``completed_reps`` is the only way to tell "the
+        athlete did nothing" from "the athlete moved and the thresholds were too
+        high to notice" — two failures that look identical from the count alone.
+        """
+        return self._attempts
 
     def flexion_of(self, sample: FrameSample, t_ms: float) -> float:
         """Filtered, normalised flexion for one frame: 0 = extended, 1 = flexed."""
@@ -232,7 +244,10 @@ class RepCounter:
         self._window.clear()
         self._rep_start_ms = None
 
-        if start is None or peak < self.config.rep_floor or len(samples) < 2:
+        if start is None or len(samples) < 2:
+            return None
+        self._attempts += 1
+        if peak < self.config.rep_floor:
             return None
 
         event = self._build_event(start, t_ms, peak, samples, flexion)

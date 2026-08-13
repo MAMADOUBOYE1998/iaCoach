@@ -43,6 +43,44 @@ python -m vision.eval.evaluate vision/eval/manifest.pullups.json \
 Si **aucun** clip n'est trouvé, la commande sort en erreur au lieu de rendre un
 résumé vide : un résumé vide ressemble à une mesure.
 
+## Diagnostiquer un comptage faux
+
+Un compteur qui rend 3 au lieu de 9 a trois explications incompatibles, et le
+nombre final n'en désigne aucune. Trois compteurs emboîtés le font :
+
+| | ce qu'il compte |
+|---|---|
+| `attempted` | toute excursion partie du bas et revenue, si superficielle soit-elle |
+| `events` | celles assez profondes pour émettre un `RepEvent` (≥ `rep_floor`) |
+| `predicted` | celles assez profondes pour compter (≥ `count_floor`) |
+
+L'étape où le nombre s'effondre nomme le responsable. `attempted` ≪ vérité : la
+FSM ne voit rien, le signal ou la plage sont en cause. `events` ≪ `attempted` :
+les cycles existent mais sont trop peu amples relativement à la plage calibrée.
+`predicted` ≪ `events` : c'est `count_floor`.
+
+`angle_percentiles` (signal brut) et `flexion_percentiles` (signal normalisé que
+la FSM consomme, lisible contre `bottom_exit` 0,20 / `rep_floor` 0,50 /
+`count_floor` 0,75) disent **quelle** queue de distribution porte l'amplitude —
+une flexion réelle brève et une aberration en hyperextension élargissent
+identiquement l'écart `min`/`max` et appellent des correctifs opposés. Les
+percentiles sont renseignés **même quand la calibration refuse**, cas où ils sont
+la seule preuve disponible.
+
+Et quand les percentiles ne suffisent pas, `--dump-angles` écrit la série
+temporelle par clip :
+
+```bash
+python -m vision.eval.evaluate vision/eval/manifest.pullups.json \
+    --clips-root ~/Downloads/QUVARepetitionDataset/videos \
+    --dump-angles angles/ --out brut.json
+```
+
+Un `.csv` par clip (`t_ms`, angles gauche/droit/moyen, confiance). Les
+percentiles disent qu'une distribution est étroite ; seule la série dit si c'est
+un signal plat, un signal rapide sous-échantillonné, ou un cycle propre au
+mauvais décalage.
+
 ## Ce que les chiffres veulent dire
 
 `MAE`, `OBO` (à ±1 répétition près) et `MAPE` : les métriques de la littérature

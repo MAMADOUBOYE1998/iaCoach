@@ -126,6 +126,7 @@ export class RepCounter {
   private readonly filter = new OneEuroFilter();
   private currentPhase: RepPhase = "idle";
   private repIndex = 0;
+  private attempts = 0;
 
   private windowSamples: FrameSample[] = [];
   private windowFlexion: number[] = [];
@@ -150,6 +151,18 @@ export class RepCounter {
 
   get completedReps(): number {
     return this.repIndex;
+  }
+
+  /**
+   * Excursions that left the bottom and came back, whatever their depth.
+   *
+   * Includes the ones dropped below `repFloor`, which emit no event. The gap
+   * between this and `completedReps` is the only way to tell "the athlete did
+   * nothing" from "the athlete moved and the thresholds were too high to
+   * notice" — two failures that look identical from the count alone.
+   */
+  get attemptedReps(): number {
+    return this.attempts;
   }
 
   /** Filtered, normalised flexion for one frame: 0 = extended, 1 = flexed. */
@@ -242,7 +255,9 @@ export class RepCounter {
     this.windowFlexion = [];
     this.repStartMs = null;
 
-    if (start === null || peak < this.config.repFloor || samples.length < 2) return null;
+    if (start === null || samples.length < 2) return null;
+    this.attempts += 1;
+    if (peak < this.config.repFloor) return null;
 
     const event = this.buildEvent(start, tMs, peak, samples, flexion);
     this.repIndex += 1;
