@@ -40,3 +40,27 @@ des progrès qu'il n'a pas faits.
 
 Détail des sources de données utilisables et de leurs limites :
 [`docs/DATASETS.md`](../../docs/DATASETS.md).
+
+## Importer un dataset téléchargé
+
+```bash
+python -m vision.eval.import_quva /chemin/vers/QUVARepetitionDataset \
+    --out fixtures/clips/manifest.json
+```
+
+Le script **inspecte avant de conclure** : il affiche ce qu'il a réellement
+trouvé — extensions, appariement vidéo/annotation, forme et premières valeurs
+d'une annotation — avant d'écrire quoi que ce soit. Le format d'annotation de
+QUVA n'est documenté nulle part d'accessible ; deviner produirait un manifeste
+plausible et faux d'une répétition sur chaque ligne.
+
+Vérifier **une** vidéo à la main avant de s'y fier. Si le compte est décalé de
+1, relancer avec `--count-convention boundaries`.
+
+### QUVA en particulier
+
+C'est un jeu de mouvements **génériques** : nage, touillage, coiffage, musique.
+Très peu de corps entiers avec les bras visibles, qui est ce dont ce pipeline a
+besoin. La plupart des clips reviendront `skipped` — c'est le bon comportement,
+et un test utile en soi : le harnais refuse du footage hors domaine au lieu
+d'inventer des comptages. **Il n'en sortira pas de précision sur traction.**
