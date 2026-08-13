@@ -45,15 +45,35 @@ class ClipResult:
     note: str = ""
     flags: dict[str, int] = field(default_factory=dict)
 
+    # Diagnostics. Without these, a wrong count has two indistinguishable
+    # causes: the state machine never saw the repetition, or it saw it and
+    # declined to count it. Those need opposite fixes, and reporting only the
+    # final number hides which one you have.
+    events: int = 0
+    """Repetition cycles detected, counted or not."""
+    calibration_deg: tuple[float, float] | None = None
+    """The range the counter was given. An outlier frame inflates it, and every
+    threshold is a fraction of it, so a wrong range starves every rep at once."""
+    peak_angles_deg: list[float] = field(default_factory=list)
+    """Deepest joint angle reached per detected rep. Compared against the
+    calibrated range, this says whether reps fell short or were never seen."""
+
     @property
     def error(self) -> int | None:
         return None if self.predicted is None else abs(self.predicted - self.truth)
+
+
+def _quantile(sorted_values: list[float], q: float) -> float:
+    rank = (len(sorted_values) - 1) * q
+    low, high = int(rank), min(int(rank) + 1, len(sorted_values) - 1)
+    return sorted_values[low] + (sorted_values[high] - sorted_values[low]) * (rank - low)
 
 
 def calibration_from(
     samples: list[FrameSample],
     exercise: Exercise = Exercise.PULL_UP,
     captured_at: datetime | None = None,
+    trim_percent: float = 0.0,
 ) -> ExerciseCalibration | None:
     """Range of motion estimated from the clip itself.
 
@@ -70,8 +90,18 @@ def calibration_from(
     usable = [s for s in samples if s.confidence >= MIN_CONFIDENCE]
     if len(usable) < MIN_USABLE_FRAMES:
         return None
-    angles = [(s.elbow_left_deg + s.elbow_right_deg) / 2.0 for s in usable]
-    low, high = min(angles), max(angles)
+    angles = sorted((s.elbow_left_deg + s.elbow_right_deg) / 2.0 for s in usable)
+
+    # min/max is one bad frame away from a wrong range, and every threshold is a
+    # fraction of that range — so a single spurious extreme starves every rep at
+    # once, and the symptom is "counts nothing", which looks like a broken state
+    # machine rather than a broken calibration. `trim_percent` discards that tail.
+    if trim_percent > 0.0:
+        q = trim_percent / 100.0
+        low, high = _quantile(angles, q), _quantile(angles, 1.0 - q)
+    else:
+        low, high = angles[0], angles[-1]
+
     if high - low < MIN_SPAN_DEG:
         return None
     return ExerciseCalibration(
@@ -92,6 +122,7 @@ def score_samples(
     exercise: Exercise = Exercise.PULL_UP,
     frames: int = 0,
     seconds: float = 0.0,
+    trim_percent: float = 0.0,
 ) -> ClipResult:
     """Calibrate from a clip's samples, then count.
 
@@ -109,7 +140,7 @@ def score_samples(
         seconds=seconds,
     )
 
-    calibration = calibration_from(samples, exercise)
+    calibration = calibration_from(samples, exercise, trim_percent=trim_percent)
     if calibration is None:
         # Reported, not silently counted as zero: "could not calibrate" and
         # "counted no reps" are different failures needing different fixes.
@@ -119,6 +150,12 @@ def score_samples(
     counter = RepCounter(exercise, calibration)
     events = [event for sample in samples if (event := counter.push(sample)) is not None]
     result.predicted = sum(1 for event in events if event.counted)
+    result.events = len(events)
+    result.calibration_deg = (
+        round(calibration.rom_min_deg, 1),
+        round(calibration.rom_max_deg, 1),
+    )
+    result.peak_angles_deg = [round(event.peak_angle_deg, 1) for event in events]
     for event in events:
         for flag in event.flags:
             result.flags[flag] = result.flags.get(flag, 0) + 1

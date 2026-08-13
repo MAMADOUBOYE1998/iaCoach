@@ -107,7 +107,9 @@ def sample_video(path: Path, model_path: Path) -> tuple[list[FrameSample], int, 
     return samples, frames, time.perf_counter() - started
 
 
-def evaluate_clip(path: Path, truth: int, exercise: Exercise, model: Path) -> ClipResult:
+def evaluate_clip(
+    path: Path, truth: int, exercise: Exercise, model: Path, trim_percent: float
+) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
     samples, frames, seconds = sample_video(path, model)
     return score_samples(
@@ -117,6 +119,7 @@ def evaluate_clip(path: Path, truth: int, exercise: Exercise, model: Path) -> Cl
         exercise=exercise,
         frames=frames,
         seconds=seconds,
+        trim_percent=trim_percent,
     )
 
 
@@ -131,6 +134,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--trim-percent",
+        type=float,
+        default=0.0,
+        help=(
+            "Discard this %% from each tail when estimating the clip's range of "
+            "motion. 0 uses min/max, which one spurious frame is enough to "
+            "inflate — and since every threshold is a fraction of the range, an "
+            "inflated one starves every rep at once."
+        ),
+    )
     parser.add_argument(
         "--out-of-domain",
         action="store_true",
@@ -171,13 +185,16 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"absent  {path}", file=sys.stderr)
             continue
-        result = evaluate_clip(path, int(entry["reps"]), exercise, args.model)
+        result = evaluate_clip(
+            path, int(entry["reps"]), exercise, args.model, args.trim_percent
+        )
         results.append(result)
         truth_column = "hors-domaine" if args.out_of_domain else f"vrai={result.truth:3d}"
         print(
             f"{path.name:40s} {truth_column} "
             f"prédit={'—' if result.predicted is None else result.predicted:>3} "
-            f"({result.detected_frames}/{result.frames} frames, {result.seconds:.1f}s) "
+            f"({result.detected_frames}/{result.frames} frames, "
+            f"{result.events} cycles vus, {result.seconds:.1f}s) "
             f"{result.note}"
         )
 

@@ -184,3 +184,55 @@ class TestScoreSamples:
     def test_carries_the_flags_through(self) -> None:
         result = score_samples(pullup_cycles(3), path="synthetic.mp4", truth=3)
         assert isinstance(result.flags, dict)
+
+
+class TestTrimmedCalibration:
+    """One spurious frame must not redefine the athlete's range.
+
+    Every threshold is a fraction of the calibrated range, so an inflated range
+    starves every rep at once — and the symptom is "counts nothing", which reads
+    like a broken state machine rather than a broken calibration.
+    """
+
+    def test_min_max_is_captured_by_a_single_outlier(self) -> None:
+        clean = pullup_cycles(4)
+        outlier = FrameSample(
+            t_ms=-1.0,
+            elbow_left_deg=15.0,
+            elbow_right_deg=15.0,
+            trunk_deg=0.0,
+            hip_speed=0.0,
+            confidence=0.95,
+        )
+        wide = calibration_from([outlier, *clean])
+        assert wide is not None
+        assert wide.rom_min_deg == pytest.approx(15.0)
+
+    def test_trimming_ignores_it(self) -> None:
+        clean = pullup_cycles(4)
+        outlier = FrameSample(
+            t_ms=-1.0,
+            elbow_left_deg=15.0,
+            elbow_right_deg=15.0,
+            trunk_deg=0.0,
+            hip_speed=0.0,
+            confidence=0.95,
+        )
+        trimmed = calibration_from([outlier, *clean], trim_percent=2.0)
+        assert trimmed is not None
+        assert trimmed.rom_min_deg > 40.0
+
+    def test_trimming_a_clean_clip_barely_moves_the_range(self) -> None:
+        clean = pullup_cycles(6)
+        plain = calibration_from(clean)
+        trimmed = calibration_from(clean, trim_percent=2.0)
+        assert plain is not None and trimmed is not None
+        assert abs(trimmed.rom_max_deg - plain.rom_max_deg) < 5.0
+
+    def test_diagnostics_separate_unseen_from_uncounted(self) -> None:
+        # `events` is what tells the two apart; without it a low count has two
+        # opposite explanations and no way to choose.
+        result = score_samples(pullup_cycles(5), path="c.mp4", truth=5)
+        assert result.events == 5
+        assert len(result.peak_angles_deg) == 5
+        assert result.calibration_deg is not None

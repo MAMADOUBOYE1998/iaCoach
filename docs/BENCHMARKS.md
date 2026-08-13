@@ -138,6 +138,69 @@ part ailleurs sans DevTools :
 
 Une ligne de ce tableau sans ces informations n'est pas une mesure.
 
+## Spécificité — footage qui n'est pas l'exercice
+
+QUVA Repetition, 100 clips de mouvements répétitifs quelconques (corde à sauter,
+aviron, coiffage, pelletage). Question posée : **le compteur invente-t-il des
+tractions quand l'athlète n'en fait pas ?**
+
+| Date | Jeu | Clips | Refus de calibrer | Évalués | Clips à faux positif | Taux | Reps inventées | Pire clip |
+|---|---|---|---|---|---|---|---|---|
+| 2026-08-11 | QUVA (`d89f668`) | 100 | 61 | 39 | 31 | **31 %** | 114 | 14 |
+
+**31 %, c'est mauvais**, et la cause est structurelle, pas un réglage à corriger :
+la FSM compte des cycles de flexion de coude. L'aviron *est* un cycle de flexion
+de coude. Le brossage de cheveux aussi. Les pires faux positifs le disent
+clairement — `055_cable_chop` 14 reps, `034_rowing_machine` 10 (pour 9 coups
+d'aviron réels : le compteur a compté juste, mais pas ce qu'on lui demandait),
+`080_brushing_hair` 9.
+
+Aucun seuil ne sépare ces mouvements d'une traction, parce que **rien dans le
+pipeline ne regarde de quel exercice il s'agit**. C'est le classifieur de M2, et
+ce chiffre en est la justification chiffrée plutôt qu'une intuition.
+
+Deux pistes mesurées sur ces données, à traiter avant le classifieur :
+
+- **11 des 31 clips fautifs** portent `low_confidence` sur au moins autant de
+  reps qu'ils en comptent — 54 des 114 reps inventées. Aujourd'hui une rep dont
+  la confiance moyenne est sous 0,70 est **comptée quand même** (seul le retour
+  correctif est supprimé). Ne pas la compter supprimerait près de la moitié des
+  faux positifs, au prix de reps perdues quand le suivi décroche sur une vraie
+  séance. Arbitrage à mesurer, pas à trancher au jugé.
+- La détection de pose n'est **pas** le maillon faible : médiane de 97 % des
+  frames avec une pose exploitable, et seulement 9 clips sous 20 %.
+
+## Sensibilité — les tractions présentes dans QUVA
+
+Trois clips du jeu sont de vraies tractions. Le résultat est plus préoccupant
+que les faux positifs :
+
+| Clip | Reps réelles | Comptées | Frames avec pose |
+|---|---|---|---|
+| `082_pullups_monkey_bar` | 9 | **3** | 791/791 |
+| `083_pullups_monkey_bar` | 20 | **refus de calibrer** | 384/384 |
+| `084_pullups_monkey_bar` | 34 | **2** | 1175/1175 |
+
+La pose est parfaite sur les trois (100 % des frames), donc le problème est
+entièrement dans le comptage. Trois causes possibles, que les résultats
+d'origine ne permettaient pas de départager :
+
+1. la FSM ne voit pas les cycles ;
+2. elle les voit et refuse de les compter (amplitude sous `count_floor`) ;
+3. la calibration estimée est fausse — `min`/`max` sur tout le clip, donc **une
+   seule frame aberrante suffit à gonfler la plage**, et comme tous les seuils
+   sont des fractions de cette plage, une plage gonflée affame toutes les reps
+   d'un coup. Le symptôme ressemble alors à une FSM cassée.
+
+Le harnais rapporte maintenant `events` (cycles vus, comptés ou non),
+`calibration_deg` et `peak_angles_deg` : ces trois-là départagent les
+hypothèses. `--trim-percent 2` teste la troisième en écartant les queues de
+distribution.
+
+**Mesure à refaire**, sur ces trois clips, avec et sans `--trim-percent`. Tant
+qu'elle n'existe pas, la précision de comptage reste non mesurée — ces trois
+lignes disent qu'il y a un problème, pas lequel.
+
 ## Précision de comptage — footage propre
 
 | Date | Jeu de test | Reps réelles | Détectées | Précision | Rappel |
