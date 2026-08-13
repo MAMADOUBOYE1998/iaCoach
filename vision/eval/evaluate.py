@@ -39,7 +39,12 @@ from typing import Any
 
 from iacoach.contracts import Exercise, FrameSample
 from iacoach.counting import RepCounter
-from iacoach.evaluation import ClipResult, calibration_from, summarise
+from iacoach.evaluation import (
+    ClipResult,
+    calibration_from,
+    summarise,
+    summarise_out_of_domain,
+)
 from iacoach.frame import FrameSampler, Landmark
 
 
@@ -141,6 +146,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--out-of-domain",
+        action="store_true",
+        help=(
+            "The clips are NOT the exercise. Reports specificity — how often the "
+            "counter invents reps on footage it should stay silent on — instead "
+            "of accuracy, whose `truth` would describe a different movement."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if not args.model.exists():
@@ -166,14 +180,17 @@ def main(argv: list[str] | None = None) -> int:
             continue
         result = evaluate_clip(path, int(entry["reps"]), exercise, args.model)
         results.append(result)
+        truth_column = "hors-domaine" if args.out_of_domain else f"vrai={result.truth:3d}"
         print(
-            f"{path.name:40s} vrai={result.truth:3d} "
+            f"{path.name:40s} {truth_column} "
             f"prédit={'—' if result.predicted is None else result.predicted:>3} "
             f"({result.detected_frames}/{result.frames} frames, {result.seconds:.1f}s) "
             f"{result.note}"
         )
 
-    summary = summarise(results)
+    summary = (
+        summarise_out_of_domain(results) if args.out_of_domain else summarise(results)
+    )
     print("\n" + json.dumps(summary, indent=2))
 
     if args.out:

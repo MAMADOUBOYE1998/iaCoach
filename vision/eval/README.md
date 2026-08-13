@@ -57,10 +57,24 @@ plausible et faux d'une répétition sur chaque ligne.
 Vérifier **une** vidéo à la main avant de s'y fier. Si le compte est décalé de
 1, relancer avec `--count-convention boundaries`.
 
-### QUVA en particulier
+### QUVA : une mesure de spécificité, pas de précision
 
-C'est un jeu de mouvements **génériques** : nage, touillage, coiffage, musique.
-Très peu de corps entiers avec les bras visibles, qui est ce dont ce pipeline a
-besoin. La plupart des clips reviendront `skipped` — c'est le bon comportement,
-et un test utile en soi : le harnais refuse du footage hors domaine au lieu
-d'inventer des comptages. **Il n'en sortira pas de précision sur traction.**
+C'est un jeu de mouvements **génériques** : corde à sauter, trampoline,
+balançoire, touillage, coiffage. Aucune traction. Étiqueter ces clips `pull_up`
+et mesurer une « précision » n'aurait aucun sens.
+
+En revanche ils répondent à la question qui est *sous* la précision :
+
+```bash
+python -m vision.eval.evaluate fixtures/clips/manifest.json --out-of-domain
+```
+
+**Le compteur invente-t-il des répétitions quand l'athlète ne fait pas
+l'exercice ?** C'est ce qui décide si un journal de séance est croyable. Un
+compteur qui s'incrémente pendant une corde à sauter s'incrémentera aussi
+pendant que tu ajustes ta prise, que tu restes suspendu, ou que quelqu'un passe
+devant la caméra.
+
+En mode `--out-of-domain`, refuser de calibrer est compté comme **correct** :
+sur du footage qui n'est pas l'exercice, refuser est la bonne réponse. Le
+chiffre qui compte est `false_positive_rate`.

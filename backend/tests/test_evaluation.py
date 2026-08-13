@@ -16,6 +16,7 @@ from iacoach.evaluation import (
     ClipResult,
     calibration_from,
     summarise,
+    summarise_out_of_domain,
 )
 
 
@@ -108,3 +109,29 @@ class TestSummarise:
 
     def test_empty_input(self) -> None:
         assert summarise([]) == {"clips": 0, "scored": 0, "skipped": 0}
+
+
+class TestOutOfDomain:
+    """Specificity on footage that is not the exercise at all."""
+
+    def test_refusing_to_calibrate_counts_as_correct(self) -> None:
+        # On a rope-skipping clip, refusing is the right answer, not a miss.
+        summary = summarise_out_of_domain([clip(0, None), clip(0, None)])
+        assert summary["refused_to_calibrate"] == 2
+        assert summary["false_positive_rate"] == 0.0
+
+    def test_a_counted_rep_on_other_footage_is_a_false_positive(self) -> None:
+        summary = summarise_out_of_domain([clip(0, 3), clip(0, None), clip(0, 0)])
+        assert summary["false_positive_clips"] == 1
+        assert summary["false_positive_rate"] == pytest.approx(1 / 3)
+        assert summary["reps_invented_total"] == 3
+        assert summary["worst_clip_reps"] == 3
+
+    def test_zero_reps_counted_is_not_a_false_positive(self) -> None:
+        # Calibrating then counting nothing is the counter working correctly.
+        summary = summarise_out_of_domain([clip(0, 0)])
+        assert summary["false_positive_clips"] == 0
+        assert summary["scored"] == 1
+
+    def test_empty_input(self) -> None:
+        assert summarise_out_of_domain([])["false_positive_rate"] == 0.0

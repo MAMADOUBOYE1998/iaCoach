@@ -17,7 +17,7 @@ from typing import Any
 
 from .contracts import Exercise, ExerciseCalibration, FrameSample
 
-__all__ = ["ClipResult", "calibration_from", "summarise"]
+__all__ = ["ClipResult", "calibration_from", "summarise", "summarise_out_of_domain"]
 
 MIN_SPAN_DEG = 40.0
 """Below this the clip never showed a real range, so any calibration from it is
@@ -75,6 +75,35 @@ def calibration_from(
         captured_at=captured_at or datetime.now(UTC),
         confidence=len(usable) / len(samples),
     )
+
+
+def summarise_out_of_domain(results: list[ClipResult]) -> dict[str, Any]:
+    """Specificity: how often the counter invents reps on footage that is not
+    the exercise at all.
+
+    Accuracy answers "does it count correctly when the athlete is doing
+    pull-ups". This answers the question underneath it — "does it stay silent
+    when they are not" — and that one decides whether a session log can be
+    trusted at all. A counter that ticks while someone skips rope will also tick
+    while they hang, adjust their grip, or walk past the camera.
+
+    Refusing to calibrate counts as a **correct** outcome here, not a failure:
+    on footage that is not the exercise, refusing is the right answer.
+
+    `truth` in the manifest is ignored — it describes a different movement.
+    """
+    scored = [r for r in results if r.predicted is not None]
+    false_positives = [r for r in scored if (r.predicted or 0) > 0]
+    counts = sorted((r.predicted or 0) for r in false_positives)
+    return {
+        "clips": len(results),
+        "refused_to_calibrate": len(results) - len(scored),
+        "scored": len(scored),
+        "false_positive_clips": len(false_positives),
+        "false_positive_rate": (len(false_positives) / len(results)) if results else 0.0,
+        "reps_invented_total": sum(counts),
+        "worst_clip_reps": counts[-1] if counts else 0,
+    }
 
 
 def summarise(results: list[ClipResult]) -> dict[str, Any]:
