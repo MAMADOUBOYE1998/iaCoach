@@ -133,6 +133,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Same .task the app ships, so the measurement describes the app.",
     )
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument(
+        "--clips-root",
+        type=Path,
+        default=None,
+        help=(
+            "Directory the manifest's relative paths resolve against. Defaults "
+            "to the manifest's own directory, which is wrong as soon as the "
+            "manifest lives in the repository and the clips do not."
+        ),
+    )
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument(
         "--trim-percent",
@@ -172,7 +182,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
-    root = args.manifest.parent
+    root = args.clips_root or args.manifest.parent
     clips = manifest["clips"][: args.limit]
 
     results: list[ClipResult] = []
@@ -197,6 +207,22 @@ def main(argv: list[str] | None = None) -> int:
             f"{result.events} cycles vus, {result.seconds:.1f}s) "
             f"{result.note}"
         )
+
+    missing = [r for r in results if r.note == "fichier absent"]
+    if missing and len(missing) == len(results):
+        # Exiting 0 here would hand back an empty summary that looks like a
+        # measurement. It is a setup error, and it has to read as one.
+        print(
+            f"\nAucun clip trouvé ({len(missing)}/{len(results)}). Les chemins du "
+            f"manifeste sont résolus depuis {root}.\n"
+            "Utiliser --clips-root pour pointer le dossier des vidéos :\n"
+            f"  python -m vision.eval.evaluate {args.manifest} "
+            "--clips-root /chemin/vers/les/videos",
+            file=sys.stderr,
+        )
+        return 2
+    if missing:
+        print(f"\n⚠ {len(missing)} clips absents, exclus des métriques.", file=sys.stderr)
 
     summary = (
         summarise_out_of_domain(results) if args.out_of_domain else summarise(results)

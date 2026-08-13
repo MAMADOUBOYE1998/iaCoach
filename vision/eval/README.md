@@ -31,6 +31,18 @@ python -m vision.eval.evaluate fixtures/clips/manifest.json --out counting.json
 
 `PYTHONPATH` devient inutile une fois `backend` installé en editable.
 
+Les chemins d'un manifeste sont résolus **depuis le manifeste lui-même**, ce qui
+casse dès que le manifeste vit dans le dépôt et les vidéos ailleurs.
+`--clips-root` pointe le dossier des vidéos :
+
+```bash
+python -m vision.eval.evaluate vision/eval/manifest.pullups.json \
+    --clips-root ~/Downloads/QUVARepetitionDataset/videos --out brut.json
+```
+
+Si **aucun** clip n'est trouvé, la commande sort en erreur au lieu de rendre un
+résumé vide : un résumé vide ressemble à une mesure.
+
 ## Ce que les chiffres veulent dire
 
 `MAE`, `OBO` (à ±1 répétition près) et `MAPE` : les métriques de la littérature
