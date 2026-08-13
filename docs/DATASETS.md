@@ -111,10 +111,14 @@ L'évaluation tourne donc **sur la machine où sont les clips** :
 
 ```bash
 git clone https://github.com/MAMADOUBOYE1998/iaCoach && cd iaCoach
-cd web && npm install && npm run vendor-assets     # le .task que l'app embarque
-cd ../backend && pip install -e ".[eval]"          # mediapipe + opencv
-cd .. && PYTHONPATH=backend/src python -m vision.eval.evaluate \
-    fixtures/clips/manifest.json --out counting.json
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e "./backend[eval]"
+
+mkdir -p web/public/models
+curl -L -o web/public/models/pose_landmarker_full.task \
+  https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task
+
+python -m vision.eval.evaluate fixtures/clips/manifest.json --out counting.json
 ```
 
 Puis coller le contenu de `counting.json` : c'est du texte, il remonte

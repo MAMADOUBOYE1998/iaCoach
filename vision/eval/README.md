@@ -3,18 +3,33 @@
 Fait tourner le pipeline réel — MediaPipe, `FrameSampler`, `RepCounter` — sur des
 clips dont on connaît le nombre vrai de répétitions.
 
-```bash
-cd web && npm run vendor-assets     # le modèle que l'app embarque
-cd .. && PYTHONPATH=backend/src python -m vision.eval.evaluate \
-    fixtures/clips/manifest.json --out docs/results/counting.json
-```
+### Installation
 
-Dépendances non incluses dans le backend (lourdes, et inutiles pour servir
-l'API) :
+Depuis la racine du dépôt. Un venv, parce que le python système de macOS refuse
+les installations directes (PEP 668) :
 
 ```bash
-pip install mediapipe opencv-python-headless
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e "./backend[eval]"        # iacoach + mediapipe + opencv
+
+mkdir -p web/public/models
+curl -L -o web/public/models/pose_landmarker_full.task \
+  https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task
 ```
+
+Le `curl` remplace `npm run vendor-assets` : c'est le même fichier, et il n'y a
+aucune raison d'installer une chaîne JavaScript pour évaluer des vidéos.
+
+Si pip ne trouve pas de wheel `mediapipe`, la version de Python est trop
+récente — utiliser 3.12.
+
+### Lancer
+
+```bash
+python -m vision.eval.evaluate fixtures/clips/manifest.json --out counting.json
+```
+
+`PYTHONPATH` devient inutile une fois `backend` installé en editable.
 
 ## Ce que les chiffres veulent dire
 

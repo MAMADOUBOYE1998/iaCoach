@@ -158,8 +158,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not args.model.exists():
+        # The npm route needs node; the curl route needs nothing. Both fetch the
+        # same file, and someone evaluating clips has no reason to install a
+        # JavaScript toolchain first.
         print(
-            f"Missing pose model: {args.model}\nRun: cd web && npm run vendor-assets",
+            f"Modèle de pose absent : {args.model}\n\n"
+            "  mkdir -p web/public/models && curl -L -o "
+            "web/public/models/pose_landmarker_full.task \\\n"
+            "    https://storage.googleapis.com/mediapipe-models/pose_landmarker"
+            "/pose_landmarker_full/float16/1/pose_landmarker_full.task\n\n"
+            "ou, si node est installé :  cd web && npm run vendor-assets",
             file=sys.stderr,
         )
         return 2
