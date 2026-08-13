@@ -29,11 +29,18 @@ def test_fixtures_exist() -> None:
 def test_fixture_replays_exactly(path: Path) -> None:
     fixture = json.loads(path.read_text(encoding="utf-8"))
 
+    pad = fixture["pad"]
+
     features = []
     for frame, expected in zip(fixture["frames"], fixture["expected_frames"], strict=True):
+        # Only the read landmarks are stored; the rest is inert padding that
+        # nothing indexes, rebuilt here so the frame is complete.
         landmarks = [
-            Landmark(lm["x"], lm["y"], lm["z"], lm["visibility"]) for lm in frame["landmarks"]
+            Landmark(pad["x"], pad["y"], pad["z"], pad["visibility"])
+            for _ in range(fixture["landmark_count"])
         ]
+        for index, lm in frame["landmarks"].items():
+            landmarks[int(index)] = Landmark(lm["x"], lm["y"], lm["z"], lm["visibility"])
         found = frame_features(landmarks, landmarks, frame["t_ms"])
         assert found is not None
         assert asdict(found) == pytest.approx(expected, abs=1e-9)

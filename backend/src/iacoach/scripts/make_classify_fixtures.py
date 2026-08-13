@@ -242,8 +242,43 @@ def _rounded(lm: Landmark) -> Landmark:
     return Landmark(round(lm.x, 9), round(lm.y, 9), round(lm.z, 9), lm.visibility)
 
 
-def _landmark_json(lm: Landmark) -> dict[str, Any]:
-    return {"x": lm.x, "y": lm.y, "z": lm.z, "visibility": lm.visibility}
+STORED = (
+    "LEFT_SHOULDER",
+    "RIGHT_SHOULDER",
+    "LEFT_ELBOW",
+    "RIGHT_ELBOW",
+    "LEFT_WRIST",
+    "RIGHT_WRIST",
+    "LEFT_HIP",
+    "RIGHT_HIP",
+    "LEFT_KNEE",
+    "RIGHT_KNEE",
+    "LEFT_ANKLE",
+    "RIGHT_ANKLE",
+)
+"""The landmarks the classifier actually reads.
+
+The first version of these fixtures stored all 33, of which 21 were zero
+padding — 1.7 MB and 91 000 lines of JSON for seven synthetic scenarios, which
+buries every future diff. Only the read landmarks are stored; the readers
+rebuild the padding, which is inert by construction since nothing indexes it."""
+
+PAD = {"x": 0.0, "y": 0.0, "z": 0.0, "visibility": 1.0}
+"""What the omitted landmarks were. Written down so both readers rebuild the
+same frame, and so the values stay reproducible rather than conventional."""
+
+
+def _sparse(landmarks: list[Landmark]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for name in STORED:
+        lm = landmarks[LANDMARK[name]]
+        out[str(LANDMARK[name])] = {
+            "x": lm.x,
+            "y": lm.y,
+            "z": lm.z,
+            "visibility": lm.visibility,
+        }
+    return out
 
 
 def _payload(scenario: Scenario) -> dict[str, Any]:
@@ -256,7 +291,7 @@ def _payload(scenario: Scenario) -> dict[str, Any]:
         mid = (scenario.low_deg + scenario.high_deg) / 2.0
         angle = mid + (scenario.high_deg - scenario.low_deg) / 2.0 * math.cos(phase)
         landmarks = [_rounded(lm) for lm in scenario.pose(angle)]
-        frames.append({"t_ms": t_ms, "landmarks": [_landmark_json(lm) for lm in landmarks]})
+        frames.append({"t_ms": t_ms, "landmarks": _sparse(landmarks)})
         found = frame_features(landmarks, landmarks, t_ms)
         assert found is not None, "the synthetic frames always carry every landmark"
         features.append(found)
@@ -267,6 +302,8 @@ def _payload(scenario: Scenario) -> dict[str, Any]:
         "name": scenario.name,
         "description": scenario.description,
         "fps": FPS,
+        "landmark_count": 33,
+        "pad": PAD,
         "frames": frames,
         "expected_frames": [asdict(f) for f in features],
         "expected_window": asdict(window),

@@ -27,7 +27,9 @@ const CLASSIFY = join(HERE, "..", "..", "..", "fixtures", "classify");
 interface ClassifyFixture {
   name: string;
   description: string;
-  frames: { t_ms: number; landmarks: Landmark[] }[];
+  landmark_count: number;
+  pad: Landmark;
+  frames: { t_ms: number; landmarks: Record<string, Landmark> }[];
   expected_frames: FrameFeatures[];
   expected_window: WindowFeatures;
   expected: {
@@ -56,7 +58,15 @@ for (const file of files) {
 
     it("reproduces every frame's features", () => {
       for (const [i, frame] of fixture.frames.entries()) {
-        const found = frameFeatures(frame.landmarks, frame.landmarks, frame.t_ms);
+        // Only the read landmarks are stored; the rest is inert padding that
+        // nothing indexes, rebuilt here so the frame is complete.
+        const landmarks: Landmark[] = Array.from({ length: fixture.landmark_count }, () => ({
+          ...fixture.pad,
+        }));
+        for (const [index, lm] of Object.entries(frame.landmarks)) {
+          landmarks[Number(index)] = lm;
+        }
+        const found = frameFeatures(landmarks, landmarks, frame.t_ms);
         expect(found).not.toBeNull();
         const expected = fixture.expected_frames[i]!;
         for (const key of Object.keys(expected) as (keyof FrameFeatures)[]) {
