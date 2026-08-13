@@ -39,6 +39,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from iacoach.classify import ExerciseClassifier
 from iacoach.contracts import Exercise, FrameSample
 from iacoach.evaluation import (
     ClipResult,
@@ -76,12 +77,17 @@ def _segment_lengths(world: list[Landmark]) -> dict[str, float]:
 
 def sample_video(
     path: Path, model_path: Path
-) -> tuple[list[FrameSample], list[dict[str, float]], int, float]:
+) -> tuple[list[FrameSample], list[dict[str, float]], list[Exercise], int, float]:
     """Every frame of a clip, reduced to `FrameSample` plus its segment lengths.
 
-    Returns the samples, the per-sample arm-segment lengths, the number of
-    frames read, and the wall-clock seconds spent. Frames where no pose was
-    found produce no sample — never a neutral one.
+    Returns the samples, the per-sample arm-segment lengths, the classifier's
+    per-window labels, the number of frames read, and the wall-clock seconds
+    spent. Frames where no pose was found produce no sample — never a neutral
+    one.
+
+    The classifier runs over the same frames as the counter, deliberately: a
+    gate measured on a different frame set than the thing it gates would not
+    describe the pipeline anyone will ship.
     """
     import cv2  # imported here so the module can be read without the heavy deps
     import mediapipe as mp
@@ -100,8 +106,10 @@ def sample_video(
     fps = capture.get(cv2.CAP_PROP_FPS) or 30.0
 
     sampler = FrameSampler()
+    classifier = ExerciseClassifier()
     samples: list[FrameSample] = []
     lengths: list[dict[str, float]] = []
+    labels: list[Exercise] = []
     frames = 0
     started = time.perf_counter()
 
@@ -119,6 +127,13 @@ def sample_video(
             result = landmarker.detect_for_video(image, int(t_ms))
             if not result.pose_world_landmarks or not result.pose_landmarks:
                 continue
+            world = _landmarks(result.pose_world_landmarks[0])
+            if (
+                label := classifier.push(
+                    world, _landmarks(result.pose_landmarks[0]), t_ms
+                )
+            ) is not None:
+                labels.append(label.exercise)
             sample = sampler.sample(
                 _landmarks(result.pose_world_landmarks[0]),
                 _landmarks(result.pose_landmarks[0]),
@@ -131,7 +146,7 @@ def sample_video(
                 )
 
     capture.release()
-    return samples, lengths, frames, time.perf_counter() - started
+    return samples, lengths, labels, frames, time.perf_counter() - started
 
 
 def dump_angles(
@@ -176,7 +191,7 @@ def evaluate_clip(
     dump_dir: Path | None = None,
 ) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
-    samples, lengths, frames, seconds = sample_video(path, model)
+    samples, lengths, labels, frames, seconds = sample_video(path, model)
     if dump_dir is not None:
         dump_angles(samples, lengths, dump_dir / f"{path.stem}.csv")
     result = score_samples(
@@ -187,6 +202,7 @@ def evaluate_clip(
         frames=frames,
         seconds=seconds,
         trim_percent=trim_percent,
+        labels=labels,
     )
     result.segment_cv = segment_stability(lengths)
     return result
@@ -292,6 +308,7 @@ def main(argv: list[str] | None = None) -> int:
             f"{path.name:40s} {truth_column} "
             f"prédit={'—' if result.predicted is None else result.predicted:>3} "
             f"({result.detected_frames}/{result.frames} frames, "
+            f"[{result.classified_as or '—'}] "
             f"{result.attempted} excursions / {result.events} cycles, "
             f"{result.seconds:.1f}s) "
             f"{result.note}"

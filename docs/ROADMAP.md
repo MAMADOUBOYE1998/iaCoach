@@ -130,13 +130,46 @@ ce qui flatte le résultat. Détail et sources utilisables :
 
 ## M2 — Qualité fine + classifieur
 
-- ROM, kipping (accélération du bassin orthogonale à l'axe), symétrie, tempo,
-  alignement — tous continus dans `[0,1]`.
-- Traduction des `flags` en retours actionnables en français.
-- Classifieur d'exercice : fenêtre glissante de keypoints → exercice, pour
-  router vers les bonnes règles.
+**Classifieur d'exercice — livré, spécificité à mesurer.**
 
-Sortie mesurée : accord avec annotation experte sur le jeu de test.
+`iacoach.classify` + `web/src/analysis/classify.ts`, conformance bloquante sur
+`fixtures/classify/` (7 scénarios, dont 2 refus).
+
+Justification chiffrée, pas esthétique : sur 100 clips d'autres mouvements, le
+compteur a inventé des reps sur 31. Il compte des cycles de flexion du coude, et
+ramer en est un. Rien en amont ne demandait si l'athlète faisait l'exercice.
+
+- Fenêtre glissante de 2 s → posture (mains/épaules, verticalité du tronc) et
+  travail (amplitude coude vs genou) → score continu par exercice.
+- `UNKNOWN` est une réponse de premier rang, pas un échec. Un jeu de règles mal
+  routé corrige la mauvaise chose, ce qui est pire que ne pas corriger.
+- Hystérésis sur le label lui-même : un challenger doit gagner de 0,15 sur 3
+  fenêtres consécutives. Une étiquette qui clignote en pleine série est pire
+  qu'une étiquette périmée.
+- Tous les seuils sont des fractions des longueurs de segments de l'athlète.
+  Aucun mètre absolu ; un test vérifie qu'un athlète 1,3× plus grand donne les
+  mêmes nombres.
+
+**Non émis délibérément**, et écrit dans le code plutôt qu'absent en silence :
+`chin_up` (la supination de prise n'est pas récupérable de ces landmarks) et
+`muscle_up` (demande un modèle de transition, et zéro exemple annoté — une
+muscle-up sera lue `pull_up` pendant sa phase de traction).
+
+**Statut des seuils : priors géométriques, pas mesures.** Ils encodent ce que
+*sont* les postures. Ils n'ont été ajustés sur aucun positif annoté, faute
+d'en avoir. À traiter comme `kip_tolerance_ms`.
+
+Reste dans M2 :
+
+- Faire tourner la spécificité sur les 100 clips QUVA : le harnais rapporte
+  maintenant `false_positive_clips_after_gate` et `reps_invented_after_gate`.
+  C'est la seule mesure que ce jeu permet — il n'a pas de positifs exploitables.
+- Traduction des `flags` en retours actionnables en français.
+- Recalage de `kip_tolerance_ms` et `trunk_tolerance_deg` sur footage réel
+  enregistré au débit réel de l'appareil (~21 fps, pas 30).
+
+Sortie mesurée : spécificité après portillon sur QUVA. La sensibilité reste
+non mesurable sur données publiques.
 
 ## M3 — Coaching + persistance ✅ livré
 

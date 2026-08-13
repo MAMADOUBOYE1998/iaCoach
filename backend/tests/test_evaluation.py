@@ -17,6 +17,7 @@ from iacoach.evaluation import (
     MIN_USABLE_FRAMES,
     ClipResult,
     calibration_from,
+    classification_verdict,
     periodicity_count,
     score_samples,
     segment_stability,
@@ -382,3 +383,58 @@ class TestPeriodicityBaseline:
 
     def test_refuses_a_clip_too_short_to_judge(self) -> None:
         assert periodicity_count(pullup_cycles(1)[:40]) is None
+
+
+class TestClassificationVerdict:
+    """Windows reduced to one label per clip, without losing the refusals."""
+
+    def test_the_dominant_named_label_wins(self) -> None:
+        labels = [Exercise.PULL_UP] * 8 + [Exercise.DIP] * 2
+        verdict = classification_verdict(labels)
+        assert verdict["label"] == "pull_up"
+        assert verdict["share"] == pytest.approx(0.8)
+
+    def test_refusals_are_reported_beside_the_label_not_folded_in(self) -> None:
+        # 9 refusals and one hesitant dip is not a dip. Keeping only the label
+        # would say it was, and the counter would be let through.
+        labels = [Exercise.UNKNOWN] * 9 + [Exercise.DIP]
+        verdict = classification_verdict(labels)
+        assert verdict["label"] == "dip"
+        assert verdict["share"] == pytest.approx(0.1)
+        assert verdict["unknown_share"] == pytest.approx(0.9)
+
+    def test_all_refusals_yield_unknown(self) -> None:
+        verdict = classification_verdict([Exercise.UNKNOWN] * 5)
+        assert verdict["label"] == "unknown"
+        assert verdict["unknown_share"] == 1.0
+
+    def test_no_windows_invents_nothing(self) -> None:
+        assert classification_verdict([])["label"] == ""
+
+
+class TestGateReporting:
+    """What the classifier would remove from the false-positive count."""
+
+    def _fp(self, classified: str) -> ClipResult:
+        result = clip(truth=5, predicted=4)
+        result.exercise, result.classified_as = "pull_up", classified
+        return result
+
+    def test_a_clip_the_classifier_rejects_never_reaches_the_counter(self) -> None:
+        summary = summarise_out_of_domain([self._fp("squat"), self._fp("unknown")])
+        assert summary["false_positive_clips"] == 2
+        assert summary["false_positive_clips_after_gate"] == 0
+        assert summary["reps_invented_after_gate"] == 0
+
+    def test_a_clip_it_accepts_still_counts(self) -> None:
+        summary = summarise_out_of_domain([self._fp("pull_up"), self._fp("squat")])
+        assert summary["false_positive_clips_after_gate"] == 1
+        assert summary["reps_invented_after_gate"] == 4
+
+    def test_an_unmeasured_gate_is_not_credited_with_a_save(self) -> None:
+        # No classification ran. Reporting 0 survivors would claim a saving the
+        # measurement never made.
+        plain = clip(truth=5, predicted=4)
+        summary = summarise_out_of_domain([plain])
+        assert summary["false_positive_clips"] == 1
+        assert summary["false_positive_clips_after_gate"] is None

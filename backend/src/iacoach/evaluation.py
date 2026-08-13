@@ -12,6 +12,7 @@ settles no argument.
 from __future__ import annotations
 
 import math
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -22,6 +23,7 @@ from .counting import RepCounter
 __all__ = [
     "ClipResult",
     "calibration_from",
+    "classification_verdict",
     "periodicity_count",
     "score_samples",
     "segment_stability",
@@ -66,6 +68,15 @@ class ClipResult:
     `predicted` is what amplitude gating costs on this clip."""
     periodicity_r: float | None = None
     """Autocorrelation at the chosen period. Low means the baseline is guessing."""
+    exercise: str = ""
+    """The exercise the manifest claims. Needed to ask whether the classifier
+    would have let this clip reach the counter at all."""
+    classified_as: str = ""
+    """What the classifier called it, over the whole clip."""
+    classified_share: float = 0.0
+    unknown_share: float = 0.0
+    """Fraction of windows the classifier refused to name. High is *good* on
+    footage that is not the exercise."""
     segment_cv: dict[str, float] = field(default_factory=dict)
     """Length variability of the rigid arm segments. The one tracking-quality
     signal here that does not come from MediaPipe's own optimism."""
@@ -270,6 +281,7 @@ def score_samples(
     frames: int = 0,
     seconds: float = 0.0,
     trim_percent: float = 0.0,
+    labels: list[Exercise] | None = None,
 ) -> ClipResult:
     """Calibrate from a clip's samples, then count.
 
@@ -285,7 +297,13 @@ def score_samples(
         frames=frames,
         detected_frames=len(samples),
         seconds=seconds,
+        exercise=exercise.value,
     )
+    if labels:
+        verdict = classification_verdict(labels)
+        result.classified_as = verdict["label"]
+        result.classified_share = round(verdict["share"], 3)
+        result.unknown_share = round(verdict["unknown_share"], 3)
 
     usable = [s for s in samples if s.confidence >= MIN_CONFIDENCE]
     result.usable_frames = len(usable)
@@ -325,6 +343,29 @@ def score_samples(
     return result
 
 
+def classification_verdict(labels: list[Exercise]) -> dict[str, Any]:
+    """Per-window labels reduced to one verdict for the clip.
+
+    The dominant *named* label wins, but ``unknown_share`` is reported beside
+    it and not folded in: a clip the classifier refused 90 % of the time and
+    hesitantly called a dip once is not a dip, and a summary that only kept the
+    label would say it was.
+    """
+    if not labels:
+        return {"label": "", "share": 0.0, "unknown_share": 0.0}
+    counts = Counter(labels)
+    unknown_share = counts[Exercise.UNKNOWN] / len(labels)
+    named = [(e, c) for e, c in counts.items() if e is not Exercise.UNKNOWN]
+    if not named:
+        return {"label": Exercise.UNKNOWN.value, "share": 0.0, "unknown_share": 1.0}
+    label, count = max(named, key=lambda pair: pair[1])
+    return {
+        "label": label.value,
+        "share": count / len(labels),
+        "unknown_share": unknown_share,
+    }
+
+
 def summarise_out_of_domain(results: list[ClipResult]) -> dict[str, Any]:
     """Specificity: how often the counter invents reps on footage that is not
     the exercise at all.
@@ -343,7 +384,19 @@ def summarise_out_of_domain(results: list[ClipResult]) -> dict[str, Any]:
     scored = [r for r in results if r.predicted is not None]
     false_positives = [r for r in scored if (r.predicted or 0) > 0]
     counts = sorted((r.predicted or 0) for r in false_positives)
+
+    # What the classifier would change if it gated the counter: a clip it does
+    # not call the manifest's exercise never reaches `RepCounter`, so its
+    # invented reps never exist. Clips with no classification at all are counted
+    # as surviving — an unmeasured gate must not be credited with a save.
+    classified = [r for r in results if r.classified_as]
+    survivors = [r for r in false_positives if r.classified_as == r.exercise]
     return {
+        "classified_clips": len(classified),
+        "false_positive_clips_after_gate": len(survivors) if classified else None,
+        "reps_invented_after_gate": sum(r.predicted or 0 for r in survivors)
+        if classified
+        else None,
         "clips": len(results),
         "refused_to_calibrate": len(results) - len(scored),
         "scored": len(scored),

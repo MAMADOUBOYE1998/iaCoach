@@ -31,6 +31,7 @@ jobs:
       # Same contract one stage earlier: the landmark fixtures pin the sampler,
       # which the phone and the offline evaluation both implement.
       - run: python -m iacoach.scripts.make_landmark_fixtures --check
+      - run: python -m iacoach.scripts.make_classify_fixtures --check
 
   web:
     runs-on: ubuntu-latest
