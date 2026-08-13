@@ -299,16 +299,84 @@ Seul `083` a sa cadence mesurée sur la série temporelle ; les deux autres sont
 déduits de `frames / reps` en supposant 30 fps, et l'annotation pouvant ne
 couvrir qu'un segment du clip, ce sont des **bornes hautes** de la période.
 
+### Le signal contient les répétitions. C'est nous qui les jetons.
+
+L'autocorrélation de l'angle de coude, sur les trois clips, aux maxima locaux
+avec correction d'octave :
+
+| Clip | vrai | FSM | autocorrélation | lag | r |
+|---|---|---|---|---|---|
+| `082` | 9 | 3 | **10,0** | 79 (2724 ms) | 0,379 |
+| `083` | 20 | refus | **21,3** | 18 (621 ms) | 0,455 |
+| `084` | 34 | 2 | **35,6** | 33 (1138 ms) | 0,710 |
+
+| | MAE |
+|---|---|
+| `RepCounter` | **19,3** |
+| rythme seul | **1,3** |
+
+Les trois clips portent leur cadence annotée dans l'angle de coude, et sur `084`
+elle est franche (r = 0,71, avec ses harmoniques à 66 et 100 frames). Le
+problème n'est ni le footage, ni l'annotation, ni l'étage pose.
+
+**`RepCounter` est verrouillé sur l'amplitude.** Tous ses seuils sont des
+fractions d'une plage calibrée à partir des extrêmes ; un mouvement dont la
+plage est mal estimée est invisible, si régulier soit-il. L'information de
+répétition est dans la **périodicité**, et nous ne l'utilisons nulle part.
+
+### Pourquoi ça ne remplace rien
+
+Deux limites décisives, mesurées ou structurelles :
+
+- **Aucune spécificité.** Sauter à la corde, ramer, touiller une casserole sont
+  périodiques. `RepCounter` refuse 61 des 100 clips hors-domaine ; un compteur
+  par périodicité les compterait tous les 100. Il n'est utilisable qu'**en aval
+  d'un classifieur d'exercice**.
+- **Aucune qualité par rep.** Un compte n'est pas un `RepEvent` : ni ROM, ni
+  symétrie, ni tempo. Le contrat de coaching a besoin des trois, et ils
+  *exigent* l'amplitude.
+
+Les deux mesures convergent donc sur la même architecture : **M2 (classifieur)
+puis comptage par périodicité, l'amplitude servant à la qualité et non au
+déclenchement.** Ça déplace le repli RepNet de M4 vers le chemin principal.
+
+Honnêteté sur ce chiffre : la règle de correction d'octave a été écrite **après**
+avoir vu ces trois clips. Son MAE de 1,3 ici n'est pas une revendication de
+généralisation — la ligne existe pour poser un plancher sous ce que le signal
+contient, pas pour devenir le compteur.
+
+### Suivi : `segment_cv`, et ce qu'il ne dit pas
+
+| Clip | pire segment | confiance < 0,7 | conf. moitié fléchie / tendue | écart G-D fléchi / tendu |
+|---|---|---|---|---|
+| `082` | **12,6 %** | 98/791 | 0,886 / 0,992 | 10,4° / 6,0° |
+| `083` | 8,6 % | 0/384 | 1,000 / 1,000 | 6,5° / 5,5° |
+| `084` | 9,4 % | 0/1175 | 1,000 / 1,000 | 4,2° / 6,1° |
+
+Un os ne change pas de longueur : 8 à 13 % de variation sur un avant-bras
+mesuré, c'est ~2 cm de ballottement sur l'estimation 3D. **Aucun de ces clips
+n'a un suivi propre**, et sur `083` et `084` la `visibility` MediaPipe n'en
+signale rien — 0 frame sous le seuil de confiance.
+
+Sur `082`, le suivi se dégrade **précisément pendant la traction** : confiance
+0,886 en position fléchie contre 0,992 tendue, et l'écart gauche/droite double.
+Le pire moment du suivi est le moment qui nous intéresse.
+
+`083` a le meilleur `segment_cv` des trois et la plus petite amplitude, ce qui
+penche pour « le mouvement n'est pas une traction » plutôt que « la pose écrase
+l'amplitude ». Mais 8,6 % reste trop élevé pour trancher franchement, et je n'ai
+pas regardé les vidéos. **Ça reste ouvert.**
+
 ### Ce que ce jeu peut et ne peut pas trancher
 
 Notre compteur est conçu autour d'une **calibration volontaire par athlète**.
 Sur du footage tiers, on la remplace par l'amplitude observée dans le clip — et
 `082` montre le prix : la plage est prise en otage par quelques frames.
 
-QUVA ne validera donc pas notre précision de comptage. Il a rendu mieux : deux
-défauts concrets et reproductibles de la FSM — le verrou `bottom_enter` et les
-deux populations de frames — que seule une mesure réelle pouvait faire
-apparaître.
+QUVA ne validera donc pas notre précision de comptage. Il a rendu mieux : le
+défaut `084` (verrou `bottom_enter`), les deux populations de frames, l'angle
+mort de la confiance, et surtout la démonstration que **le signal porte les reps
+que nous jetons**.
 
 **La mesure décisive reste une séance réelle**, calibration volontaire comprise,
 enregistrée sur le téléphone à ses ~21 fps réels.

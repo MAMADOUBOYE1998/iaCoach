@@ -17,6 +17,7 @@ from iacoach.evaluation import (
     MIN_USABLE_FRAMES,
     ClipResult,
     calibration_from,
+    periodicity_count,
     score_samples,
     segment_stability,
     summarise,
@@ -347,3 +348,37 @@ class TestSegmentStability:
     def test_no_frames_is_not_perfect_stability(self) -> None:
         # A zero here would read as a flawless track on a clip nobody measured.
         assert segment_stability([]) == {}
+
+
+class TestPeriodicityBaseline:
+    """What the rhythm alone contains, as a floor under the amplitude-gated FSM.
+
+    Not a replacement: it has no specificity (skipping rope is periodic too) and
+    yields no per-rep quality. It exists so "our counter found 2" can be read
+    against "the signal held 34".
+    """
+
+    def test_counts_the_rhythm_of_full_reps(self) -> None:
+        found = periodicity_count(pullup_cycles(8))
+        assert found is not None
+        count, correlation = found
+        assert abs(count - 8) <= 1
+        assert correlation > 0.5
+
+    def test_counts_reps_far_too_shallow_for_the_state_machine(self) -> None:
+        # The whole point. These never approach `rep_floor`, so `RepCounter`
+        # emits nothing, yet the rhythm is unambiguous.
+        shallow = cycles_between(10, 175.0, 168.0)
+        result = score_samples(shallow, path="c.mp4", truth=10)
+        assert result.predicted is None or result.predicted == 0
+
+        found = periodicity_count(shallow)
+        assert found is not None
+        assert abs(found[0] - 10) <= 1
+
+    def test_refuses_a_signal_with_no_rhythm(self) -> None:
+        flat = samples(200, low=140.0, high=141.0)
+        assert periodicity_count(flat) is None
+
+    def test_refuses_a_clip_too_short_to_judge(self) -> None:
+        assert periodicity_count(pullup_cycles(1)[:40]) is None

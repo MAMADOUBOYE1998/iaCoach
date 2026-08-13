@@ -22,6 +22,7 @@ from .counting import RepCounter
 __all__ = [
     "ClipResult",
     "calibration_from",
+    "periodicity_count",
     "score_samples",
     "segment_stability",
     "summarise",
@@ -60,6 +61,11 @@ class ClipResult:
     threshold is a fraction of it, so a wrong range starves every rep at once."""
     usable_frames: int = 0
     """Frames above the confidence floor — the only ones calibration may use."""
+    periodicity_reps: float | None = None
+    """Count from the rhythm alone, ignoring depth. A baseline: the gap to
+    `predicted` is what amplitude gating costs on this clip."""
+    periodicity_r: float | None = None
+    """Autocorrelation at the chosen period. Low means the baseline is guessing."""
     segment_cv: dict[str, float] = field(default_factory=dict)
     """Length variability of the rigid arm segments. The one tracking-quality
     signal here that does not come from MediaPipe's own optimism."""
@@ -128,6 +134,76 @@ def segment_stability(lengths: list[dict[str, float]]) -> dict[str, float]:
     if out:
         out["worst"] = max(out.values())
     return out
+
+
+MIN_PERIODICITY_R = 0.20
+MIN_PERIODICITY_FRAMES = 60
+
+
+def periodicity_count(samples: list[FrameSample]) -> tuple[float, float] | None:
+    """Repetitions counted from the *rhythm* of the elbow angle, ignoring depth.
+
+    A **baseline, not a counter.** `RepCounter` gates on amplitude: every
+    threshold is a fraction of a calibrated range, so a movement whose range is
+    misjudged is invisible however plainly periodic it is. This measures what is
+    left on the table by asking only "how often does the signal repeat".
+
+    Two things it cannot do, and they are why it does not replace anything:
+
+    - **No specificity whatsoever.** Skipping rope, rowing and stirring a pot
+      are periodic. `RepCounter` refuses 61 of the 100 out-of-domain QUVA clips;
+      this would count all 100. It is only safe downstream of an exercise
+      classifier.
+    - **No per-rep quality.** A count is not a `RepEvent`: no ROM, no symmetry,
+      no tempo. The coaching contract needs all three.
+
+    Returns ``(count, correlation)``, or ``None`` when nothing repeats clearly
+    enough — refusing rather than inventing a number from noise.
+
+    Assumes near-uniform frame spacing (lags are in frames). True of video and
+    of a steady capture; a clip with large gaps would need resampling first.
+    """
+    if len(samples) < MIN_PERIODICITY_FRAMES:
+        return None
+    values = [s.elbow_mean_deg for s in samples]
+    n = len(values)
+    mean = sum(values) / n
+    centred = [v - mean for v in values]
+    energy = sum(v * v for v in centred)
+    if energy <= 0.0:
+        return None
+
+    limit = n // 3
+    correlation = {
+        lag: sum(centred[i] * centred[i + lag] for i in range(n - lag)) / energy
+        for lag in range(3, limit + 2)
+    }
+    # Local maxima only. Autocorrelation is near 1.0 at short lags for any smooth
+    # signal, so a plain maximum returns the smoothness scale, not the period.
+    peaks = [
+        lag
+        for lag in range(4, limit)
+        if correlation[lag] > correlation[lag - 1] and correlation[lag] > correlation[lag + 1]
+    ]
+    if not peaks:
+        return None
+    best = max(peaks, key=lambda lag: correlation[lag])
+
+    # Octave correction, standard in pitch detection: a periodic signal peaks at
+    # its period *and* at every multiple, and the multiple can win. When a
+    # sub-multiple holds up nearly as well, it is the fundamental.
+    for divisor in (2, 3):
+        target = best / divisor
+        nearby = [lag for lag in peaks if abs(lag - target) <= max(2.0, target * 0.15)]
+        if nearby:
+            candidate = max(nearby, key=lambda lag: correlation[lag])
+            if correlation[candidate] >= 0.8 * correlation[best]:
+                best = candidate
+                break
+
+    if correlation[best] < MIN_PERIODICITY_R:
+        return None
+    return (n - 1) / best, round(correlation[best], 3)
 
 
 PERCENTILES = (1, 2, 5, 25, 50, 75, 95, 98, 99)
@@ -213,6 +289,8 @@ def score_samples(
 
     usable = [s for s in samples if s.confidence >= MIN_CONFIDENCE]
     result.usable_frames = len(usable)
+    if (periodicity := periodicity_count(samples)) is not None:
+        result.periodicity_reps, result.periodicity_r = round(periodicity[0], 1), periodicity[1]
     result.angle_percentiles = _percentiles([s.elbow_mean_deg for s in usable])
 
     calibration = calibration_from(samples, exercise, trim_percent=trim_percent)
