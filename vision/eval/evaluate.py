@@ -38,10 +38,9 @@ from pathlib import Path
 from typing import Any
 
 from iacoach.contracts import Exercise, FrameSample
-from iacoach.counting import RepCounter
 from iacoach.evaluation import (
     ClipResult,
-    calibration_from,
+    score_samples,
     summarise,
     summarise_out_of_domain,
 )
@@ -109,30 +108,16 @@ def sample_video(path: Path, model_path: Path) -> tuple[list[FrameSample], int, 
 
 
 def evaluate_clip(path: Path, truth: int, exercise: Exercise, model: Path) -> ClipResult:
+    """Read a clip, then hand the samples to the tested scoring path."""
     samples, frames, seconds = sample_video(path, model)
-    result = ClipResult(
+    return score_samples(
+        samples,
         path=str(path),
         truth=truth,
-        predicted=None,
+        exercise=exercise,
         frames=frames,
-        detected_frames=len(samples),
         seconds=seconds,
     )
-
-    calibration = calibration_from(samples, exercise)
-    if calibration is None:
-        # Reported, not silently counted as zero: "we could not calibrate" and
-        # "we counted no reps" are different failures and need different fixes.
-        result.note = "calibration impossible (amplitude ou suivi insuffisants)"
-        return result
-
-    counter = RepCounter(calibration)
-    events = [event for sample in samples if (event := counter.push(sample)) is not None]
-    result.predicted = sum(1 for e in events if e.counted)
-    for event in events:
-        for flag in event.flags:
-            result.flags[flag] = result.flags.get(flag, 0) + 1
-    return result
 
 
 def main(argv: list[str] | None = None) -> int:

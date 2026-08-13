@@ -16,8 +16,15 @@ from datetime import UTC, datetime
 from typing import Any
 
 from .contracts import Exercise, ExerciseCalibration, FrameSample
+from .counting import RepCounter
 
-__all__ = ["ClipResult", "calibration_from", "summarise", "summarise_out_of_domain"]
+__all__ = [
+    "ClipResult",
+    "calibration_from",
+    "score_samples",
+    "summarise",
+    "summarise_out_of_domain",
+]
 
 MIN_SPAN_DEG = 40.0
 """Below this the clip never showed a real range, so any calibration from it is
@@ -75,6 +82,47 @@ def calibration_from(
         captured_at=captured_at or datetime.now(UTC),
         confidence=len(usable) / len(samples),
     )
+
+
+def score_samples(
+    samples: list[FrameSample],
+    *,
+    path: str,
+    truth: int,
+    exercise: Exercise = Exercise.PULL_UP,
+    frames: int = 0,
+    seconds: float = 0.0,
+) -> ClipResult:
+    """Calibrate from a clip's samples, then count.
+
+    Lives here rather than beside the video reader so it is covered by the test
+    suite. It was in the reader once, and the one line that constructs the
+    counter went untested because no synthetic clip ever calibrated far enough
+    to reach it — the wrong argument list only surfaced on the first real video.
+    """
+    result = ClipResult(
+        path=path,
+        truth=truth,
+        predicted=None,
+        frames=frames,
+        detected_frames=len(samples),
+        seconds=seconds,
+    )
+
+    calibration = calibration_from(samples, exercise)
+    if calibration is None:
+        # Reported, not silently counted as zero: "could not calibrate" and
+        # "counted no reps" are different failures needing different fixes.
+        result.note = "calibration impossible (amplitude ou suivi insuffisants)"
+        return result
+
+    counter = RepCounter(exercise, calibration)
+    events = [event for sample in samples if (event := counter.push(sample)) is not None]
+    result.predicted = sum(1 for event in events if event.counted)
+    for event in events:
+        for flag in event.flags:
+            result.flags[flag] = result.flags.get(flag, 0) + 1
+    return result
 
 
 def summarise_out_of_domain(results: list[ClipResult]) -> dict[str, Any]:

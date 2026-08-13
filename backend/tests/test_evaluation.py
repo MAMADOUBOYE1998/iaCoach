@@ -7,6 +7,8 @@ that scores its own failures reports progress it did not make.
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from iacoach.contracts import Exercise, FrameSample
@@ -15,6 +17,7 @@ from iacoach.evaluation import (
     MIN_USABLE_FRAMES,
     ClipResult,
     calibration_from,
+    score_samples,
     summarise,
     summarise_out_of_domain,
 )
@@ -135,3 +138,49 @@ class TestOutOfDomain:
 
     def test_empty_input(self) -> None:
         assert summarise_out_of_domain([])["false_positive_rate"] == 0.0
+
+
+def pullup_cycles(
+    count: int, *, fps: float = 30.0, seconds_per_rep: float = 2.0
+) -> list[FrameSample]:
+    """`count` full pull-up cycles, 175 deg hanging to 45 deg at the top."""
+    out: list[FrameSample] = []
+    total = int(count * seconds_per_rep * fps)
+    for i in range(total):
+        phase = 2.0 * math.pi * i / (seconds_per_rep * fps)
+        angle = 110.0 + 65.0 * math.cos(phase)
+        out.append(
+            FrameSample(
+                t_ms=i * 1000.0 / fps,
+                elbow_left_deg=angle,
+                elbow_right_deg=angle,
+                trunk_deg=3.0,
+                hip_speed=0.05,
+                confidence=0.95,
+            )
+        )
+    return out
+
+
+class TestScoreSamples:
+    """The path from samples to a count.
+
+    This is what was missing: the line constructing `RepCounter` lived beside
+    the video reader, outside the test suite, and its wrong argument list only
+    surfaced on the first real clip that got far enough to reach it.
+    """
+
+    def test_counts_the_cycles_it_was_given(self) -> None:
+        result = score_samples(pullup_cycles(5), path="synthetic.mp4", truth=5)
+        assert result.predicted == 5
+        assert result.error == 0
+
+    def test_reports_the_calibration_refusal_instead_of_zero(self) -> None:
+        flat = samples(60, low=100.0, high=110.0)
+        result = score_samples(flat, path="flat.mp4", truth=4)
+        assert result.predicted is None
+        assert "calibration impossible" in result.note
+
+    def test_carries_the_flags_through(self) -> None:
+        result = score_samples(pullup_cycles(3), path="synthetic.mp4", truth=3)
+        assert isinstance(result.flags, dict)
