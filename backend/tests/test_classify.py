@@ -27,14 +27,21 @@ from iacoach.frame import Landmark
 # source of truth: these unit tests exercise the rules, the conformance fixtures
 # lock the numbers, and both must describe the same bodies.
 from iacoach.scripts.make_classify_fixtures import (
+    FOREARM,
+    HIP_HALF,
+    SHIN,
+    SHOULDER_HALF,
+    THIGH,
+    TORSO,
+    UPPER_ARM,
+    _mirror,
+    _skeleton,
     hanging_pose,
     l_sit_pose,
     push_up_pose,
     rowing_pose,
     squat_pose,
 )
-
-SHIN = 0.42
 
 
 def cycle(pose, low: float, high: float, count: int = 60):
@@ -105,12 +112,49 @@ class TestClassification:
         assert result.exercise is Exercise.PUSH_UP
 
     def test_squat(self) -> None:
-        result = classify_window(summarise(cycle(squat_pose, 70.0, 172.0)))
+        # `squat_pose` takes a depth in [0, 0.75], not an angle.
+        result = classify_window(summarise(cycle(squat_pose, 0.0, 0.75)))
         assert result.exercise is Exercise.SQUAT
 
     def test_l_sit(self) -> None:
         frames = [(l_sit_pose(0.0), i * 1000.0 / 30.0) for i in range(60)]
         assert classify_window(summarise(frames)).exercise is Exercise.L_SIT
+
+
+class TestSquatNeedsTheHip:
+    """A squat folds the hip. Without that term the rule read "standing, legs
+    moving, arms still" — which also describes walking, cycling and skipping
+    rope, and labelled 34 of 100 out-of-domain clips a squat.
+
+    It went unnoticed because the synthetic squat used to hold its hip rigid,
+    which no real squat does. The fixture was wrong before the rule was.
+    """
+
+    def test_a_real_squat_folds_the_hip(self) -> None:
+        window = summarise(cycle(squat_pose, 0.0, 0.75))
+        assert window.hip_rom_deg > 60.0
+        assert window.knee_rom_deg > 60.0
+
+    def test_moving_legs_without_folding_the_hip_is_not_a_squat(self) -> None:
+        # Pedalling, walking, skipping: the knee cycles, the hip barely does.
+        def rigid_hip(depth: float) -> list[Landmark]:
+            points = {}
+            points.update(_mirror("HIP", HIP_HALF, 0.0, 0.0))
+            points.update(_mirror("SHOULDER", SHOULDER_HALF, -TORSO, 0.0))
+            points.update(_mirror("ELBOW", SHOULDER_HALF, -TORSO + UPPER_ARM, 0.0))
+            points.update(_mirror("WRIST", SHOULDER_HALF, -TORSO + UPPER_ARM + FOREARM, 0.0))
+            points.update(_mirror("KNEE", HIP_HALF, THIGH, 0.0))
+            # Only the ankle swings, so the knee angle cycles and the hip does not.
+            angle = math.radians(60.0 + 110.0 * depth)
+            points.update(
+                _mirror("ANKLE", HIP_HALF, THIGH + SHIN * math.sin(angle), -SHIN * math.cos(angle))
+            )
+            return _skeleton(points)
+
+        window = summarise(cycle(rigid_hip, 0.0, 1.0))
+        assert window.knee_rom_deg > 60.0
+        assert window.hip_rom_deg < 20.0
+        assert classify_window(window).exercise is not Exercise.SQUAT
 
 
 class TestRefusal:

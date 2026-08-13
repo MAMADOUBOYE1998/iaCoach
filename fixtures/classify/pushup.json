@@ -5178,6 +5178,7 @@
     "trunk_verticality": 0.039968038348871575,
     "elbow_rom_deg": 84.64052179302811,
     "knee_rom_deg": 0.0,
+    "hip_rom_deg": 0.0,
     "knee_deg": 180.0,
     "hip_deg": 177.70938995736125,
     "frames": 60,

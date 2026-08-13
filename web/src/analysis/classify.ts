@@ -98,6 +98,7 @@ export interface WindowFeatures {
   trunk_verticality: number;
   elbow_rom_deg: number;
   knee_rom_deg: number;
+  hip_rom_deg: number;
   knee_deg: number;
   hip_deg: number;
   frames: number;
@@ -281,6 +282,7 @@ export function windowFeatures(frames: FrameFeatures[]): WindowFeatures {
     trunk_verticality: median(frames.map((f) => f.trunk_verticality)),
     elbow_rom_deg: robustRange(frames.map((f) => f.elbow_deg)),
     knee_rom_deg: robustRange(frames.map((f) => f.knee_deg)),
+    hip_rom_deg: robustRange(frames.map((f) => f.hip_deg)),
     knee_deg: median(frames.map((f) => f.knee_deg)),
     hip_deg: median(frames.map((f) => f.hip_deg)),
     frames: frames.length,
@@ -318,12 +320,17 @@ export function classifyWindow(
   const armsStill = atMost(f.elbow_rom_deg, 25, 25);
   const legsStill = atMost(f.knee_rom_deg, 30, 30);
   const legsWork = atLeast(f.knee_rom_deg, 50, 30);
+  // A squat folds the hip as much as the knee — roughly 130 deg of it. Without
+  // this term the rule read "standing, legs moving, arms still", which also
+  // describes walking, cycling and skipping rope: it labelled 34 of the 100
+  // out-of-domain clips a squat, and 16 of them still produced invented reps.
+  const hipsFold = atLeast(f.hip_rom_deg, 60, 30);
 
   const scores: Partial<Record<Exercise, number>> = {
     pull_up: Math.min(hangs, upright, armsWork, legsStill),
     dip: Math.min(onBars, plumb, armsWork, legsStill),
     push_up: Math.min(horizontal, armsWork, legsStill),
-    squat: Math.min(legsWork, armsStill, atLeast(f.trunk_verticality, 0.6, 0.3)),
+    squat: Math.min(legsWork, hipsFold, armsStill, atLeast(f.trunk_verticality, 0.6, 0.3)),
     l_sit: Math.min(
       band(f.hip_deg, 70, 115, 30),
       atLeast(f.knee_deg, 150, 30),

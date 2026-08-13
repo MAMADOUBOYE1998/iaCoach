@@ -139,6 +139,7 @@ class WindowFeatures:
     trunk_verticality: float
     elbow_rom_deg: float
     knee_rom_deg: float
+    hip_rom_deg: float
     knee_deg: float
     hip_deg: float
     frames: int
@@ -292,6 +293,7 @@ def window_features(frames: list[FrameFeatures]) -> WindowFeatures:
         trunk_verticality=_median([f.trunk_verticality for f in frames]),
         elbow_rom_deg=_robust_range([f.elbow_deg for f in frames]),
         knee_rom_deg=_robust_range([f.knee_deg for f in frames]),
+        hip_rom_deg=_robust_range([f.hip_deg for f in frames]),
         knee_deg=_median([f.knee_deg for f in frames]),
         hip_deg=_median([f.hip_deg for f in frames]),
         frames=len(frames),
@@ -328,12 +330,21 @@ def classify_window(
     arms_still = _at_most(f.elbow_rom_deg, 25.0, 25.0)
     legs_still = _at_most(f.knee_rom_deg, 30.0, 30.0)
     legs_work = _at_least(f.knee_rom_deg, 50.0, 30.0)
+    # A squat folds the hip as much as the knee — roughly 130 deg of it. Without
+    # this term the rule read "standing, legs moving, arms still", which also
+    # describes walking, cycling and skipping rope: it labelled 34 of the 100
+    # out-of-domain clips a squat, and 16 of them still produced invented reps.
+    # Purely negative evidence, and it only became visible once the synthetic
+    # squat stopped holding its hip rigid, which no real squat does.
+    hips_fold = _at_least(f.hip_rom_deg, 60.0, 30.0)
 
     scores = {
         Exercise.PULL_UP: min(hangs, upright, arms_work, legs_still),
         Exercise.DIP: min(on_bars, plumb, arms_work, legs_still),
         Exercise.PUSH_UP: min(horizontal, arms_work, legs_still),
-        Exercise.SQUAT: min(legs_work, arms_still, _at_least(f.trunk_verticality, 0.6, 0.3)),
+        Exercise.SQUAT: min(
+            legs_work, hips_fold, arms_still, _at_least(f.trunk_verticality, 0.6, 0.3)
+        ),
         Exercise.L_SIT: min(
             _band(f.hip_deg, 70.0, 115.0, 30.0),
             _at_least(f.knee_deg, 150.0, 30.0),

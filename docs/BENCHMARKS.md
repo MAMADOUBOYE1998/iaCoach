@@ -381,6 +381,73 @@ que nous jetons**.
 **La mesure décisive reste une séance réelle**, calibration volontaire comprise,
 enregistrée sur le téléphone à ses ~21 fps réels.
 
+## Portillon de classification — spécificité mesurée
+
+Les 100 clips QUVA, aucun n'étant un exercice suivi. Le compteur ne tourne que
+si le classifieur nomme l'exercice de la séance.
+
+| Date | Clips | Faux positifs | Reps inventées | Pire clip |
+|---|---|---|---|---|
+| 2026-08-13, sans portillon (`d89f668`) | 100 | 31 (**31 %**) | 114 | 14 |
+| 2026-08-13, portillon traction (`40713fd`) | 100 | **1 (1 %)** | **5** | 5 |
+
+Le seul survivant est `040_monkey_bars`, classé `pull_up` sur 91,5 % des
+fenêtres. C'est un échec loyal : quelqu'un suspendu à des barres de singe a les
+mains au-dessus des épaules, le buste vertical et les coudes qui travaillent.
+La géométrie *est* celle d'une traction.
+
+### Ce que ce 1 % ne dit pas
+
+Il vaut pour une séance de tractions. Le même fichier montre pourquoi :
+
+| Étiquette rendue | Clips |
+|---|---|
+| `squat` | 34 |
+| `unknown` | 33 |
+| `dip` | 11 |
+| `push_up` | 10 |
+| (aucune pose détectée) | 7 |
+| `pull_up` | 3 |
+| `l_sit` | 2 |
+
+**60 clips sur 100 reçoivent le nom d'un exercice réel**, 41 avec plus de la
+moitié des fenêtres d'accord. Seuls 33 sont refusés. Le portillon tient pour la
+traction parce que la traction a une signature géométrique unique — les mains
+au-dessus des épaules — pas parce que le classifieur est bon.
+
+Le portillon simulé pour chaque exercice le chiffre :
+
+| Si la séance était | Clips laissés passer | Faux positifs | Reps inventées |
+|---|---|---|---|
+| `pull_up` | 3 | **1** | 5 |
+| `push_up` | 10 | 3 | 9 |
+| `dip` | 11 | 6 | 30 |
+| `squat` | 34 | **16** | **55** |
+| *(sans portillon)* | 100 | 31 | 114 |
+
+Sur une séance de squats, le portillon ne retirait que la moitié du problème.
+
+### La règle `squat` était creuse, et ma fixture le cachait
+
+`min(genou travaille, bras immobiles, buste plutôt vertical)` se lit : « debout,
+les jambes bougent, les bras non ». Ça décrit aussi marcher, pédaler et sauter à
+la corde — d'où les 34 étiquettes.
+
+Ce qui manquait est ce qui définit un squat : **la hanche fléchit**, d'environ
+130°. Pédaler, marcher, sauter en fléchissent bien moins.
+
+Et si aucun test ne l'avait attrapé, c'est que **ma pose de squat synthétique
+gardait la hanche rigide** et ne bougeait que la cheville. Aucun squat ne fait
+ça. La fixture était fausse avant la règle.
+
+Corrigé : `hip_rom_deg` ajouté aux deux runtimes, terme `hips_fold` dans la
+règle, et pose synthétique refaite — hanche 180°→82°, genou 173°→52° sur la
+plage utilisée, soit un squat profond mais réel.
+
+**Non revérifié sur QUVA.** Le resserrement s'appuie sur des négatifs seuls ; il
+prédit que les 34 tombent, et cette prédiction attend une nouvelle passe. La
+sensibilité, elle, reste invérifiable : ce jeu n'a aucun squat.
+
 ## Précision de comptage — footage propre
 
 | Date | Jeu de test | Reps réelles | Détectées | Précision | Rappel |

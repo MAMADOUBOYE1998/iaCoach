@@ -100,30 +100,38 @@ def push_up_pose(elbow_deg: float) -> list[Landmark]:
     return _skeleton(points)
 
 
-def squat_pose(knee_deg: float) -> list[Landmark]:
-    """Near-upright trunk, arms hanging still, knee angle driven exactly.
+def squat_pose(depth: float) -> list[Landmark]:
+    """A squat, parameterised by depth from standing (0) to deep (0.75).
 
-    The ankle is placed by rotating the knee->hip direction by the wanted angle
-    in the y-z plane, so `knee_deg` is the angle by construction rather than an
-    approximation that would drift with the limb lengths.
+    The first version of this pose held the hip rigid and moved only the ankle.
+    No squat does that: the hip folds about as far as the knee, roughly 130 deg
+    of it. A rigid hip made the fixture unable to catch a squat rule that read
+    "standing, legs moving, arms still" — which also describes walking, cycling
+    and skipping rope, and labelled 34 of the 100 out-of-domain clips a squat.
+
+    Angles here come out at hip 180->82 and knee 173->52 over the range used,
+    which is a deep but real squat rather than a contortion.
     """
-    knee_y, knee_z = THIGH * 0.9, -0.10
-    length = math.hypot(knee_y, knee_z)
-    ux, uy = -knee_y / length, -knee_z / length
-    rad = math.radians(knee_deg)
+    lean = math.radians(40.0 * depth)
+    thigh = math.radians(90.0 * depth)
+    knee_y, knee_z = THIGH * math.cos(thigh), -THIGH * math.sin(thigh)
+    # Foot planted roughly under the hip: solve the shin direction that lands
+    # the ankle there, rather than letting it float.
+    sin_shin = max(-1.0, min(1.0, (-0.05 - knee_z) / SHIN))
+    shoulder_y, shoulder_z = -TORSO * math.cos(lean), -TORSO * math.sin(lean)
 
     points: Points = {}
     points.update(_mirror("HIP", HIP_HALF, 0.0, 0.0))
-    points.update(_mirror("SHOULDER", SHOULDER_HALF, -TORSO + 0.01, -0.08))
-    points.update(_mirror("ELBOW", SHOULDER_HALF, -TORSO + UPPER_ARM, 0.02))
-    points.update(_mirror("WRIST", SHOULDER_HALF, -TORSO + UPPER_ARM + FOREARM, 0.04))
+    points.update(_mirror("SHOULDER", SHOULDER_HALF, shoulder_y, shoulder_z))
+    points.update(_mirror("ELBOW", SHOULDER_HALF, shoulder_y + UPPER_ARM, shoulder_z))
+    points.update(_mirror("WRIST", SHOULDER_HALF, shoulder_y + UPPER_ARM + FOREARM, shoulder_z))
     points.update(_mirror("KNEE", HIP_HALF, knee_y, knee_z))
     points.update(
         _mirror(
             "ANKLE",
             HIP_HALF,
-            knee_y + SHIN * (ux * math.cos(rad) - uy * math.sin(rad)),
-            knee_z + SHIN * (ux * math.sin(rad) + uy * math.cos(rad)),
+            knee_y + SHIN * math.sqrt(1.0 - sin_shin * sin_shin),
+            knee_z + SHIN * sin_shin,
         )
     )
     return _skeleton(points)
@@ -205,7 +213,13 @@ def _scenarios() -> list[Scenario]:
             172.0,
         ),
         Scenario("pushup", "Pompes : buste horizontal.", push_up_pose, 80.0, 172.0),
-        Scenario("squat", "Squats : le genou travaille, le coude non.", squat_pose, 70.0, 172.0),
+        Scenario(
+            "squat",
+            "Squats : genou et hanche fléchissent ensemble, le coude non.",
+            squat_pose,
+            0.0,
+            0.75,
+        ),
         Scenario(
             "l_sit",
             "L-sit : hanches à 90°, genoux verrouillés, rien ne bouge.",
