@@ -11,6 +11,7 @@ settles no argument.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -22,6 +23,7 @@ __all__ = [
     "ClipResult",
     "calibration_from",
     "score_samples",
+    "segment_stability",
     "summarise",
     "summarise_out_of_domain",
 ]
@@ -58,6 +60,9 @@ class ClipResult:
     threshold is a fraction of it, so a wrong range starves every rep at once."""
     usable_frames: int = 0
     """Frames above the confidence floor — the only ones calibration may use."""
+    segment_cv: dict[str, float] = field(default_factory=dict)
+    """Length variability of the rigid arm segments. The one tracking-quality
+    signal here that does not come from MediaPipe's own optimism."""
 
     # `attempted` / `events` / `predicted` nest, and the step that collapses says
     # which stage is at fault. An earlier version of this reported the per-rep
@@ -86,6 +91,43 @@ def _quantile(sorted_values: list[float], q: float) -> float:
     rank = (len(sorted_values) - 1) * q
     low, high = int(rank), min(int(rank) + 1, len(sorted_values) - 1)
     return sorted_values[low] + (sorted_values[high] - sorted_values[low]) * (rank - low)
+
+
+SEGMENTS = ("upper_arm_left", "forearm_left", "upper_arm_right", "forearm_right")
+
+
+def segment_stability(lengths: list[dict[str, float]]) -> dict[str, float]:
+    """Coefficient of variation of each rigid segment's measured length.
+
+    Our per-frame ``confidence`` is the fraction of driving landmarks whose
+    MediaPipe ``visibility`` clears 0.6 — that is a claim the landmark was
+    *found*, not that it was found in the right place. Nothing in the pipeline
+    currently measures the second thing, and invariant "no landmark below the
+    confidence threshold is used for a correction" rests on it.
+
+    A forearm is rigid. Its metric length in ``worldLandmarks`` should barely
+    move. When it swings by 20 % frame to frame, the 3D estimate is unreliable
+    however confident ``visibility`` sounds — and unlike visibility, this is
+    checkable without ground truth.
+
+    Returns the CV per segment, plus ``worst``. Empty input yields ``{}`` rather
+    than a zero that would read as perfect stability.
+    """
+    if not lengths:
+        return {}
+    out: dict[str, float] = {}
+    for name in SEGMENTS:
+        values = [row[name] for row in lengths if row.get(name, 0.0) > 0.0]
+        if len(values) < 2:
+            continue
+        mean = sum(values) / len(values)
+        if mean <= 0.0:
+            continue
+        variance = sum((v - mean) ** 2 for v in values) / len(values)
+        out[name] = round(math.sqrt(variance) / mean, 4)
+    if out:
+        out["worst"] = max(out.values())
+    return out
 
 
 PERCENTILES = (1, 2, 5, 25, 50, 75, 95, 98, 99)

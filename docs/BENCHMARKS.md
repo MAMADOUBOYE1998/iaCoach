@@ -172,63 +172,146 @@ Deux pistes mesurées sur ces données, à traiter avant le classifieur :
 
 ## Sensibilité — les tractions présentes dans QUVA
 
-Trois clips du jeu sont de vraies tractions. Le résultat est plus préoccupant
-que les faux positifs :
+Trois clips du jeu sont annotés comme des tractions. La pose est parfaite sur
+les trois (100 % des frames détectées), donc rien ne se joue à l'étage L1. Les
+diagnostics `attempted` / `events` / `predicted` les séparent en **trois causes
+distinctes**, dont une seule est un défaut de notre compteur.
 
-| Clip | Reps réelles | Comptées | Frames avec pose |
+| Clip | vrai | `attempted` | `events` | compté | flexion p1 | flexion p50 | flexion p95 |
+|---|---|---|---|---|---|---|---|
+| `082` | 9 | 14 | 3 | 3 | 0,023 | 0,135 | 0,463 |
+| `083` | 20 | 0 | 0 | refus | — | — | — |
+| `084` | 34 | 3 | 3 | 2 | **0,149** | 0,520 | 0,705 |
+
+Rappel des seuils qu'on lit contre ces percentiles : `bottom_enter` 0,12 —
+`bottom_exit` 0,20 — `rep_floor` 0,50 — `count_floor` 0,75.
+
+### `084` — un défaut réel, et il est chez nous
+
+**La flexion ne redescend jamais sous `bottom_enter`.** Le 1ᵉʳ percentile est à
+0,149, au-dessus du seuil de 0,12. Seule une poignée de frames passe dessous, et
+elles expliquent exactement les 3 armements observés sur 34 répétitions.
+
+La FSM exige un retour confirmé en quasi-extension complète pour armer la rep
+suivante. À 34,6 frames/rep (~1,15 s à 30 fps), l'athlète ne verrouille pas les
+coudes entre les reps : le compteur s'arme une fois, compte, puis attend
+indéfiniment une suspension bras tendus qui ne vient plus.
+
+**Ce n'est pas un artefact de dataset.** Tout athlète enchaînant vite, ou en
+kipping, sans verrouillage entre les reps sera compté à ~0 dans l'app. Et le
+symptôme est « ne compte rien » — celui qu'on avait d'abord attribué à la
+calibration.
+
+Cause de fond : `bottom_enter` est une fraction de la plage calibrée, dont
+l'extrémité en extension (`rom_max_deg`) est fixée par **la frame la plus tendue
+du clip** — qui peut être un échauffement suspendu, pas la position réellement
+tenue entre deux reps.
+
+### `082` — la plage est définie par 7 frames
+
+`attempted` = 14 pour 9 reps annotées : **la FSM voit bien le mouvement**, à peu
+près au bon rythme. Mais la flexion p95 vaut 0,463, juste sous `rep_floor`
+(0,50) : l'excursion typique plafonne vers 0,3-0,46 et seules 3 dépassent le
+seuil.
+
+Le minimum calibré (112,7°) est en dessous du 1ᵉʳ percentile des angles
+(136,4°). **Moins de 1 % des frames — environ 7 — définit 40 % de la plage**, et
+tous les seuils sont des fractions de cette plage. Sept frames affament les 780
+autres.
+
+C'est aussi pourquoi `--trim-percent 2` fait refuser ce clip : rogner la queue
+en flexion ramène la plage à 27° et passe sous `MIN_SPAN_DEG`. **Le trim
+symétrique est le mauvais outil ici** — il traite une flexion réelle mais brève
+comme une aberration.
+
+### Deux populations de frames, une incohérence
+
+`rep_min_angle_deg` descend à **103,5°** sur `082`, sous le minimum calibré de
+112,7°. Ce n'est pas une contradiction, c'est un défaut :
+
+- la calibration n'utilise que les frames de confiance ≥ 0,70 (693 sur 791) ;
+- le compteur consomme **toutes** les frames.
+
+Les positions les plus fléchies sont donc les moins confiantes — auto-occlusion
+en haut d'une traction, bras repliés, poignets près du visage. La calibration
+rogne systématiquement l'extrémité en flexion de l'amplitude réelle, et
+`normalised` sature ensuite à 1,0 avant que l'athlète n'atteigne son vrai
+maximum.
+
+### `083` — la répétition est réelle, l'amplitude ne l'est pas
+
+Première lecture, à partir des seuls percentiles : la cadence annotée
+(19,2 frames/rep, ≤ 0,64 s) est impossible pour une traction, donc l'annotation
+compte autre chose. **La série temporelle a corrigé ça.**
+
+Sur les 384 frames (29,0 fps mesurés, 13,21 s) :
+
+| | |
+|---|---|
+| autocorrélation, meilleur pic | lag 18 frames = **621 ms**, r = 0,46 |
+| soit | 1,61 Hz → **21,3 cycles** sur le clip (20 annotées) |
+| deuxième pic | lag 35 = harmonique du même cycle, r = 0,46 |
+| pic spectral | 1,66 Hz à **5,2×** le plancher de bruit |
+
+La périodicité annotée **est présente dans l'angle de coude**, au bon rythme.
+Ce n'est pas une annotation qui décrit autre chose.
+
+Ce qui manque, c'est l'amplitude : **~5° crête-à-crête**, là où une traction en
+parcourt ~110°. Et l'angle de coude ne quitte jamais la bande 119-155° : les
+bras ne sont **jamais tendus**, à aucun instant des 13 secondes.
+
+Deux lectures restent ouvertes, et elles appellent des correctifs opposés :
+
+1. le mouvement n'est pas une traction (traversée de barres, balancement bras
+   fléchis) — auquel cas le refus de calibrer est le bon comportement ;
+2. l'étage pose écrase l'amplitude réelle.
+
+### Et notre mesure de confiance ne peut pas les départager
+
+`confidence` vaut **1,000 sur les 384 frames**. Notre confiance est la fraction
+des landmarks moteurs dont la `visibility` MediaPipe dépasse 0,6 : c'est
+l'affirmation qu'un landmark a été **trouvé**, pas qu'il a été trouvé au bon
+endroit. Rien dans le pipeline ne mesurait la seconde chose.
+
+C'est un angle mort dans une pièce porteuse : l'invariant « aucun landmark sous
+le seuil de confiance n'est utilisé pour une correction » repose entièrement sur
+ce score.
+
+Ajouté en conséquence : `segment_cv`, le coefficient de variation de la longueur
+métrique des segments rigides du bras (`worldLandmarks`). Un avant-bras ne
+change pas de longueur ; si sa longueur mesurée varie de 20 % d'une frame à
+l'autre, l'estimation 3D est mauvaise quoi qu'annonce `visibility` — et
+contrairement à `visibility`, ça se vérifie sans vérité terrain.
+
+Sur `083`, un `segment_cv` bas trancherait pour la lecture 1 (le suivi est bon,
+le mouvement n'est pas une traction) ; un `segment_cv` haut pour la lecture 2.
+**Non encore mesuré** — l'instrument est postérieur à la passe.
+
+### Cadences annotées, pour situer
+
+| Clip | frames/rep | durée d'une rep | plausible pour une traction ? |
 |---|---|---|---|
-| `082_pullups_monkey_bar` | 9 | **3** | 791/791 |
-| `083_pullups_monkey_bar` | 20 | **refus de calibrer** | 384/384 |
-| `084_pullups_monkey_bar` | 34 | **2** | 1175/1175 |
+| `082` | 87,9 | 2,93 s @30 fps | oui, tempo strict |
+| `084` | 34,6 | 1,15 s @30 fps | rapide, plausible en kipping |
+| `083` | 19,2 | **0,62 s mesuré** | pas à cette amplitude |
 
-La pose est parfaite sur les trois (100 % des frames), donc le problème est
-entièrement dans le comptage.
+Seul `083` a sa cadence mesurée sur la série temporelle ; les deux autres sont
+déduits de `frames / reps` en supposant 30 fps, et l'annotation pouvant ne
+couvrir qu'un segment du clip, ce sont des **bornes hautes** de la période.
 
-### Ce que la mesure a tranché — et ce qu'elle a invalidé
+### Ce que ce jeu peut et ne peut pas trancher
 
-Trois causes étaient possibles : la FSM ne voit pas les cycles ; elle les voit
-et refuse de les compter (`count_floor`) ; ou la calibration `min`/`max` est
-gonflée par une frame aberrante — et comme tous les seuils sont des fractions de
-la plage, une plage gonflée affame toutes les reps d'un coup.
+Notre compteur est conçu autour d'une **calibration volontaire par athlète**.
+Sur du footage tiers, on la remplace par l'amplitude observée dans le clip — et
+`082` montre le prix : la plage est prise en otage par quelques frames.
 
-| Clip | `events` | comptées | plage brute | plage à 2-98 % |
-|---|---|---|---|---|
-| `082` | 3 | 3 | 112,7-171,8° (59,1°) | **< 40° → refus** |
-| `083` | — | refus | **< 40° → refus** | < 40° → refus |
-| `084` | 3 | 2 | 117,2-172,1° (54,9°) | **< 40° → refus** |
+QUVA ne validera donc pas notre précision de comptage. Il a rendu mieux : deux
+défauts concrets et reproductibles de la FSM — le verrou `bottom_enter` et les
+deux populations de frames — que seule une mesure réelle pouvait faire
+apparaître.
 
-- **`count_floor` est hors de cause.** `events` ≈ `predicted` : la FSM n'émet
-  que 3 cycles, elle n'en refuse pas 6 ou 31.
-- **`--trim-percent 2` fait refuser les trois clips.** Écarter 2 % de chaque
-  queue retire ≥19° sur `082`. Le signal est donc quasi plat, avec de brèves
-  excursions — ou porteur d'une aberration franche à une extrémité.
-
-Ce qui reste indéterminé, et pourquoi : **quelle** queue porte ces 19°. Une
-flexion réelle mais brève et une hyperextension aberrante élargissent toutes
-deux l'écart `min`/`max`, et appellent des correctifs opposés.
-
-### L'instrument était en cause aussi
-
-`peak_angles_deg` a été retiré : il rapportait `max(angle)` sur la rep, c'est-à-
-dire le point le plus **tendu**. Une rep se fermant par construction au retour
-en extension, ces 166-172° étaient tautologiques. Le diagnostic construit pour
-départager la troisième hypothèse ne la mesurait pas.
-
-Remplacé par : `attempted` (toute excursion vue, même sous `rep_floor`, donc
-invisible jusqu'ici), `angle_percentiles` (p1…p99 du signal brut — dit **quelle**
-queue porte la plage, y compris quand la calibration refuse), `flexion_percentiles`
-(le signal normalisé que la FSM consomme, lisible directement contre
-`bottom_exit` 0,20 / `rep_floor` 0,50 / `count_floor` 0,75), `rep_rom` et
-`rep_min_angle_deg`. Plus `--dump-angles`, qui écrit la série temporelle : les
-percentiles disent qu'une distribution est étroite, seule la série dit si c'est
-un signal plat ou un cycle propre au mauvais décalage.
-
-`attempted` ≥ `events` ≥ `predicted` s'emboîtent, et l'étape où le nombre
-s'effondre nomme le responsable.
-
-**Mesure à refaire** avec ces diagnostics. Tant qu'elle n'existe pas, la
-précision de comptage reste non mesurée — ces lignes disent qu'il y a un
-problème et éliminent une hypothèse sur trois, pas laquelle des deux restantes.
+**La mesure décisive reste une séance réelle**, calibration volontaire comprise,
+enregistrée sur le téléphone à ses ~21 fps réels.
 
 ## Précision de comptage — footage propre
 

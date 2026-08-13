@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -42,22 +43,45 @@ from iacoach.contracts import Exercise, FrameSample
 from iacoach.evaluation import (
     ClipResult,
     score_samples,
+    segment_stability,
     summarise,
     summarise_out_of_domain,
 )
-from iacoach.frame import FrameSampler, Landmark
+from iacoach.frame import LANDMARK, FrameSampler, Landmark
 
 
 def _landmarks(proto: Any) -> list[Landmark]:
     return [Landmark(lm.x, lm.y, lm.z, getattr(lm, "visibility", None)) for lm in proto]
 
 
-def sample_video(path: Path, model_path: Path) -> tuple[list[FrameSample], int, float]:
-    """Every frame of a clip, reduced to `FrameSample`.
+def _segment_lengths(world: list[Landmark]) -> dict[str, float]:
+    """Metric length of each rigid arm segment, from `worldLandmarks`.
 
-    Returns the samples, the number of frames read, and the wall-clock seconds
-    spent. Frames where no pose was found produce no sample — never a neutral
-    one.
+    The arm bones do not change length. Whatever variation shows up here is the
+    3D estimate moving, which is the one tracking-quality signal available that
+    MediaPipe does not grade itself.
+    """
+
+    def span(a: int, b: int) -> float:
+        p, q = world[a], world[b]
+        return math.dist((p.x, p.y, p.z), (q.x, q.y, q.z))
+
+    return {
+        "upper_arm_left": span(LANDMARK["LEFT_SHOULDER"], LANDMARK["LEFT_ELBOW"]),
+        "forearm_left": span(LANDMARK["LEFT_ELBOW"], LANDMARK["LEFT_WRIST"]),
+        "upper_arm_right": span(LANDMARK["RIGHT_SHOULDER"], LANDMARK["RIGHT_ELBOW"]),
+        "forearm_right": span(LANDMARK["RIGHT_ELBOW"], LANDMARK["RIGHT_WRIST"]),
+    }
+
+
+def sample_video(
+    path: Path, model_path: Path
+) -> tuple[list[FrameSample], list[dict[str, float]], int, float]:
+    """Every frame of a clip, reduced to `FrameSample` plus its segment lengths.
+
+    Returns the samples, the per-sample arm-segment lengths, the number of
+    frames read, and the wall-clock seconds spent. Frames where no pose was
+    found produce no sample — never a neutral one.
     """
     import cv2  # imported here so the module can be read without the heavy deps
     import mediapipe as mp
@@ -77,6 +101,7 @@ def sample_video(path: Path, model_path: Path) -> tuple[list[FrameSample], int, 
 
     sampler = FrameSampler()
     samples: list[FrameSample] = []
+    lengths: list[dict[str, float]] = []
     frames = 0
     started = time.perf_counter()
 
@@ -101,12 +126,17 @@ def sample_video(path: Path, model_path: Path) -> tuple[list[FrameSample], int, 
             )
             if sample is not None:
                 samples.append(sample)
+                lengths.append(
+                    _segment_lengths(_landmarks(result.pose_world_landmarks[0]))
+                )
 
     capture.release()
-    return samples, frames, time.perf_counter() - started
+    return samples, lengths, frames, time.perf_counter() - started
 
 
-def dump_angles(samples: list[FrameSample], destination: Path) -> None:
+def dump_angles(
+    samples: list[FrameSample], lengths: list[dict[str, float]], destination: Path
+) -> None:
     """The per-frame signal, so it can be looked at rather than inferred.
 
     Percentiles say the distribution is narrow; only the time series says
@@ -146,10 +176,10 @@ def evaluate_clip(
     dump_dir: Path | None = None,
 ) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
-    samples, frames, seconds = sample_video(path, model)
+    samples, lengths, frames, seconds = sample_video(path, model)
     if dump_dir is not None:
-        dump_angles(samples, dump_dir / f"{path.stem}.csv")
-    return score_samples(
+        dump_angles(samples, lengths, dump_dir / f"{path.stem}.csv")
+    result = score_samples(
         samples,
         path=str(path),
         truth=truth,
@@ -158,6 +188,8 @@ def evaluate_clip(
         seconds=seconds,
         trim_percent=trim_percent,
     )
+    result.segment_cv = segment_stability(lengths)
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:

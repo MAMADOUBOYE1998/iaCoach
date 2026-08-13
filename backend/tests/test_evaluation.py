@@ -18,6 +18,7 @@ from iacoach.evaluation import (
     ClipResult,
     calibration_from,
     score_samples,
+    segment_stability,
     summarise,
     summarise_out_of_domain,
 )
@@ -306,3 +307,43 @@ class TestDiagnostics:
         # A clip of full reps must spend part of its time above `count_floor`.
         assert result.flexion_percentiles["p95"] > 0.75
         assert result.flexion_percentiles["p5"] < 0.12
+
+
+class TestSegmentStability:
+    """A tracking-quality signal MediaPipe does not grade itself.
+
+    `confidence` is built from `visibility`, which claims a landmark was
+    *found*, not that it was found in the right place. A rigid bone whose
+    measured length wanders says the second thing, without ground truth.
+    """
+
+    def test_a_rigid_arm_is_stable(self) -> None:
+        rows = [
+            {
+                "upper_arm_left": 0.30,
+                "forearm_left": 0.25,
+                "upper_arm_right": 0.30,
+                "forearm_right": 0.25,
+            }
+            for _ in range(50)
+        ]
+        assert segment_stability(rows)["worst"] == pytest.approx(0.0)
+
+    def test_a_wandering_segment_shows_up(self) -> None:
+        rows = [
+            {
+                "upper_arm_left": 0.30,
+                "forearm_left": 0.20 if i % 2 else 0.30,
+                "upper_arm_right": 0.30,
+                "forearm_right": 0.25,
+            }
+            for i in range(50)
+        ]
+        stability = segment_stability(rows)
+        assert stability["forearm_left"] > 0.15
+        assert stability["upper_arm_left"] == pytest.approx(0.0)
+        assert stability["worst"] == stability["forearm_left"]
+
+    def test_no_frames_is_not_perfect_stability(self) -> None:
+        # A zero here would read as a flawless track on a clip nobody measured.
+        assert segment_stability([]) == {}
