@@ -381,6 +381,60 @@ que nous jetons**.
 **La mesure décisive reste une séance réelle**, calibration volontaire comprise,
 enregistrée sur le téléphone à ses ~21 fps réels.
 
+## Sélection du sujet — mesurée, et pas retenue
+
+Continuité de piste sur `num_poses=3`, contre le comportement d'origine.
+48 030 frames, 97 clips hors domaine.
+
+| | FP après portillon | FP | reps inventées | scored | débit |
+|---|---|---|---|---|---|
+| avant (`spec6`) | 1 | 29 | 109 | 37 | **54,9 fps** |
+| tracker, `--max-poses 3` | **0** | 28 | **109** | 37 | **40,6 fps** |
+
+Le 0 n'est pas un gain de suivi. Les faux positifs **sans** portillon passent de
+29 à 28 et les reps inventées ne bougent pas (109). Ce qui bouge, ce sont les
+étiquettes : `pull_up` tombe de 4 à 2, donc deux clips de moins franchissent le
+portillon. Même mécanisme que les fois précédentes — de la précision achetée
+avec du rappel, qui reste à **0/3**.
+
+**Coût : −26 % de débit** (CPU de bureau, pas GPU de téléphone, mais la
+direction est réelle). Sur un appareil déjà mesuré à 21 fps, c'est inabordable
+pour ce que ça rend.
+
+**Sur `084`, la sélection n'a jamais eu le choix.** `max_candidates = 1` même
+avec `num_poses=3` : MediaPipe ne détecte jamais un second corps sur ce clip.
+C'est un échec de **détection**, pas de choix, et aucune politique de sélection
+ne pouvait le corriger. C'est exactement ce que le champ a été ajouté pour dire.
+
+Volume de l'intervention : **2 615 frames sur 31 340 détectées (8,3 %)** avaient
+un choix réel, pendant que le tracker en abandonnait **2 313**. Il jette presque
+autant qu'il arbitre. Et sur les clips à candidats multiples, les comptages
+bougent dans les deux sens sans direction — `065_knife` passe de 0 à 17 reps
+inventées, `080_brushing_hair` de 9 à aucune.
+
+Défaut retour à `--max-poses 1`. Le code reste, instrumenté : le cas
+multi-personnes est réel, seulement ce jeu ne contient pas le footage qui le
+prouverait.
+
+### Le A/B que j'ai annoncé n'en était pas un
+
+Écrit au commit précédent : « `--max-poses 1` rétablit l'ancien comportement ».
+Faux, et mesurablement. `track1` diffère de `spec6` sur **11 clips**, faux
+positifs après portillon 1 → 3.
+
+Deux causes, toutes deux corrigées ou consignées :
+
+1. Le tracker tournait **même sans rien à choisir**, et abandonnait les frames
+   dont l'unique corps avait « téléporté ». La continuité comme filtre de
+   qualité est une autre fonctionnalité que la sélection de sujet ; les mesurer
+   par un seul drapeau ne mesurait ni l'une ni l'autre. `--max-poses 1` court-
+   circuite désormais le tracker entièrement.
+2. **`num_poses` change la sortie du détecteur lui-même.** Sur `084`,
+   `detected_frames` est identique (1175) et `predicted` passe de 2 à 8 : mêmes
+   frames, landmarks différents. Ce drapeau n'isole donc pas la sélection, et
+   aucune correction de code ne peut le rendre propre — c'est une propriété de
+   MediaPipe, à garder en tête à chaque comparaison qui le fait varier.
+
 ## Portillon de classification — spécificité mesurée
 
 Les 100 clips QUVA, aucun n'étant un exercice suivi. Le compteur ne tourne que

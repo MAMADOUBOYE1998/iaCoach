@@ -217,16 +217,24 @@ Reste dans M2 :
   Neutre vis-à-vis de l'exercice, donc sans effet circulaire sur la mesure de
   spécificité.
 
-  À mesurer avant tout autre pas : `--max-poses 1` rétablit l'ancien
-  comportement, donc c'est un A/B. Le champ décisif est `subject.max_candidates`
-  sur `084` — s'il vaut 1, l'athlète n'est jamais détecté et la sélection n'y
-  pouvait rien ; la question devient alors la détection, pas le choix.
+  **Mesurée, et pas retenue** (`BENCHMARKS.md`). Coût −26 % de débit
+  (54,9 → 40,6 fps), aucun gain de comptage : faux positifs 29 → 28, reps
+  inventées 109 → 109, rappel toujours 0/3. Le « 0 faux positif après
+  portillon » vient de deux étiquettes `pull_up` en moins, pas d'un meilleur
+  suivi. Défaut remis à `--max-poses 1` ; le code reste, instrumenté, parce que
+  le cas multi-personnes est réel — seulement ce jeu ne le contient pas.
 
-- **Ne pas porter ça dans l'app avant deux mesures.** L'exactitude sur QUVA, et
-  le coût en fps : l'app tourne à ~21 fps mesurés, et `numPoses: 3` triple le
-  travail de détection de pose sans qu'on sache de combien. Une amélioration
-  revendiquée sans benchmark n'en est pas une, et la fenêtre de correction utile
-  est déjà à 148 ms au lieu de 100.
+  Et sur `084`, `max_candidates = 1` **même avec `num_poses=3`** : MediaPipe ne
+  détecte jamais un second corps. Échec de détection, pas de choix. C'est
+  exactement ce que le champ a été ajouté pour dire, et il l'a dit.
+
+- **Ne pas porter ça dans l'app.** Les deux mesures demandées sont faites et
+  toutes deux sont négatives. Rien à porter.
+
+- **La question devient la détection.** L'athlète de `084` n'est jamais détecté
+  du tout — pas mal choisi, absent des candidats. Aucune politique de sélection
+  n'y peut rien ; c'est le modèle de pose, ou le cadrage, ou la taille du sujet
+  dans l'image. Piste M4 (fine-tuning), pas M2.
 
 - Interdiction de toucher un seuil du classifieur d'ici là : `084` a coûté trois
   prédictions, dont deux fausses, toutes portées sur la mauvaise couche.

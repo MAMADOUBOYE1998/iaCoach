@@ -83,8 +83,22 @@ D'où l'instrumentation, reportée par clip dans `subject` :
 | `acquisitions` | > 1 ⇒ la piste a été perdue et reprise, la seconde peut être quelqu'un d'autre |
 | `dropped_frames` | frames où un corps existait mais aucun ne collait à la piste |
 
-`--max-poses 1` rétablit l'ancien comportement, pour que le changement soit un
-A/B et pas une affirmation.
+**Mesuré, et désactivé par défaut.** `--max-poses 3` coûte 26 % de débit
+(54,9 → 40,6 fps sur 48 030 frames) et n'améliore aucune métrique de comptage :
+faux positifs 29 → 28, reps inventées 109 → 109. Détail dans
+[`docs/BENCHMARKS.md`](../../docs/BENCHMARKS.md). Le code reste parce que le cas
+multi-personnes est réel ; ce jeu n'en contient simplement pas la preuve.
+
+`--max-poses 1` (défaut) **court-circuite le tracker entièrement**. Il le
+traversait au début, ce qui rendait la comparaison illisible : sans rien à
+choisir, il abandonnait quand même les frames dont l'unique corps avait
+« téléporté », changeant le comptage sur 11 clips sur 97. La continuité comme
+filtre de qualité est une autre fonctionnalité que la sélection de sujet.
+
+Attention quand même : **`num_poses` change la sortie du détecteur lui-même.**
+Sur `084`, mêmes 1175 frames détectées et `predicted` qui passe de 2 à 8. Aucun
+drapeau ne peut isoler proprement la sélection — c'est une propriété de
+MediaPipe.
 
 ## Diagnostiquer un comptage faux
 
