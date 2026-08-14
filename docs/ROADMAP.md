@@ -209,11 +209,25 @@ répétitions ne le montre pas.
 
 Reste dans M2 :
 
-- **Politique de sélection du sujet.** Le candidat par défaut est la continuité
-  de piste : `num_poses > 1`, puis à chaque frame la pose la plus proche de la
-  précédente, amorcée sur la plus grande boîte. Neutre vis-à-vis de l'exercice,
-  donc sans effet de bord sur la spécificité. À mesurer sur QUVA avant de
-  toucher à l'app.
+- **Sélection du sujet par continuité de piste — implémentée côté harnais**
+  (`iacoach.tracking`, 11 tests). `num_poses=3`, acquisition sur le plus grand
+  torse, puis suivi de la pose la plus proche, avec rejet sur saut de centre
+  (> 0,25 largeur d'image) et sur ratio de taille (> 1,6). Une frame sans
+  candidat acceptable est **abandonnée**, jamais remplacée par le voisin.
+  Neutre vis-à-vis de l'exercice, donc sans effet circulaire sur la mesure de
+  spécificité.
+
+  À mesurer avant tout autre pas : `--max-poses 1` rétablit l'ancien
+  comportement, donc c'est un A/B. Le champ décisif est `subject.max_candidates`
+  sur `084` — s'il vaut 1, l'athlète n'est jamais détecté et la sélection n'y
+  pouvait rien ; la question devient alors la détection, pas le choix.
+
+- **Ne pas porter ça dans l'app avant deux mesures.** L'exactitude sur QUVA, et
+  le coût en fps : l'app tourne à ~21 fps mesurés, et `numPoses: 3` triple le
+  travail de détection de pose sans qu'on sache de combien. Une amélioration
+  revendiquée sans benchmark n'en est pas une, et la fenêtre de correction utile
+  est déjà à 148 ms au lieu de 100.
+
 - Interdiction de toucher un seuil du classifieur d'ici là : `084` a coûté trois
   prédictions, dont deux fausses, toutes portées sur la mauvaise couche.
 - Traduction des `flags` en retours actionnables en français.

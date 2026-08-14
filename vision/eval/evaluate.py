@@ -52,6 +52,7 @@ from iacoach.evaluation import (
     summarise_out_of_domain,
 )
 from iacoach.frame import LANDMARK, FrameSampler, Landmark
+from iacoach.tracking import SubjectTracker
 
 
 def _landmarks(proto: Any) -> list[Landmark]:
@@ -120,8 +121,10 @@ def _orientation(world: list[Landmark]) -> dict[str, float]:
 
 
 def sample_video(
-    path: Path, model_path: Path
-) -> tuple[list[FrameSample], list[dict[str, float]], list[Classification], int, float]:
+    path: Path, model_path: Path, max_poses: int = 3
+) -> tuple[
+    list[FrameSample], list[dict[str, float]], list[Classification], int, float, SubjectTracker
+]:
     """Every frame of a clip, reduced to `FrameSample` plus its segment lengths.
 
     Returns the samples, the per-sample arm-segment lengths, the classifier's
@@ -146,7 +149,11 @@ def sample_video(
     options = mp_vision.PoseLandmarkerOptions(
         base_options=mp_python.BaseOptions(model_asset_path=str(model_path)),
         running_mode=mp_vision.RunningMode.VIDEO,
-        num_poses=1,
+        # More than one, so that *choosing* is possible at all. With 1 the model
+        # returns whichever body it preferred on this frame and nothing
+        # downstream can tell that a different person answered — the measured
+        # failure on clip `084`. The tracker below does the choosing.
+        num_poses=max_poses,
     )
 
     capture = cv2.VideoCapture(str(path))
@@ -156,6 +163,7 @@ def sample_video(
 
     sampler = FrameSampler()
     classifier = ExerciseClassifier()
+    tracker = SubjectTracker()
     samples: list[FrameSample] = []
     lengths: list[dict[str, float]] = []
     verdicts: list[Classification] = []
@@ -176,24 +184,23 @@ def sample_video(
             result = landmarker.detect_for_video(image, int(t_ms))
             if not result.pose_world_landmarks or not result.pose_landmarks:
                 continue
-            world = _landmarks(result.pose_world_landmarks[0])
-            if (
-                verdict := classifier.push(world, _landmarks(result.pose_landmarks[0]), t_ms)
-            ) is not None:
+            # Selection runs on the *normalised* set: world landmarks are
+            # re-centred on each subject's own hips, so every body sits at the
+            # origin and the one signal that separates them is gone.
+            normalized = [_landmarks(p) for p in result.pose_landmarks]
+            subject = tracker.select(normalized)
+            if subject is None:
+                continue
+            world = _landmarks(result.pose_world_landmarks[subject.index])
+            if (verdict := classifier.push(world, normalized[subject.index], t_ms)) is not None:
                 verdicts.append(verdict)
-            sample = sampler.sample(
-                _landmarks(result.pose_world_landmarks[0]),
-                _landmarks(result.pose_landmarks[0]),
-                t_ms,
-            )
+            sample = sampler.sample(world, normalized[subject.index], t_ms)
             if sample is not None:
                 samples.append(sample)
-                lengths.append(
-                    _segment_lengths(world) | _orientation(world),
-                )
+                lengths.append(_segment_lengths(world) | _orientation(world))
 
     capture.release()
-    return samples, lengths, verdicts, frames, time.perf_counter() - started
+    return samples, lengths, verdicts, frames, time.perf_counter() - started, tracker
 
 
 def dump_angles(
@@ -298,9 +305,10 @@ def evaluate_clip(
     trim_percent: float,
     dump_dir: Path | None = None,
     in_domain: bool = False,
+    max_poses: int = 3,
 ) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
-    samples, lengths, verdicts, frames, seconds = sample_video(path, model)
+    samples, lengths, verdicts, frames, seconds, tracker = sample_video(path, model, max_poses)
     if dump_dir is not None:
         dump_angles(samples, lengths, dump_dir / f"{path.stem}.csv")
         dump_windows(verdicts, dump_dir / f"{path.stem}_windows.csv")
@@ -317,6 +325,12 @@ def evaluate_clip(
     )
     result.segment_cv = segment_stability(lengths)
     result.orientation = orientation_summary(lengths)
+    result.subject = {
+        "acquisitions": tracker.acquisitions,
+        "dropped_frames": tracker.dropped_frames,
+        "max_candidates": tracker.max_candidates,
+        "frames_with_choice": tracker.frames_with_choice,
+    }
     return result
 
 
@@ -385,6 +399,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Same .task the app ships, so the measurement describes the app.",
     )
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument(
+        "--max-poses",
+        type=int,
+        default=3,
+        help=(
+            "How many bodies MediaPipe may return per frame, before subject "
+            "selection picks one. 1 disables selection entirely and reproduces "
+            "the behaviour that measured clip `084` against the wrong person — "
+            "kept reachable so the change is an A/B, not an assertion."
+        ),
+    )
     parser.add_argument(
         "--clips-root",
         type=Path,
@@ -469,6 +494,7 @@ def main(argv: list[str] | None = None) -> int:
             args.trim_percent,
             args.dump_angles,
             bool(entry.get("in_domain", False)),
+            args.max_poses,
         )
         if found_via:
             # Carried into the JSON, not just stderr: a run that silently

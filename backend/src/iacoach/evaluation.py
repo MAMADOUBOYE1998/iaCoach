@@ -90,6 +90,10 @@ class ClipResult:
     """Signed vertical relations. Answers "is this body upright, and are the
     hands where the declared exercise requires them" — questions no angle can
     answer, because every angle is invariant under rotation."""
+    subject: dict[str, int] = field(default_factory=dict)
+    """What subject selection had to work with. `max_candidates == 1` means the
+    tracker never had a choice, so a wrong body on that clip is a *detection*
+    failure and no selection policy could have changed it. Above 1, it could."""
 
     # `attempted` / `events` / `predicted` nest, and the step that collapses says
     # which stage is at fault. An earlier version of this reported the per-rep

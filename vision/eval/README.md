@@ -51,6 +51,41 @@ nommés doit rester reconstituable. Deux fichiers du même nom sous la racine ne
 sont pas « trouvés » mais `nom ambigu` : deviner entre eux scorerait une vidéo
 contre l'annotation de l'autre.
 
+## Quel corps est mesuré
+
+MediaPipe rend des poses, pas des identités. Avec `num_poses=1` il rend celle
+qu'il a préférée sur *cette* frame, et rien en aval ne peut voir qu'une autre
+personne a répondu. C'est le défaut mesuré sur `084` : 1175 frames d'un corps
+droit, suivi avec une confiance de 1,0, dont les mains ne montent jamais
+au-dessus des épaules, sur un clip annoté « tractions ». Aucun seuil
+biomécanique n'était en cause — c'était le mauvais corps.
+
+`SubjectTracker` choisit une fois puis suit. **La sélection tourne sur les
+landmarks normalisés, jamais sur les `worldLandmarks`** : ces derniers sont
+recentrés sur les hanches de *chaque* sujet, donc tout le monde est à l'origine
+et le seul signal qui distingue deux personnes a disparu. C'est le seul endroit
+du dépôt où le jeu 2D est la bonne entrée, et il l'est précisément parce qu'il
+dépend du cadrage.
+
+Ce que ça corrige et ce que ça ne corrige pas :
+
+- **Le basculement**, oui. Une fois un corps choisi, on le suit au lieu de
+  redécider à chaque frame.
+- **L'acquisition**, non. Si la première frame donne la mauvaise personne, la
+  continuité verrouille l'erreur et la rend plus stable. Le coût est réel.
+
+D'où l'instrumentation, reportée par clip dans `subject` :
+
+| champ | ce qu'il dit |
+|---|---|
+| `max_candidates` | **1 ⇒ la sélection n'a jamais eu le choix.** Un mauvais sujet sur un tel clip est un échec de *détection*, aucune politique n'y pouvait rien. |
+| `frames_with_choice` | frames où plusieurs corps étaient offerts |
+| `acquisitions` | > 1 ⇒ la piste a été perdue et reprise, la seconde peut être quelqu'un d'autre |
+| `dropped_frames` | frames où un corps existait mais aucun ne collait à la piste |
+
+`--max-poses 1` rétablit l'ancien comportement, pour que le changement soit un
+A/B et pas une affirmation.
+
 ## Diagnostiquer un comptage faux
 
 Un compteur qui rend 3 au lieu de 9 a trois explications incompatibles, et le
