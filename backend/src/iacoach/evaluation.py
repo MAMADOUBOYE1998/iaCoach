@@ -191,7 +191,15 @@ def detection_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
     if not lengths:
         return {}
     out: dict[str, float] = {}
-    for name in ("box_width", "box_height", "box_centre_x", "box_centre_y", "limb_ratio"):
+    fields = (
+        "box_width",
+        "box_height",
+        "box_centre_x",
+        "box_centre_y",
+        "limb_ratio",
+        "limb_ratio_2d",
+    )
+    for name in fields:
         values = sorted(row[name] for row in lengths if name in row)
         if not values:
             continue
@@ -200,10 +208,13 @@ def detection_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
             out["box_centre_y_excursion"] = round(
                 _quantile(values, 0.9) - _quantile(values, 0.1), 4
             )
-        if name == "limb_ratio":
+        # Both ratios, so the fault can be localised. Implausible in 3D and
+        # plausible in 2D means the depth estimate is what is broken — and
+        # `worldLandmarks` is the space every biomechanical quantity here uses.
+        if name.startswith("limb_ratio"):
             low, high = HUMAN_LIMB_RATIO
             outside = sum(not low <= v <= high for v in values)
-            out["limb_ratio_implausible"] = round(outside / len(values), 4)
+            out[f"{name}_implausible"] = round(outside / len(values), 4)
     return out
 
 

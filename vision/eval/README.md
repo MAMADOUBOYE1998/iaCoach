@@ -110,7 +110,8 @@ n'a pas été mal choisi, il n'a pas été proposé. Le bloc `detection` répond
 |---|---|
 | `box_height` | part de l'image occupée par le corps suivi. Le détecteur a une taille minimale pratique ; un athlète filmé large peut passer dessous quand un passant plus proche ne passe pas. |
 | `box_centre_y_excursion` | déplacement vertical du corps suivi (p90 − p10). **Une traction translate tout le corps d'environ un demi-torse à chaque répétition.** Une boîte immobile sur 34 répétitions annotées n'appartient pas à la personne qui les fait. |
-| `limb_ratio` / `limb_ratio_implausible` | humérus sur avant-bras. Tout humain est entre 1,05 et 1,35, enfants compris. En dessous, ce n'est pas une morphologie inhabituelle, c'est un squelette mal ajusté. |
+| `limb_ratio` / `limb_ratio_implausible` | humérus sur avant-bras dans `worldLandmarks`. Tout humain est entre 1,05 et 1,35, enfants compris. En dessous, ce n'est pas une morphologie inhabituelle, c'est un squelette mal ajusté. |
+| `limb_ratio_2d` / `..._implausible` | le même rapport en espace image. Plausible en 2D et impossible en 3D ⇒ c'est l'estimation de profondeur qui casse, pas la détection. À lire sur un clip entier, pas frame par frame : la perspective raccourcit légitimement un membre pointé vers la caméra. |
 
 Ce dernier existe parce que `segment_cv` a été sur-interprété une fois : la
 stabilité d'une longueur dit que l'ajustement est **constant**, pas qu'il est

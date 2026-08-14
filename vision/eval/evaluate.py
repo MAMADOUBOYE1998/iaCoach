@@ -152,8 +152,14 @@ def _detection(normalized: list[Landmark], world: list[Landmark]) -> dict[str, f
         p, q = world[LANDMARK[a]], world[LANDMARK[b]]
         return math.dist((p.x, p.y, p.z), (q.x, q.y, q.z))
 
+    def span_2d(a: str, b: str) -> float:
+        p, q = normalized[LANDMARK[a]], normalized[LANDMARK[b]]
+        return math.dist((p.x, p.y), (q.x, q.y))
+
     upper = span("LEFT_SHOULDER", "LEFT_ELBOW") + span("RIGHT_SHOULDER", "RIGHT_ELBOW")
     fore = span("LEFT_ELBOW", "LEFT_WRIST") + span("RIGHT_ELBOW", "RIGHT_WRIST")
+    upper_2d = span_2d("LEFT_SHOULDER", "LEFT_ELBOW") + span_2d("RIGHT_SHOULDER", "RIGHT_ELBOW")
+    fore_2d = span_2d("LEFT_ELBOW", "LEFT_WRIST") + span_2d("RIGHT_ELBOW", "RIGHT_WRIST")
     out = {
         "box_width": max(xs) - min(xs),
         "box_height": max(ys) - min(ys),
@@ -162,6 +168,18 @@ def _detection(normalized: list[Landmark], world: list[Landmark]) -> dict[str, f
     }
     if fore > 0.0:
         out["limb_ratio"] = upper / fore
+    if fore_2d > 0.0:
+        # The same ratio in image space, which localises the defect. Every
+        # biomechanical quantity in this project comes from `worldLandmarks` —
+        # that is a stated invariant — so a skeleton that is anatomically
+        # impossible *there* poisons every angle, even if its 2D projection
+        # looks right. If 2D is plausible while 3D is not, the fault is the
+        # depth estimate, not the detection.
+        #
+        # Read over a clip, not per frame: perspective foreshortens a limb
+        # pointing at the camera, so single frames are legitimately far from
+        # anatomy. A whole clip sitting below 1.0 is not perspective.
+        out["limb_ratio_2d"] = upper_2d / fore_2d
     return out
 
 

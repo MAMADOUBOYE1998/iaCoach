@@ -231,22 +231,27 @@ Reste dans M2 :
 - **Ne pas porter ça dans l'app.** Les deux mesures demandées sont faites et
   toutes deux sont négatives. Rien à porter.
 
-- **La question est devenue la détection.** L'athlète de `084` n'est jamais
-  détecté — pas mal choisi, absent des candidats. Trois causes possibles, et
-  l'instrumentation pour les séparer est en place :
+- **La détection : mesurée, et la question était mal posée.** L'athlète de
+  `084` occupe **68 % de la hauteur de l'image**, centré, et il n'y a qu'un
+  seul corps détecté même en mode IMAGE qui relance la détection complète à
+  chaque frame. **C'est l'athlète.** Il n'y a jamais eu de problème de
+  sélection de sujet ; le tracker répond à un problème que ce jeu n'a pas.
 
-  | hypothèse | ce qui la confirme |
-  |---|---|
-  | le mode VIDEO ne recherche jamais un second corps (réutilisation de la ROI) | `--running-mode image` fait monter `max_candidates` au-dessus de 1 |
-  | l'athlète est trop petit dans l'image | `detection.box_height` faible sur le corps suivi |
-  | c'est l'athlète, mal ajusté | `detection.box_centre_y_excursion` proche de zéro sur 34 tractions, et `limb_ratio_implausible` élevé |
+  Ce qui reste, et qui est bien plus gros : **69 clips sur 96 ont un squelette
+  anatomiquement impossible sur plus de la moitié de leurs frames** — humérus
+  plus court que l'avant-bras, médiane 64 % des frames. Ce n'est pas un défaut
+  de `084`, c'est le plafond de tout ce qui est construit au-dessus. Aucun
+  seuil biomécanique, aucune règle de classification et aucune politique de
+  sélection ne répare un angle lu sur un squelette faux.
 
-  Le troisième point est déjà partiellement mesuré : sur `084` le rapport
-  humérus/avant-bras vaut **0,94 à gauche et 0,99 à droite**, là où aucun humain
-  n'est sous 1,05. Ce squelette n'est pas celui d'une personne de morphologie
-  inhabituelle, c'est un ajustement raté — ce qui affaiblit la lecture « corps
-  cohérent, donc quelqu'un d'autre » faite au tour précédent. La stabilité des
-  segments dit que l'ajustement est *constant*, pas qu'il est *juste*.
+  Prochaine mesure, déjà instrumentée : `limb_ratio_2d`. Plausible en 2D et
+  impossible en 3D localiserait la faute dans l'estimation de profondeur — et
+  `worldLandmarks` est l'espace que tous les calculs biomécaniques de ce projet
+  doivent utiliser (invariant n°2).
+
+- **M4 remonte.** Le fine-tuning de la pose était un « nice-to-have » de
+  robustesse. C'est maintenant le seul levier identifié sur la qualité des
+  landmarks, et donc sur tout le reste.
 
 - Interdiction de toucher un seuil du classifieur d'ici là : `084` a coûté trois
   prédictions, dont deux fausses, toutes portées sur la mauvaise couche.

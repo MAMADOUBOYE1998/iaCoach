@@ -189,6 +189,21 @@ class TestDetectionSummary:
     def test_a_plausible_body_is_not_flagged(self) -> None:
         assert detection_summary([{"limb_ratio": 1.2}] * 10)["limb_ratio_implausible"] == 0.0
 
+    def test_2d_and_3d_are_reported_apart(self) -> None:
+        """Localises the fault. Both ratios describe the same two bones.
+
+        Implausible in 3D and plausible in 2D means the depth estimate is what
+        is broken, not the detection — and `worldLandmarks` is the space every
+        biomechanical quantity in this project is required to use, so a bad fit
+        there poisons every angle while the image-space skeleton looks fine.
+        """
+        frames = [{"limb_ratio": 0.94, "limb_ratio_2d": 1.2}] * 10
+
+        found = detection_summary(frames)
+
+        assert found["limb_ratio_implausible"] == 1.0
+        assert found["limb_ratio_2d_implausible"] == 0.0
+
     def test_a_small_body_in_frame_is_reported(self) -> None:
         """MediaPipe has a practical lower size limit; this is where it shows."""
         found = detection_summary([{"box_height": 0.08}] * 10)

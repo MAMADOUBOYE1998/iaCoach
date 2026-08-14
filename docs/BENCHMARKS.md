@@ -381,6 +381,51 @@ que nous jetons**.
 **La mesure décisive reste une séance réelle**, calibration volontaire comprise,
 enregistrée sur le téléphone à ses ~21 fps réels.
 
+## L'athlète *est* le candidat — la question était mal posée
+
+Trois tours passés à chercher pourquoi l'athlète de `084` n'était jamais
+proposé au choix. Mesuré, les trois hypothèses tombent d'un coup.
+
+| | `082` | `083` | `084` |
+|---|---|---|---|
+| `box_height` (part de l'image) | **0,83** | **0,71** | **0,68** |
+| `box_centre` | (0,51 ; 0,48) | (0,46 ; 0,55) | (0,46 ; 0,66) |
+| `box_centre_y_excursion` | 0,288 | 0,159 | 0,183 |
+| `max_candidates`, mode IMAGE | 2 | 1 | **1** |
+| `limb_ratio` (humérus/avant-bras) | 1,04 | 0,94 | **0,97** |
+| frames au squelette impossible | 59 % | 96 % | **90 %** |
+
+Le corps suivi occupe **68 % de la hauteur de l'image**, centré, et il monte et
+descend de 18 % de l'image. Ce n'est pas un passant lointain. Et en mode IMAGE,
+qui relance la détection complète à chaque frame, MediaPipe n'en trouve toujours
+**qu'un seul**.
+
+**C'est l'athlète.** Il n'y a jamais eu de problème de sélection de sujet — j'ai
+construit un tracker pour un problème inexistant, et sa mesure sans gain, que
+j'avais lue comme « ce jeu ne contient pas le cas multi-personnes », disait en
+fait « il n'y a pas de second corps du tout ».
+
+L'hypothèse « le mode VIDEO cache un second corps » tombe aussi, et dans l'autre
+sens : IMAGE détecte **moins** (28 412 frames contre 36 357) et coûte 31 % de
+débit. La réutilisation de la ROI aide la continuité, elle ne cache personne.
+
+### Ce que c'est vraiment : les landmarks
+
+**69 clips sur 96 ont un squelette anatomiquement impossible sur plus de la
+moitié de leurs frames.** Médiane : 64 % des frames. Un humérus plus court que
+son avant-bras, ce qu'aucun humain n'a.
+
+Ce n'est donc pas un défaut de `084`, ni de trois clips, ni du cadrage. C'est le
+plafond de tout ce qui est construit au-dessus : aucun seuil biomécanique,
+aucune règle de classification et aucune politique de sélection ne peut réparer
+un angle lu sur un squelette faux.
+
+Reste à localiser la faute. `limb_ratio_2d` mesure le même rapport dans l'espace
+image : plausible en 2D et impossible en 3D voudrait dire que c'est l'estimation
+de profondeur qui casse, pas la détection — et `worldLandmarks` est justement
+l'espace que **tous** les calculs biomécaniques de ce projet doivent utiliser.
+Non mesuré à ce jour.
+
 ## Sélection du sujet — mesurée, et pas retenue
 
 Continuité de piste sur `num_poses=3`, contre le comportement d'origine.
