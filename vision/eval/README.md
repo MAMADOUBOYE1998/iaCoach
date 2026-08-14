@@ -111,11 +111,17 @@ n'a pas été mal choisi, il n'a pas été proposé. Le bloc `detection` répond
 | `box_height` | part de l'image occupée par le corps suivi. Le détecteur a une taille minimale pratique ; un athlète filmé large peut passer dessous quand un passant plus proche ne passe pas. |
 | `box_centre_y_excursion` | déplacement vertical du corps suivi (p90 − p10). **Une traction translate tout le corps d'environ un demi-torse à chaque répétition.** Une boîte immobile sur 34 répétitions annotées n'appartient pas à la personne qui les fait. |
 | `limb_ratio` / `limb_ratio_implausible` | humérus sur avant-bras dans `worldLandmarks`. Tout humain est entre 1,05 et 1,35, enfants compris. En dessous, ce n'est pas une morphologie inhabituelle, c'est un squelette mal ajusté. |
-| `limb_ratio_2d` / `..._implausible` | le même rapport en espace image. Plausible en 2D et impossible en 3D ⇒ c'est l'estimation de profondeur qui casse, pas la détection. À lire sur un clip entier, pas frame par frame : la perspective raccourcit légitimement un membre pointé vers la caméra. |
+| `limb_ratio_cv` | variation de ce rapport sur le clip. Les deux os sont **rigides** : leur rapport est une constante de l'athlète, que ni la posture, ni la distance, ni l'angle de caméra ne déplacent, et l'échelle attribuée par MediaPipe à chaque détection s'annule. **Zéro est la seule valeur correcte, pour n'importe quel clip.** Toute variation est une erreur d'estimation sans explication concurrente. |
+| `limb_ratio_2d` | le même rapport en espace image, **conservé comme contexte et volontairement non noté**. La bande 1,05–1,35 est un fait d'anatomie 3D ; la projection raccourcit le membre pointé vers la caméra, donc un squelette correct en sort en espace image tout le temps. Mesuré sur QUVA, la 2D est hors bande sur *plus* de frames que la 3D (76 % contre 64 %) — c'est l'artefact de projection, pas un résultat. |
 
-Ce dernier existe parce que `segment_cv` a été sur-interprété une fois : la
-stabilité d'une longueur dit que l'ajustement est **constant**, pas qu'il est
-**juste**. Un squelette constamment faux est parfaitement stable.
+Les deux premiers sont complémentaires et aucun ne remplace l'autre. La bande
+existe parce que `segment_cv` a été sur-interprété une fois : la stabilité d'une
+longueur dit que l'ajustement est **constant**, pas qu'il est **juste** — un
+squelette constamment faux est parfaitement stable, et seule la bande le voit.
+La variation prend l'inverse : un rapport qui oscille à l'intérieur de la bande
+est invisible à la bande. Et elle est la plus solide des deux, parce qu'elle
+n'exige pas que `HUMAN_LIMB_RATIO` soit la bonne bande : une bande lue sur de
+l'anthropométrie se discute, un os rigide non.
 
 Et `--running-mode image` teste la cause structurelle : en mode `video`,
 MediaPipe réutilise la région d'intérêt de la frame précédente et ne relance le

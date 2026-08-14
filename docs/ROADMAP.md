@@ -244,10 +244,29 @@ Reste dans M2 :
   seuil biomécanique, aucune règle de classification et aucune politique de
   sélection ne répare un angle lu sur un squelette faux.
 
-  Prochaine mesure, déjà instrumentée : `limb_ratio_2d`. Plausible en 2D et
-  impossible en 3D localiserait la faute dans l'estimation de profondeur — et
-  `worldLandmarks` est l'espace que tous les calculs biomécaniques de ce projet
-  doivent utiliser (invariant n°2).
+- **`limb_ratio_2d` : mesuré, et le test ne peut pas trancher.** La 2D sort de
+  la bande anatomique *plus* souvent que la 3D (76 % des frames contre 64 %),
+  et ça ne veut rien dire : la bande 1,05–1,35 est un fait d'anatomie 3D, la
+  projection raccourcit le membre pointé vers la caméra, donc un squelette
+  correct en sort en espace image tout le temps. Le rapport des deux rapports
+  ne sauve rien non plus — il vaut cos(θ_humérus)/cos(θ_avant-bras) pour un
+  squelette correct, et un biais de posture produit le même 1,14 qu'un biais de
+  profondeur. **L'instrument ne distingue pas ses deux hypothèses.** Champ
+  conservé comme contexte, plus noté.
+
+  Ce que la 3D dit seule, en revanche : **deux défauts distincts**. Un biais
+  (34 clips ont une médiane sous 1,05, contre 4 au-dessus de 1,35 — du bruit
+  serait symétrique) et une instabilité par-dessus (31 clips à médiane plausible
+  ont plus de la moitié de leurs frames impossibles). Corrélation à `segment_cv` :
+  0,31 seulement. `033_hometrainer` tient 1,000 sur 99,3 % de ses frames avec un
+  `segment_cv` de 2,6 % — stable et faux.
+
+  **Prochaine mesure, nouvellement instrumentée : `limb_ratio_cv`.** Les deux os
+  sont rigides, donc leur rapport est une constante de l'athlète : aucune
+  posture, aucune distance, aucun angle de caméra ne le déplace, et l'échelle
+  par détection s'annule. Zéro est la seule valeur correcte, pour n'importe quel
+  clip. C'est la seule mesure de détection de ce harnais qui ne repose sur
+  aucune bande à croire ni sur aucune hypothèse de projection.
 
 - **M4 remonte.** Le fine-tuning de la pose était un « nice-to-have » de
   robustesse. C'est maintenant le seul levier identifié sur la qualité des

@@ -137,11 +137,13 @@ def _detection(normalized: list[Landmark], world: list[Landmark]) -> dict[str, f
     box does not move. If the tracked box is still while the annotation says 34
     repetitions happened, the body being measured is not the one doing them.
 
-    `limb_ratio` is upper arm over forearm. Every human is between about 1.15
-    and 1.25, children included. Well below that is not a person of unusual
-    build — it is a skeleton fitted badly. Worth having because segment *stability*
-    does not imply segment *correctness*: a consistently wrong fit is stable too,
-    which is a reading of `segment_cv` this project got wrong once already.
+    `limb_ratio` is upper arm over forearm, graded against `HUMAN_LIMB_RATIO`
+    (1.05–1.35: adults near 1.2, children near 1.1). Well below that is not a
+    person of unusual build — it is a skeleton fitted badly. Worth having because
+    segment *stability* does not imply segment *correctness*: a consistently wrong
+    fit is stable too, which is a reading of `segment_cv` this project got wrong
+    once already. Its variation over a clip is the stronger signal, because the
+    bones are rigid and no band has to be believed — see `limb_ratio_cv`.
     """
     visible = [p for p in normalized if p.visibility is None or p.visibility >= 0.5]
     if len(visible) < 4:
@@ -169,16 +171,22 @@ def _detection(normalized: list[Landmark], world: list[Landmark]) -> dict[str, f
     if fore > 0.0:
         out["limb_ratio"] = upper / fore
     if fore_2d > 0.0:
-        # The same ratio in image space, which localises the defect. Every
-        # biomechanical quantity in this project comes from `worldLandmarks` —
-        # that is a stated invariant — so a skeleton that is anatomically
-        # impossible *there* poisons every angle, even if its 2D projection
-        # looks right. If 2D is plausible while 3D is not, the fault is the
-        # depth estimate, not the detection.
+        # The same ratio in image space. It was added to localise the defect —
+        # plausible in 2D and impossible in 3D would have put the fault in the
+        # depth estimate — and **that test does not work**. The 1.05–1.35 band
+        # is a fact about 3D anatomy; projection foreshortens whichever limb
+        # points at the camera, so a perfectly correct skeleton leaves the band
+        # in image space all the time. Measured over QUVA, 2D is outside the
+        # band on *more* frames than 3D (median 76 % against 64 %), which is
+        # what a foreshortening artefact looks like and not evidence of
+        # anything. The ratio-of-ratios does not rescue it either: for a correct
+        # skeleton it equals cos(θ_upper)/cos(θ_fore), and people do point their
+        # forearms at the camera more than their upper arms.
         #
-        # Read over a clip, not per frame: perspective foreshortens a limb
-        # pointing at the camera, so single frames are legitimately far from
-        # anatomy. A whole clip sitting below 1.0 is not perspective.
+        # Kept as raw context for the 3D value, and deliberately not graded —
+        # see `detection_summary`. The measurement that does settle it needs no
+        # projection at all: the two bones are rigid, so their ratio must be
+        # *constant* over a clip. That is `limb_ratio_cv`.
         out["limb_ratio_2d"] = upper_2d / fore_2d
     return out
 

@@ -187,6 +187,24 @@ def detection_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
     It exists because `segment_cv` was over-read once already: stability of a
     segment length says the fit is *consistent*, not that it is *correct*, and a
     consistently wrong skeleton is perfectly stable.
+
+    `limb_ratio_cv` is the stronger of the two, and the only one here that rests
+    on nothing but geometry. The upper arm and the forearm are rigid bones, so
+    their ratio is a constant of the athlete — pose, distance and camera angle
+    cannot change it, and the scale MediaPipe assigns per detection cancels. The
+    correct value is therefore *zero variation*, for every clip, whatever is
+    being filmed. Anything above zero is estimation error with no competing
+    explanation, which is exactly what `limb_ratio_implausible` lacks: that one
+    needs `HUMAN_LIMB_RATIO` to be right, and a band read off anthropometry is
+    arguable in a way a rigid bone is not.
+
+    `limb_ratio_2d` is reported and deliberately **not** graded against the band.
+    See `_detection` in `vision/eval/evaluate.py`: the band is a fact about 3D
+    anatomy, and projection foreshortens whichever limb points at the camera, so
+    a correct skeleton violates it in image space routinely. Measured over QUVA,
+    2D falls outside the band *more* often than 3D (median 76 % of frames against
+    64 %) — which says nothing about either. Grading it was a mistake, and the
+    field is kept only as context for the 3D value.
     """
     if not lengths:
         return {}
@@ -208,13 +226,16 @@ def detection_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
             out["box_centre_y_excursion"] = round(
                 _quantile(values, 0.9) - _quantile(values, 0.1), 4
             )
-        # Both ratios, so the fault can be localised. Implausible in 3D and
-        # plausible in 2D means the depth estimate is what is broken — and
-        # `worldLandmarks` is the space every biomechanical quantity here uses.
-        if name.startswith("limb_ratio"):
+        # The band applies to 3D only — see the docstring. `limb_ratio_2d` is
+        # carried as context and left ungraded on purpose.
+        if name == "limb_ratio":
             low, high = HUMAN_LIMB_RATIO
             outside = sum(not low <= v <= high for v in values)
-            out[f"{name}_implausible"] = round(outside / len(values), 4)
+            out["limb_ratio_implausible"] = round(outside / len(values), 4)
+            mean = sum(values) / len(values)
+            if mean > 0.0 and len(values) > 1:
+                var = sum((v - mean) ** 2 for v in values) / (len(values) - 1)
+                out["limb_ratio_cv"] = round(math.sqrt(var) / mean, 4)
     return out
 
 

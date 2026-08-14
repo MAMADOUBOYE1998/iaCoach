@@ -189,20 +189,55 @@ class TestDetectionSummary:
     def test_a_plausible_body_is_not_flagged(self) -> None:
         assert detection_summary([{"limb_ratio": 1.2}] * 10)["limb_ratio_implausible"] == 0.0
 
-    def test_2d_and_3d_are_reported_apart(self) -> None:
-        """Localises the fault. Both ratios describe the same two bones.
+    def test_the_2d_ratio_is_carried_but_never_graded(self) -> None:
+        """The band is a fact about 3D anatomy, so image space cannot be judged by it.
 
-        Implausible in 3D and plausible in 2D means the depth estimate is what
-        is broken, not the detection — and `worldLandmarks` is the space every
-        biomechanical quantity in this project is required to use, so a bad fit
-        there poisons every angle while the image-space skeleton looks fine.
+        This was added to localise the fault — plausible in 2D and impossible in
+        3D would have blamed the depth estimate — and the test is invalid.
+        Projection foreshortens whichever limb points at the camera, so a
+        correct skeleton leaves the band in image space routinely. Over QUVA the
+        2D ratio is outside the band on *more* frames than the 3D one (median
+        76 % against 64 %), which is the artefact, not a finding. The value is
+        kept as context; grading it would invite the reading it cannot support.
         """
         frames = [{"limb_ratio": 0.94, "limb_ratio_2d": 1.2}] * 10
 
         found = detection_summary(frames)
 
         assert found["limb_ratio_implausible"] == 1.0
-        assert found["limb_ratio_2d_implausible"] == 0.0
+        assert found["limb_ratio_2d"] == pytest.approx(1.2)
+        assert "limb_ratio_2d_implausible" not in found
+
+    def test_rigid_bones_make_a_varying_ratio_an_error_with_no_alibi(self) -> None:
+        """The one detection signal that rests on geometry alone.
+
+        Upper arm and forearm are rigid, so their ratio is a constant of the
+        athlete: no pose, distance or camera angle can move it, and MediaPipe's
+        per-detection scale cancels. Zero is the only correct answer, for any
+        clip, whatever is being filmed. That is what `limb_ratio_implausible`
+        cannot claim — it needs `HUMAN_LIMB_RATIO` to be the right band, and a
+        band read off anthropometry is arguable in a way a rigid bone is not.
+        """
+        rigid = [{"limb_ratio": 1.2}] * 40
+        wobbling = [{"limb_ratio": 1.2 + 0.3 * (i % 2)} for i in range(40)]
+
+        assert detection_summary(rigid)["limb_ratio_cv"] == 0.0
+        assert detection_summary(wobbling)["limb_ratio_cv"] > 0.1
+
+    def test_a_stable_but_impossible_skeleton_is_caught_by_the_band_alone(self) -> None:
+        """The two signals are complementary, and neither subsumes the other.
+
+        A skeleton fitted consistently wrong holds its ratio perfectly steady —
+        `limb_ratio_cv` sees nothing. Only the anatomical band catches it. The
+        converse is `test_rigid_bones...`: a ratio swinging through the band is
+        invisible to the band and obvious to the variation.
+        """
+        steady_and_wrong = [{"limb_ratio": 0.94}] * 40
+
+        found = detection_summary(steady_and_wrong)
+
+        assert found["limb_ratio_cv"] == 0.0
+        assert found["limb_ratio_implausible"] == 1.0
 
     def test_a_small_body_in_frame_is_reported(self) -> None:
         """MediaPipe has a practical lower size limit; this is where it shows."""

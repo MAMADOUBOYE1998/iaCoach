@@ -424,7 +424,75 @@ Reste à localiser la faute. `limb_ratio_2d` mesure le même rapport dans l'espa
 image : plausible en 2D et impossible en 3D voudrait dire que c'est l'estimation
 de profondeur qui casse, pas la détection — et `worldLandmarks` est justement
 l'espace que **tous** les calculs biomécaniques de ce projet doivent utiliser.
-Non mesuré à ce jour.
+
+## `limb_ratio_2d` : le test ne peut pas trancher
+
+Mesuré sur les 96 clips. Le résultat n'est pas celui attendu, et ce n'est pas
+non plus le résultat inverse : **le test est invalide**.
+
+| | 3D (`worldLandmarks`) | 2D (espace image) |
+|---|---|---|
+| médiane du rapport | 1,092 | 1,248 |
+| frames hors bande, médiane par clip | 64 % | **76 %** |
+| clips à >50 % de frames hors bande | 69 / 96 | **79 / 96** |
+
+La 2D sort de la bande **plus souvent** que la 3D. Il serait tentant d'en
+conclure « la détection casse avant la profondeur ». C'est faux : la bande
+1,05–1,35 est un fait d'anatomie **3D**, et la projection raccourcit le membre
+pointé vers la caméra. Un squelette parfaitement correct sort de la bande en
+espace image dès qu'un avant-bras pointe vers l'objectif. Les 76 % ne mesurent
+donc pas un défaut, ils mesurent la perspective.
+
+Le rapport des deux rapports ne sauve pas le test non plus. Il est sans échelle
+— `r₂/r₃ = (avant-bras₃/avant-bras₂)/(humérus₃/humérus₂)`, tout facteur global
+s'annule — et il vaut **1,14 en médiane, >1 sur 77 clips sur 96** : passer de
+l'image au monde allonge proportionnellement l'avant-bras 14 % de plus que
+l'humérus. Mais pour un squelette correct cette quantité vaut cos(θ_humérus) /
+cos(θ_avant-bras), et les gens pointent leur avant-bras vers la caméra bien plus
+souvent que leur humérus. Un biais réel de profondeur et un biais de posture
+produisent le même chiffre. **J'ai construit un instrument qui ne distingue pas
+ses deux hypothèses.**
+
+### Ce que la 3D dit quand même, seule
+
+| | valeur |
+|---|---|
+| médiane du rapport par clip, distribution | mode unique large centré ~1,10 |
+| clips dont la **médiane** est sous 1,05 | **34 / 96** |
+| clips dont la médiane est au-dessus de 1,35 | **4 / 96** |
+| clips à médiane plausible mais >50 % de frames impossibles | 31 / 58 |
+| corrélation avec `segment_cv` | **0,31** |
+
+Deux défauts distincts, pas un.
+
+1. **Un biais.** 34 clips contre 4 : la distribution penche du côté « humérus
+   trop court ». Du bruit serait symétrique.
+2. **Une instabilité par-dessus.** 31 clips ont une médiane parfaitement
+   plausible et plus de la moitié de leurs frames hors bande.
+
+Et la corrélation à 0,31 avec `segment_cv` confirme ce que ce projet avait déjà
+mal lu une fois : l'instabilité n'explique pas l'implausibilité.
+`033_hometrainer` tient un rapport de **1,000 sur 99,3 % de ses frames** avec un
+`segment_cv` de 2,6 % — parfaitement stable et parfaitement faux.
+
+### La mesure qui, elle, ne peut pas être contestée
+
+`limb_ratio_cv` : le coefficient de variation du rapport humérus/avant-bras sur
+un clip, en 3D. Les deux os sont **rigides**, donc leur rapport est une constante
+de l'athlète — aucune posture, aucune distance, aucun angle de caméra ne peut le
+faire bouger, et l'échelle que MediaPipe attribue à chaque détection s'annule.
+La seule valeur correcte est **zéro**, pour n'importe quel clip, quoi qu'on
+filme. Toute variation est une erreur d'estimation sans explication concurrente.
+
+C'est ce que `limb_ratio_implausible` ne peut pas revendiquer : il exige que
+`HUMAN_LIMB_RATIO` soit la bonne bande, et une bande lue sur de l'anthropométrie
+se discute — un os rigide, non. Les deux restent complémentaires : un squelette
+constamment faux tient son rapport parfaitement fixe et n'est vu que par la
+bande ; un rapport qui oscille à l'intérieur de la bande n'est vu que par la
+variation. `limb_ratio_2d` est conservé comme contexte brut et **n'est plus
+noté** — le noter invitait la lecture qu'il ne supporte pas.
+
+Non mesuré à ce jour : il faut relancer la passe.
 
 ## Sélection du sujet — mesurée, et pas retenue
 
