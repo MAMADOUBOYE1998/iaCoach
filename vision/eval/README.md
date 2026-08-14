@@ -84,16 +84,33 @@ python -m vision.eval.evaluate vision/eval/manifest.pullups.json \
     --dump-angles angles/ --out brut.json
 ```
 
-Un `.csv` par clip : `t_ms`, angles gauche/droit/moyen, confiance, puis la
-longueur des quatre segments rigides du bras. Les percentiles disent qu'une
-distribution est étroite ; seule la série dit si c'est un signal plat, un signal
-rapide sous-échantillonné, ou un cycle propre au mauvais décalage.
+Deux `.csv` par clip.
+
+`<clip>.csv` — une ligne par frame : `t_ms`, angles gauche/droit/moyen,
+confiance, puis la longueur des quatre segments rigides du bras. Les percentiles
+disent qu'une distribution est étroite ; seule la série dit si c'est un signal
+plat, un signal rapide sous-échantillonné, ou un cycle propre au mauvais
+décalage.
 
 Les longueurs de segments sont là parce que `confidence` dérive de la
 `visibility` de MediaPipe, qui affirme qu'un landmark a été **trouvé**, pas
 qu'il a été trouvé au bon endroit. Un os ne change pas de longueur : ce qui
 varie dans ces colonnes est l'estimation 3D qui bouge, et ça ne s'interprète
 qu'à côté de l'angle mesuré sur la même frame.
+
+`<clip>_windows.csv` — une ligne par fenêtre de classification : l'étiquette,
+sa confiance, le motif, les features de la fenêtre (`wrist_above_shoulder`,
+`trunk_verticality`, amplitudes coude/genou/hanche…) et le score de chaque
+exercice.
+
+Sans ce fichier, une étiquette fausse est indiscutable. `084` est appelé `squat`
+sur 99,8 % de ses fenêtres pendant que l'athlète fait des tractions ; la règle
+`squat` exige que les mains ne soient pas au-dessus des épaules, donc **soit**
+MediaPipe ne les y place pas sur un athlète suspendu, **soit** le cadrage n'est
+pas celui qu'on suppose. Ces deux causes appellent des correctifs opposés et
+l'étiquette seule ne les sépare pas. Une fenêtre refusée avant d'avoir des
+features laisse les colonnes **vides**, jamais à zéro — `wrist_above_shoulder`
+vaut légitimement 0 quand les mains sont à hauteur d'épaule.
 
 ## Ce que les chiffres veulent dire
 

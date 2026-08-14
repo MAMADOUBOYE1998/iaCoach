@@ -41,7 +41,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from iacoach.classify import ExerciseClassifier
+from iacoach.classify import Classification, ExerciseClassifier
 from iacoach.contracts import Exercise, FrameSample
 from iacoach.evaluation import (
     ClipResult,
@@ -79,13 +79,18 @@ def _segment_lengths(world: list[Landmark]) -> dict[str, float]:
 
 def sample_video(
     path: Path, model_path: Path
-) -> tuple[list[FrameSample], list[dict[str, float]], list[Exercise], int, float]:
+) -> tuple[list[FrameSample], list[dict[str, float]], list[Classification], int, float]:
     """Every frame of a clip, reduced to `FrameSample` plus its segment lengths.
 
     Returns the samples, the per-sample arm-segment lengths, the classifier's
-    per-window labels, the number of frames read, and the wall-clock seconds
-    spent. Frames where no pose was found produce no sample — never a neutral
-    one.
+    per-window verdicts, the number of frames read, and the wall-clock seconds
+    spent.
+
+    Frames where no pose was found produce no sample — never a neutral one.
+
+    The verdicts are returned whole rather than reduced to labels. A label says
+    what the classifier decided; only the features say why, and a wrong label
+    with no features attached can only be argued about.
 
     The classifier runs over the same frames as the counter, deliberately: a
     gate measured on a different frame set than the thing it gates would not
@@ -111,7 +116,7 @@ def sample_video(
     classifier = ExerciseClassifier()
     samples: list[FrameSample] = []
     lengths: list[dict[str, float]] = []
-    labels: list[Exercise] = []
+    verdicts: list[Classification] = []
     frames = 0
     started = time.perf_counter()
 
@@ -131,9 +136,9 @@ def sample_video(
                 continue
             world = _landmarks(result.pose_world_landmarks[0])
             if (
-                label := classifier.push(world, _landmarks(result.pose_landmarks[0]), t_ms)
+                verdict := classifier.push(world, _landmarks(result.pose_landmarks[0]), t_ms)
             ) is not None:
-                labels.append(label.exercise)
+                verdicts.append(verdict)
             sample = sampler.sample(
                 _landmarks(result.pose_world_landmarks[0]),
                 _landmarks(result.pose_landmarks[0]),
@@ -144,7 +149,7 @@ def sample_video(
                 lengths.append(_segment_lengths(_landmarks(result.pose_world_landmarks[0])))
 
     capture.release()
-    return samples, lengths, labels, frames, time.perf_counter() - started
+    return samples, lengths, verdicts, frames, time.perf_counter() - started
 
 
 def dump_angles(
@@ -192,6 +197,55 @@ def dump_angles(
             )
 
 
+WINDOW_FIELDS = (
+    "wrist_above_shoulder",
+    "trunk_verticality",
+    "elbow_rom_deg",
+    "knee_rom_deg",
+    "hip_rom_deg",
+    "knee_deg",
+    "hip_deg",
+    "frames",
+    "confidence",
+)
+
+
+def dump_windows(verdicts: list[Classification], destination: Path) -> None:
+    """Every classification window: the verdict, its scores, and its features.
+
+    Written because a wrong label was, until now, unarguable. Clip `084` is
+    called `squat` on 99.8 % of its windows while the athlete does pull-ups, and
+    settling *why* meant reasoning backwards from the rule to what the features
+    must have been — which is guessing with extra steps. The squat rule requires
+    the hands not to be overhead, so either MediaPipe is not putting them there
+    on a hanging athlete, or the clip is not framed as we assume. Those need
+    opposite fixes and the label alone cannot tell them apart.
+
+    One row per window, so the label can be read against the geometry that
+    produced it, at the moment it produced it.
+    """
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    exercises = sorted({e.value for v in verdicts for e in v.scores})
+    with destination.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            ["exercise", "confidence", "reason", *WINDOW_FIELDS, *(f"score_{e}" for e in exercises)]
+        )
+        for v in verdicts:
+            f = v.features
+            writer.writerow(
+                [
+                    v.exercise.value,
+                    f"{v.confidence:.4f}",
+                    v.reason,
+                    # A refused window has no features when the frames never
+                    # formed one; blank, not zero, which would read as measured.
+                    *(f"{getattr(f, name):.4f}" if f is not None else "" for name in WINDOW_FIELDS),
+                    *(f"{v.scores.get(Exercise(e), 0.0):.4f}" for e in exercises),
+                ]
+            )
+
+
 def evaluate_clip(
     path: Path,
     truth: int,
@@ -202,9 +256,10 @@ def evaluate_clip(
     in_domain: bool = False,
 ) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
-    samples, lengths, labels, frames, seconds = sample_video(path, model)
+    samples, lengths, verdicts, frames, seconds = sample_video(path, model)
     if dump_dir is not None:
         dump_angles(samples, lengths, dump_dir / f"{path.stem}.csv")
+        dump_windows(verdicts, dump_dir / f"{path.stem}_windows.csv")
     result = score_samples(
         samples,
         path=str(path),
@@ -213,7 +268,7 @@ def evaluate_clip(
         frames=frames,
         seconds=seconds,
         trim_percent=trim_percent,
-        labels=labels,
+        labels=[v.exercise for v in verdicts],
         in_domain=in_domain,
     )
     result.segment_cv = segment_stability(lengths)

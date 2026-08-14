@@ -178,14 +178,18 @@ que ce chiffre était plus étroit qu'il n'en avait l'air (`BENCHMARKS.md`) :
   tractions. Le harnais publie désormais `gate_recall` à côté de la spécificité,
   et sort les clips `in_domain` du dénominateur.
 
-Corrigés depuis : `feet_planted` dans la règle `squat` (on ne squatte pas
-suspendu à une barre) et une fixture `swinging_hang_not_a_squat` reconstruite
-depuis `082`/`084`. Non revérifié sur QUVA.
+`feet_planted` (on ne squatte pas suspendu à une barre) a corrigé `082` et **pas
+`084`**, qui reste `squat` à 99,8 %. Pour que ce score tienne malgré la règle, il
+faut que MediaPipe ne place pas les mains au-dessus des épaules sur un athlète
+suspendu — la posture entière n'est pas reconnue, pas seulement l'amplitude.
+Autre lecture possible : le cadrage n'est pas celui qu'on suppose. Correctifs
+opposés, et l'étiquette seule ne tranche pas.
 
 Reste dans M2 :
 
-- Repasser QUVA pour vérifier `feet_planted` — et cette fois lire `gate_recall`
-  autant que la spécificité.
+- **Trancher `084`** avec `<clip>_windows.csv` (features de fenêtre, désormais
+  écrites au lieu d'être jetées). Aucun nouveau seuil avant ça : la dernière
+  prédiction faite sans mesure a échoué, celle d'après à moitié.
 - Traduction des `flags` en retours actionnables en français.
 - Recalage de `kip_tolerance_ms` et `trunk_tolerance_deg` sur footage réel
   enregistré au débit réel de l'appareil (~21 fps, pas 30).

@@ -17,8 +17,9 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from iacoach.contracts import FrameSample
-from vision.eval.evaluate import dump_angles
+from iacoach.classify import Classification, WindowFeatures
+from iacoach.contracts import Exercise, FrameSample
+from vision.eval.evaluate import dump_angles, dump_windows
 
 
 def _sample(t_ms: float, angle: float = 90.0) -> FrameSample:
@@ -96,3 +97,69 @@ class TestDumpAngles:
         dump_angles([_sample(0.0)], [_lengths(0.31)], destination)
 
         assert destination.exists()
+
+
+def _window(**overrides: float) -> WindowFeatures:
+    values: dict[str, float] = {
+        "wrist_above_shoulder": 0.95,
+        "trunk_verticality": 1.0,
+        "elbow_rom_deg": 6.0,
+        "knee_rom_deg": 80.0,
+        "hip_rom_deg": 78.0,
+        "knee_deg": 150.0,
+        "hip_deg": 137.0,
+        "frames": 60,
+        "confidence": 1.0,
+    }
+    values.update(overrides)
+    return WindowFeatures(**values)  # type: ignore[arg-type]
+
+
+class TestDumpWindows:
+    """The classification window, written down so a wrong label can be argued.
+
+    Clip `084` is labelled `squat` on 99.8 % of its windows while the athlete
+    does pull-ups. Two incompatible explanations fit — MediaPipe is not placing
+    the hands overhead on a hanging athlete, or the clip is not framed the way
+    the rule assumes — and the label alone distinguishes neither. Only the
+    features do, and until this existed they were computed and discarded.
+    """
+
+    def test_writes_the_feature_that_decides_the_squat_rule(self, tmp_path: Path) -> None:
+        destination = tmp_path / "clip_windows.csv"
+        verdict = Classification(
+            Exercise.SQUAT, 0.8, {Exercise.SQUAT: 0.8, Exercise.PULL_UP: 0.0}, "", _window()
+        )
+
+        dump_windows([verdict], destination)
+
+        header, rows = _read(destination)
+        assert "wrist_above_shoulder" in header
+        assert rows[0]["wrist_above_shoulder"] == "0.9500"
+        assert rows[0]["exercise"] == "squat"
+        assert rows[0]["score_pull_up"] == "0.0000"
+
+    def test_a_window_without_features_leaves_blanks(self, tmp_path: Path) -> None:
+        """Blank, never 0.0 — a zero here would read as a measured value.
+
+        `wrist_above_shoulder = 0` is a real posture (hands at shoulder height),
+        so filling it in for a window that has no features would fabricate the
+        exact evidence this file exists to supply.
+        """
+        destination = tmp_path / "clip_windows.csv"
+        refused = Classification(Exercise.UNKNOWN, 0.0, {}, "fenêtre trop courte", None)
+
+        dump_windows([refused], destination)
+
+        _, rows = _read(destination)
+        assert rows[0]["wrist_above_shoulder"] == ""
+        assert rows[0]["reason"] == "fenêtre trop courte"
+
+    def test_a_clip_with_no_windows_still_writes_a_header(self, tmp_path: Path) -> None:
+        destination = tmp_path / "empty_windows.csv"
+
+        dump_windows([], destination)
+
+        header, rows = _read(destination)
+        assert rows == []
+        assert header[0] == "exercise"

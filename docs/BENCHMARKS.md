@@ -391,6 +391,7 @@ si le classifieur nomme l'exercice de la séance.
 | 2026-08-13, sans portillon (`d89f668`) | 100 | 31 (**31 %**) | 114 | 14 |
 | 2026-08-13, portillon traction (`40713fd`) | 100 | **1 (1 %)** | **5** | 5 |
 | 2026-08-14, `hips_fold` (`5fdeacd`) | 100 | 1 (1 %) | 5 | 5 |
+| 2026-08-14, `feet_planted` (`aaa215f`) | 97 + 3 hors dénominateur | 1 (1 %) | 5 | 5 |
 
 Ce 1 % est à lire avec le rappel mesuré plus bas — **0/3 sur les vraies
 tractions du jeu** — sans quoi il flatte un portillon qui refuse aussi les
@@ -501,11 +502,41 @@ Corrigé dans le harnais : les clips vraiment dans le domaine sont marqués
 `gate_recall` est publié à côté. **Rappel du portillon traction sur QUVA : 0/3.**
 La spécificité seule est trivialement gagnable et ne veut rien dire isolée.
 
-**Non revérifié.** `feet_planted` prédit que `082` et `084` quittent `squat`.
-Mais une prédiction vient d'échouer sur cette même page, alors elle vaut ce
-qu'elle vaut : la mesure décidera. Et la sensibilité reste hors de portée de ce
-jeu — trois tractions dégradées, aucun squat, aucun dip, aucune pompe. Seule une
-séance filmée par l'athlète peut la mesurer.
+### Vérification `feet_planted` (passe du 2026-08-14, `spec4`)
+
+Prédiction : `082` et `084` quittent `squat`. **Une sur deux.**
+
+| Clip | avant | après |
+|---|---|---|
+| `082_pullups` | `squat` 95,3 % | `unknown` |
+| `083_pullups` | `unknown` | `unknown` |
+| `084_pullups` | `squat` 99,8 % | **`squat` 99,8 %** — inchangé |
+
+Étiquettes `squat` : 30 → 28. Portillon squat simulé : 34/16/55 → 27/14/50.
+
+`084` est le résultat intéressant. Pour qu'une fenêtre score `squat` malgré
+`feet_planted`, il faut `wrist_above_shoulder ≲ 0,2` : **MediaPipe ne place pas
+les mains au-dessus des épaules sur un athlète suspendu à une barre.** Ce n'est
+plus « l'amplitude du coude est sous-estimée », c'est la posture entière qui
+n'est pas reconnue. Sauf si le cadrage n'est pas celui qu'on suppose — et ces
+deux causes appellent des correctifs opposés.
+
+Impossible de trancher depuis ce fichier : les features de fenêtre étaient
+calculées puis jetées. `--dump-angles` écrit désormais aussi
+`<clip>_windows.csv` (étiquette, motif, features, score par exercice), ce qui
+rend la question mesurable au lieu d'argumentable. C'est le prochain pas, avant
+tout nouveau seuil.
+
+Attention à la lecture du tableau principal : les faux positifs passent de 31/100
+à 29/97 **sans qu'aucun clip ne change**. Les trois tractions sortent du
+dénominateur, et deux d'entre elles y comptaient comme faux positifs. Ce n'est
+pas un progrès, c'est une comptabilité corrigée.
+
+`gate_recall` reste **0/3**.
+
+La sensibilité reste hors de portée de ce jeu — trois tractions dégradées, aucun
+squat, aucun dip, aucune pompe. Seule une séance filmée par l'athlète peut la
+mesurer.
 
 ## Précision de comptage — footage propre
 
