@@ -25,7 +25,9 @@ Usage:
 
 Manifest format (JSON):
     {"clips": [{"path": "clips/pullup_01.mp4", "reps": 8, "exercise": "pull_up"}]}
-Paths are resolved relative to the manifest.
+Paths are resolved relative to the manifest, or to `--clips-root` when given.
+When a clip is not where the manifest says, the file is looked up by name under
+that root before being declared missing — see `_index_by_name`.
 """
 
 from __future__ import annotations
@@ -129,9 +131,7 @@ def sample_video(
                 continue
             world = _landmarks(result.pose_world_landmarks[0])
             if (
-                label := classifier.push(
-                    world, _landmarks(result.pose_landmarks[0]), t_ms
-                )
+                label := classifier.push(world, _landmarks(result.pose_landmarks[0]), t_ms)
             ) is not None:
                 labels.append(label.exercise)
             sample = sampler.sample(
@@ -141,9 +141,7 @@ def sample_video(
             )
             if sample is not None:
                 samples.append(sample)
-                lengths.append(
-                    _segment_lengths(_landmarks(result.pose_world_landmarks[0]))
-                )
+                lengths.append(_segment_lengths(_landmarks(result.pose_world_landmarks[0])))
 
     capture.release()
     return samples, lengths, labels, frames, time.perf_counter() - started
@@ -157,8 +155,15 @@ def dump_angles(
     Percentiles say the distribution is narrow; only the time series says
     whether that is a flat signal, a fast one the sampler undersamples, or a
     clean cycle sitting at the wrong offset.
+
+    The segment lengths ride along in the same file on purpose. `confidence` is
+    built from MediaPipe's `visibility`, which claims a landmark was *found*,
+    not that it was found in the right place — so a frame can be fully
+    confident and badly placed. A bone changing length is the evidence for
+    that, and it is only interpretable next to the angle it was measured from.
     """
     destination.parent.mkdir(parents=True, exist_ok=True)
+    segments = sorted(lengths[0]) if lengths else []
     with destination.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
         writer.writerow(
@@ -168,9 +173,13 @@ def dump_angles(
                 "elbow_right_deg",
                 "elbow_mean_deg",
                 "confidence",
+                *segments,
             ]
         )
-        for s in samples:
+        # `lengths` is built alongside `samples` in `sample_video`, one entry
+        # per retained frame, so index i means the same frame in both.
+        for i, s in enumerate(samples):
+            row = lengths[i] if i < len(lengths) else {}
             writer.writerow(
                 [
                     f"{s.t_ms:.1f}",
@@ -178,6 +187,7 @@ def dump_angles(
                     f"{s.elbow_right_deg:.2f}",
                     f"{s.elbow_mean_deg:.2f}",
                     f"{s.confidence:.3f}",
+                    *(f"{row[k]:.4f}" if k in row else "" for k in segments),
                 ]
             )
 
@@ -206,6 +216,61 @@ def evaluate_clip(
     )
     result.segment_cv = segment_stability(lengths)
     return result
+
+
+def _index_by_name(root: Path) -> dict[str, list[Path]]:
+    """Every file under `root`, grouped by basename.
+
+    Built lazily, on the first clip that is not where the manifest says it is,
+    and never otherwise: a manifest whose paths are right walks nothing. The
+    obvious alternative — an `rglob` per missing clip — re-walks the dataset
+    once per line, which on QUVA is 100 walks of 201 files to answer the same
+    question 100 times.
+
+    Grouping by name rather than returning the first hit is deliberate. Two
+    files with the same basename under one root mean the manifest is ambiguous,
+    and guessing between them would silently score the wrong video against the
+    right annotation. That case has to stay visible.
+    """
+    index: dict[str, list[Path]] = {}
+    for path in root.rglob("*"):
+        if path.is_file():
+            index.setdefault(path.name, []).append(path)
+    return index
+
+
+class ClipLocator:
+    """Turns a manifest path into a file on disk, or into a reason it is not.
+
+    Separate from `main` so it can be tested without MediaPipe, and because the
+    decision it makes — score this file, or refuse — is the one that decides
+    whether the harness reports a measurement or an empty summary.
+    """
+
+    def __init__(self, root: Path) -> None:
+        self.root = root
+        self.relocated = 0
+        self._index: dict[str, list[Path]] | None = None
+
+    def locate(self, relative: str) -> tuple[Path | None, str]:
+        """`(path, note)`. A `None` path means the note is why there isn't one."""
+        path = (self.root / relative).resolve()
+        if path.exists():
+            return path, ""
+
+        # We know the filename and we know the root. Looking under it is what
+        # the person reading "absent" is about to do by hand, and the first
+        # version of this harness made them do it for a dataset whose videos
+        # sat one directory away from where its manifest said.
+        if self._index is None:
+            self._index = _index_by_name(self.root)
+        candidates = self._index.get(Path(relative).name, [])
+        if len(candidates) == 1:
+            self.relocated += 1
+            return candidates[0].resolve(), f"retrouvé sous {self.root}"
+        if candidates:
+            return None, f"nom ambigu ({len(candidates)} fichiers)"
+        return None, "fichier absent"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -281,17 +346,19 @@ def main(argv: list[str] | None = None) -> int:
     clips = manifest["clips"][: args.limit]
 
     results: list[ClipResult] = []
+    locator = ClipLocator(root)
     for entry in clips:
-        path = (root / entry["path"]).resolve()
         exercise = Exercise(entry.get("exercise", "pull_up"))
-        if not path.exists():
+        path, found_via = locator.locate(entry["path"])
+        if path is None:
+            declared = (root / entry["path"]).resolve()
+            print(f"{found_via:24s} {declared}", file=sys.stderr)
             results.append(
-                ClipResult(
-                    str(path), entry["reps"], None, 0, 0, 0.0, note="fichier absent"
-                )
+                ClipResult(str(declared), entry["reps"], None, 0, 0, 0.0, note=found_via)
             )
-            print(f"absent  {path}", file=sys.stderr)
             continue
+        if found_via:
+            print(f"dévié   {entry['path']} -> {path}", file=sys.stderr)
         result = evaluate_clip(
             path,
             int(entry["reps"]),
@@ -300,10 +367,13 @@ def main(argv: list[str] | None = None) -> int:
             args.trim_percent,
             args.dump_angles,
         )
+        if found_via:
+            # Carried into the JSON, not just stderr: a run that silently
+            # scored files other than the ones the manifest named is a run
+            # whose provenance you cannot reconstruct afterwards.
+            result.note = f"{result.note} ; {found_via}".strip(" ;").strip()
         results.append(result)
-        truth_column = (
-            "hors-domaine" if args.out_of_domain else f"vrai={result.truth:3d}"
-        )
+        truth_column = "hors-domaine" if args.out_of_domain else f"vrai={result.truth:3d}"
         print(
             f"{path.name:40s} {truth_column} "
             f"prédit={'—' if result.predicted is None else result.predicted:>3} "
@@ -314,27 +384,34 @@ def main(argv: list[str] | None = None) -> int:
             f"{result.note}"
         )
 
-    missing = [r for r in results if r.note == "fichier absent"]
+    missing = [r for r in results if r.predicted is None and r.frames == 0]
     if missing and len(missing) == len(results):
         # Exiting 0 here would hand back an empty summary that looks like a
         # measurement. It is a setup error, and it has to read as one.
+        seen = sorted({Path(r.path).suffix for r in results if Path(r.path).suffix})
         print(
             f"\nAucun clip trouvé ({len(missing)}/{len(results)}). Les chemins du "
-            f"manifeste sont résolus depuis {root}.\n"
-            "Utiliser --clips-root pour pointer le dossier des vidéos :\n"
+            f"manifeste sont résolus depuis {root}, et une recherche par nom de "
+            "fichier sous cette racine n'a rien donné non plus"
+            + (f" (extensions cherchées : {', '.join(seen)})." if seen else ".")
+            + "\nLa racine est probablement la mauvaise :\n"
             f"  python -m vision.eval.evaluate {args.manifest} "
             "--clips-root /chemin/vers/les/videos",
             file=sys.stderr,
         )
         return 2
     if missing:
+        print(f"\n⚠ {len(missing)} clips absents, exclus des métriques.", file=sys.stderr)
+    if locator.relocated:
+        # Not a warning — the run is valid — but the manifest is now wrong about
+        # where its own clips live, and that is worth fixing before the next one.
         print(
-            f"\n⚠ {len(missing)} clips absents, exclus des métriques.", file=sys.stderr
+            f"⚠ {locator.relocated} clips retrouvés ailleurs que là où le manifeste les "
+            "déclare. Les chemins du manifeste sont périmés.",
+            file=sys.stderr,
         )
 
-    summary = (
-        summarise_out_of_domain(results) if args.out_of_domain else summarise(results)
-    )
+    summary = summarise_out_of_domain(results) if args.out_of_domain else summarise(results)
     print("\n" + json.dumps(summary, indent=2))
 
     if args.out:

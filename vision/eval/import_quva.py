@@ -93,9 +93,7 @@ def read_count(path: Path, convention: str) -> tuple[int | None, str]:
 
     if suffix in {".txt", ".csv"}:
         values = [
-            line.strip()
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
+            line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
         ]
         if len(values) == 1 and values[0].isdigit():
             return int(values[0]), "texte scalaire"

@@ -32,7 +32,10 @@ packages = ["src/iacoach"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# ".." puts the repo root on the path so `vision.eval` is importable. Its heavy
+# dependencies (cv2, mediapipe) are imported inside the functions that need
+# them, so the path-resolution helpers can be tested without installing 200 MB.
+pythonpath = ["src", ".."]
 addopts = "-q"
 
 [tool.ruff]
@@ -49,4 +52,4 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["iacoach"]
+known-first-party = ["iacoach", "vision"]

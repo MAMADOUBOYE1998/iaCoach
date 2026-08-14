@@ -43,6 +43,14 @@ python -m vision.eval.evaluate vision/eval/manifest.pullups.json \
 Si **aucun** clip n'est trouvé, la commande sort en erreur au lieu de rendre un
 résumé vide : un résumé vide ressemble à une mesure.
 
+Et si un clip n'est pas là où le manifeste le déclare, il est **cherché par nom
+sous la racine** avant d'être déclaré absent — c'est exactement ce qu'on
+s'apprêtait à faire à la main. La déviation est signalée (`dévié`) et inscrite
+dans le `note` du clip : une passe qui a mesuré d'autres fichiers que ceux
+nommés doit rester reconstituable. Deux fichiers du même nom sous la racine ne
+sont pas « trouvés » mais `nom ambigu` : deviner entre eux scorerait une vidéo
+contre l'annotation de l'autre.
+
 ## Diagnostiquer un comptage faux
 
 Un compteur qui rend 3 au lieu de 9 a trois explications incompatibles, et le
@@ -76,10 +84,16 @@ python -m vision.eval.evaluate vision/eval/manifest.pullups.json \
     --dump-angles angles/ --out brut.json
 ```
 
-Un `.csv` par clip (`t_ms`, angles gauche/droit/moyen, confiance). Les
-percentiles disent qu'une distribution est étroite ; seule la série dit si c'est
-un signal plat, un signal rapide sous-échantillonné, ou un cycle propre au
-mauvais décalage.
+Un `.csv` par clip : `t_ms`, angles gauche/droit/moyen, confiance, puis la
+longueur des quatre segments rigides du bras. Les percentiles disent qu'une
+distribution est étroite ; seule la série dit si c'est un signal plat, un signal
+rapide sous-échantillonné, ou un cycle propre au mauvais décalage.
+
+Les longueurs de segments sont là parce que `confidence` dérive de la
+`visibility` de MediaPipe, qui affirme qu'un landmark a été **trouvé**, pas
+qu'il a été trouvé au bon endroit. Un os ne change pas de longueur : ce qui
+varie dans ces colonnes est l'estimation 3D qui bouge, et ça ne s'interprète
+qu'à côté de l'angle mesuré sur la même frame.
 
 ## Ce que les chiffres veulent dire
 

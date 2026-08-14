@@ -19,6 +19,13 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check src tests
       - run: ruff format --check src tests
+      # `vision/` is the offline evaluation harness — the code that produces
+      # every number in docs/BENCHMARKS.md. It sits outside `backend/` and was
+      # therefore linted by nothing. Its heavy deps (cv2, mediapipe) are
+      # imported inside the functions that need them, so it is checked, and its
+      # path-resolution and CSV-dump logic tested, without installing 200 MB.
+      - run: ruff check ../vision
+      - run: ruff format --check ../vision
       - run: pytest
       # The Pydantic models are the source of truth for the contracts. A model
       # change that does not regenerate contracts/schema/ fails here rather than

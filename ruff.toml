@@ -1,0 +1,12 @@
+# Lint settings for the code that lives outside `backend/` — today `vision/`,
+# the offline evaluation harness.
+#
+# It needs a config file of its own because ruff resolves settings by walking up
+# from each file: without this, `vision/` had no ancestor config and silently
+# fell back to ruff's defaults, which differ from the project's (line length 88
+# vs 100). Two invocations of the same command from two directories then
+# disagreed about whether the same file was formatted.
+#
+# `extend` rather than a copy: the rule set is one decision, made in
+# backend/pyproject.toml, and a second copy of it would drift.
+extend = "backend/pyproject.toml"
