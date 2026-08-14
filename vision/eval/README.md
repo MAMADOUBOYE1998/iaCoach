@@ -99,7 +99,9 @@ varie dans ces colonnes est l'estimation 3D qui bouge, et ça ne s'interprète
 qu'à côté de l'angle mesuré sur la même frame.
 
 S'y ajoutent trois relations verticales **signées** :
-`shoulder_above_hip`, `knee_below_hip`, `wrist_above_shoulder_y`.
+`shoulder_above_hip`, `knee_below_hip`, `wrist_above_shoulder_y` — rapportées
+aussi par clip dans le JSON (`orientation`), médiane et fraction de frames du
+mauvais côté de zéro.
 
 Tout le reste de l'étage d'analyse est constitué d'angles — invariants par
 rotation — et `trunk_verticality` prend une valeur absolue. **Un athlète suivi à
@@ -115,13 +117,16 @@ sa confiance, le motif, les features de la fenêtre (`wrist_above_shoulder`,
 exercice.
 
 Sans ce fichier, une étiquette fausse est indiscutable. `084` est appelé `squat`
-sur 99,8 % de ses fenêtres pendant que l'athlète fait des tractions ; la règle
-`squat` exige que les mains ne soient pas au-dessus des épaules, donc **soit**
-MediaPipe ne les y place pas sur un athlète suspendu, **soit** le cadrage n'est
-pas celui qu'on suppose. Ces deux causes appellent des correctifs opposés et
-l'étiquette seule ne les sépare pas. Une fenêtre refusée avant d'avoir des
-features laisse les colonnes **vides**, jamais à zéro — `wrist_above_shoulder`
-vaut légitimement 0 quand les mains sont à hauteur d'épaule.
+sur 99,8 % de ses fenêtres pendant que l'athlète fait des tractions, et il a
+fallu ces colonnes pour établir que ni la règle ni aucun seuil n'était en cause :
+les mains ne passent au-dessus des épaules sur **aucune** des 1175 frames, alors
+que les épaules restent au-dessus des hanches sur toutes. Corps droit, mains
+jamais en haut — `num_poses=1` suit quelqu'un d'autre.
+
+Une fenêtre refusée avant d'avoir des features laisse les colonnes **vides**,
+jamais à zéro : `wrist_above_shoulder` vaut légitimement 0 quand les mains sont
+à hauteur d'épaule, et un zéro fabriquerait la preuve que ce fichier existe pour
+fournir.
 
 ## Ce que les chiffres veulent dire
 

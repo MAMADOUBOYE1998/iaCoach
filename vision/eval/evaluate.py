@@ -45,6 +45,7 @@ from iacoach.classify import Classification, ExerciseClassifier
 from iacoach.contracts import Exercise, FrameSample
 from iacoach.evaluation import (
     ClipResult,
+    orientation_summary,
     score_samples,
     segment_stability,
     summarise,
@@ -91,23 +92,30 @@ def _orientation(world: list[Landmark]) -> dict[str, float]:
     mid-muscle-up — in every posture a human body takes, the shoulders are
     above the hips. If this comes out negative, the skeleton is inverted and
     every angle downstream is being read off an upside-down body. If it stays
-    positive while `wrist_above_shoulder` is negative, the skeleton is upright
-    and the arms really are down: a different person, or a different moment,
-    but not a rotation.
+    positive while `wrist_above_shoulder_y` is negative, the skeleton is
+    upright and the arms really are down: a different person, or a different
+    moment, but not a rotation.
+
+    Everything is divided by the **3D** torso length, not by the vertical gap.
+    The first version used the gap, which made `shoulder_above_hip` come out
+    exactly ±1 on every frame by construction — a sign, carrying no magnitude,
+    and blind to a body lying on its side. Against the 3D length it is a signed
+    verticality: +1 upright, 0 horizontal, −1 inverted. Which is precisely the
+    quantity `trunk_verticality` throws away when it takes an absolute value.
     """
 
-    def mid_y(left: str, right: str) -> float:
-        return (world[LANDMARK[left]].y + world[LANDMARK[right]].y) / 2.0
+    def mid(left: str, right: str) -> tuple[float, float, float]:
+        p, q = world[LANDMARK[left]], world[LANDMARK[right]]
+        return ((p.x + q.x) / 2.0, (p.y + q.y) / 2.0, (p.z + q.z) / 2.0)
 
-    hip_y = mid_y("LEFT_HIP", "RIGHT_HIP")
-    shoulder_y = mid_y("LEFT_SHOULDER", "RIGHT_SHOULDER")
-    torso = abs(hip_y - shoulder_y)
+    hip, shoulder = mid("LEFT_HIP", "RIGHT_HIP"), mid("LEFT_SHOULDER", "RIGHT_SHOULDER")
+    torso = math.dist(hip, shoulder)
     if torso <= 0.0:
         return {}
     return {
-        "shoulder_above_hip": (hip_y - shoulder_y) / torso,
-        "knee_below_hip": (mid_y("LEFT_KNEE", "RIGHT_KNEE") - hip_y) / torso,
-        "wrist_above_shoulder_y": (shoulder_y - mid_y("LEFT_WRIST", "RIGHT_WRIST")) / torso,
+        "shoulder_above_hip": (hip[1] - shoulder[1]) / torso,
+        "knee_below_hip": (mid("LEFT_KNEE", "RIGHT_KNEE")[1] - hip[1]) / torso,
+        "wrist_above_shoulder_y": (shoulder[1] - mid("LEFT_WRIST", "RIGHT_WRIST")[1]) / torso,
     }
 
 
@@ -308,6 +316,7 @@ def evaluate_clip(
         in_domain=in_domain,
     )
     result.segment_cv = segment_stability(lengths)
+    result.orientation = orientation_summary(lengths)
     return result
 
 

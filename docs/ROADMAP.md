@@ -197,12 +197,25 @@ athlète debout.** Le dump par frame porte désormais `shoulder_above_hip` — l
 seul signe qui ne ment pas, puisqu'aucune posture humaine ne met les épaules
 sous les hanches.
 
+**Tranché.** `shoulder_above_hip` vaut +1,000 sur les 1175 frames de `084` :
+le squelette n'est pas retourné. Mais `wrist_above_shoulder_y` est négatif sur
+**1175 frames sur 1175**. Un corps droit, cohérent, confiance 1,0, dont les
+mains ne passent jamais au-dessus des épaules sur un clip de tractions.
+
+Donc : **le défaut est le choix du sujet**, pas la biomécanique. `num_poses=1`
+sans politique de sélection, et l'app a la même exposition — filme-toi dans un
+parc, quelqu'un passe. Aucun score de forme ne rattrape ça, et un compte de
+répétitions ne le montre pas.
+
 Reste dans M2 :
 
-- **Lire `shoulder_above_hip` sur `084`.** Négatif ⇒ squelette retourné
-  (rotation vidéo, ou pose inversée) ; positif ⇒ ce n'est pas l'athlète qui est
-  suivi (`num_poses=1` sur une aire de jeux). Correctifs opposés. Aucun seuil
-  du classifieur ne bouge avant cette lecture.
+- **Politique de sélection du sujet.** Le candidat par défaut est la continuité
+  de piste : `num_poses > 1`, puis à chaque frame la pose la plus proche de la
+  précédente, amorcée sur la plus grande boîte. Neutre vis-à-vis de l'exercice,
+  donc sans effet de bord sur la spécificité. À mesurer sur QUVA avant de
+  toucher à l'app.
+- Interdiction de toucher un seuil du classifieur d'ici là : `084` a coûté trois
+  prédictions, dont deux fausses, toutes portées sur la mauvaise couche.
 - Traduction des `flags` en retours actionnables en français.
 - Recalage de `kip_tolerance_ms` et `trunk_tolerance_deg` sur footage réel
   enregistré au débit réel de l'appareil (~21 fps, pas 30).

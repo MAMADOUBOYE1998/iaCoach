@@ -18,6 +18,7 @@ from iacoach.evaluation import (
     ClipResult,
     calibration_from,
     classification_verdict,
+    orientation_summary,
     periodicity_count,
     score_samples,
     segment_stability,
@@ -141,6 +142,36 @@ class TestOutOfDomain:
 
     def test_empty_input(self) -> None:
         assert summarise_out_of_domain([])["false_positive_rate"] == 0.0
+
+
+class TestOrientationSummary:
+    """Per clip, so this question never needs a per-frame dump again.
+
+    It took four passes to establish that `084` — annotated as pull-ups —
+    never once shows the hands above the shoulders, and the last one only
+    answered it because a CSV got opened by hand.
+    """
+
+    def test_reports_how_often_a_relation_is_negative(self) -> None:
+        frames = [{"wrist_above_shoulder_y": v} for v in (-0.8, -0.9, -0.7, 0.4)]
+
+        found = orientation_summary(frames)
+
+        assert found["wrist_above_shoulder_y_negative"] == pytest.approx(0.75)
+        assert found["wrist_above_shoulder_y"] < 0
+
+    def test_the_084_signature(self) -> None:
+        """Upright torso, hands never up: not an inversion, a wrong subject."""
+        frames = [{"shoulder_above_hip": 1.0, "wrist_above_shoulder_y": -0.84}] * 50
+
+        found = orientation_summary(frames)
+
+        assert found["shoulder_above_hip_negative"] == 0.0
+        assert found["wrist_above_shoulder_y_negative"] == 1.0
+
+    def test_no_frames_reports_nothing(self) -> None:
+        """`{}`, not zeros — zeros here would read as a measured upright body."""
+        assert orientation_summary([]) == {}
 
 
 def gated(

@@ -24,6 +24,7 @@ __all__ = [
     "ClipResult",
     "calibration_from",
     "classification_verdict",
+    "orientation_summary",
     "periodicity_count",
     "score_samples",
     "segment_stability",
@@ -85,6 +86,10 @@ class ClipResult:
     segment_cv: dict[str, float] = field(default_factory=dict)
     """Length variability of the rigid arm segments. The one tracking-quality
     signal here that does not come from MediaPipe's own optimism."""
+    orientation: dict[str, float] = field(default_factory=dict)
+    """Signed vertical relations. Answers "is this body upright, and are the
+    hands where the declared exercise requires them" — questions no angle can
+    answer, because every angle is invariant under rotation."""
 
     # `attempted` / `events` / `predicted` nest, and the step that collapses says
     # which stage is at fault. An earlier version of this reported the per-rep
@@ -149,6 +154,35 @@ def segment_stability(lengths: list[dict[str, float]]) -> dict[str, float]:
         out[name] = round(math.sqrt(variance) / mean, 4)
     if out:
         out["worst"] = max(out.values())
+    return out
+
+
+ORIENTATION = ("shoulder_above_hip", "knee_below_hip", "wrist_above_shoulder_y")
+
+
+def orientation_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
+    """Median of each signed vertical relation, plus how often it is negative.
+
+    Reported per clip so this class of question never needs a per-frame dump
+    again. It took four passes to establish that clip `084` — annotated as
+    pull-ups — never once shows the hands above the shoulders, and the last of
+    those passes only answered it because someone opened a CSV by hand.
+
+    `..._negative` is the fraction of frames on the wrong side of zero. On a
+    declared pull-up, `wrist_above_shoulder_y_negative` near 1.0 means the pose
+    stage never saw a hang: either it is tracking somebody else, or the athlete
+    is not in frame. Neither is a biomechanics problem, and both are invisible
+    in a rep count.
+    """
+    if not lengths:
+        return {}
+    out: dict[str, float] = {}
+    for name in ORIENTATION:
+        values = sorted(row[name] for row in lengths if name in row)
+        if not values:
+            continue
+        out[name] = round(_quantile(values, 0.5), 4)
+        out[f"{name}_negative"] = round(sum(v < 0.0 for v in values) / len(values), 4)
     return out
 
 

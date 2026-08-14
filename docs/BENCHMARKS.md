@@ -558,14 +558,48 @@ correctifs opposés :
    peut verrouiller un passant. Debout, jambes qui bougent, bras qui pendent —
    la description colle exactement.
 
-Le discriminant est ajouté au dump par frame : `shoulder_above_hip`. Debout,
-suspendu, en squat, en pleine muscle-up — **dans toute posture qu'un corps
-humain prend, les épaules sont au-dessus des hanches.** Négatif ⇒ squelette
-retourné. Positif avec `wrist_above_shoulder` négatif ⇒ squelette droit et bras
-réellement baissés, donc mauvaise personne ou mauvais moment.
+### Tranché (`spec6`, 1175 frames de `084`)
 
-Ni la règle `squat` ni aucun seuil ne sont en cause sur `084`. Ne rien toucher
-au classifieur tant que cette colonne n'a pas parlé.
+| | valeur | frames négatives |
+|---|---|---|
+| `shoulder_above_hip` | **+1,000** | **0 / 1175** |
+| `knee_below_hip` | +0,652 | 13 / 1175 |
+| `wrist_above_shoulder_y` | −0,838 | **1175 / 1175** |
+| `elbow_mean_deg` | 144,1 (p5 131,5 – p95 162,8) | — |
+| `confidence` | 1,000 | — |
+
+**Hypothèse 1 éliminée.** Le squelette n'est pas retourné : épaules au-dessus
+des hanches sur *toutes* les frames, genoux sous les hanches sur 99 %.
+
+Reste l'hypothèse 2. Un corps droit, cohérent, suivi avec une confiance de 1,0
+et des segments stables (humérus 0,243 m, avant-bras 0,256 m, CV 9 %), dont les
+**mains ne passent jamais au-dessus des épaules** sur un clip annoté « tractions ».
+`num_poses=1` : le modèle a verrouillé quelqu'un d'autre, ou l'athlète n'est pas
+dans le cadre.
+
+Longueurs de segments à l'appui, sans en faire une preuve : un humérus de
+0,24 m est court pour un adulte (~0,33 m), et l'humérus ressort ici *plus court*
+que l'avant-bras, ce qui n'est pas une proportion adulte. Aire de jeux, barres
+de singe. L'échelle métrique de MediaPipe est approximative, donc c'est un
+indice, pas une conclusion.
+
+**Ce que ça change de responsabilité.** Le défaut n'est ni dans la règle `squat`,
+ni dans aucun seuil biomécanique, ni dans le compteur. Il est dans **le choix du
+sujet** — et l'app a exactement la même exposition : filme-toi dans un parc,
+quelqu'un passe, `num_poses=1` n'a aucune politique pour dire lequel est
+l'athlète. Aucun score de forme ne peut rattraper ça, et rien dans un compte de
+répétitions ne le montre.
+
+Deux corrections dans le harnais, faites :
+
+- `shoulder_above_hip` divisait par l'écart vertical, ce qui le forçait à ±1 par
+  construction — un signe, sans magnitude, aveugle à un corps couché. Divisé
+  désormais par la longueur 3D du torse : **+1 debout, 0 horizontal, −1 inversé.**
+  C'est exactement la quantité que `trunk_verticality` jette avec sa valeur
+  absolue.
+- `orientation` est publié par clip dans le JSON, avec la fraction de frames du
+  mauvais côté de zéro. Il a fallu quatre passes pour établir ce fait sur `084`,
+  et la dernière n'a répondu que parce qu'un CSV a été ouvert à la main.
 
 Attention à la lecture du tableau principal : les faux positifs passent de 31/100
 à 29/97 **sans qu'aucun clip ne change**. Les trois tractions sortent du

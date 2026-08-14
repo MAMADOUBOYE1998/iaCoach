@@ -17,6 +17,8 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+import pytest
+
 from iacoach.classify import Classification, WindowFeatures
 from iacoach.contracts import Exercise, FrameSample
 from iacoach.frame import LANDMARK, Landmark
@@ -195,7 +197,9 @@ class TestOrientation:
     def test_an_upright_body_has_its_shoulders_above_its_hips(self) -> None:
         found = _orientation(_body())
 
-        assert found["shoulder_above_hip"] > 0
+        # +1 upright, 0 horizontal, -1 inverted: a signed verticality, which is
+        # exactly what `trunk_verticality` discards when it takes `abs`.
+        assert found["shoulder_above_hip"] == pytest.approx(1.0, abs=0.02)
         assert found["knee_below_hip"] > 0
         assert found["wrist_above_shoulder_y"] > 0
 
