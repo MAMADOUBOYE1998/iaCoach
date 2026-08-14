@@ -18,6 +18,7 @@ from iacoach.evaluation import (
     ClipResult,
     calibration_from,
     classification_verdict,
+    detection_summary,
     orientation_summary,
     periodicity_count,
     score_samples,
@@ -142,6 +143,60 @@ class TestOutOfDomain:
 
     def test_empty_input(self) -> None:
         assert summarise_out_of_domain([])["false_positive_rate"] == 0.0
+
+
+class TestDetectionSummary:
+    """Why the athlete was never a candidate, rather than which body to pick.
+
+    Subject selection turned out to answer the wrong question on `084`: the
+    tracker never had more than one candidate, so the athlete was not chosen
+    against — they were never offered.
+    """
+
+    def test_a_still_box_through_many_reps_is_not_the_athlete(self) -> None:
+        """The signal a rep count cannot give.
+
+        A pull-up translates the whole body by roughly half a torso, every
+        repetition. A box that barely moves through 34 annotated repetitions
+        belongs to somebody else — and every angle-based quantity in the
+        pipeline is blind to it, because angles do not care where a body is.
+        """
+        still = [{"box_centre_y": 0.5 + 0.001 * (i % 3)} for i in range(200)]
+
+        found = detection_summary(still)
+
+        assert found["box_centre_y_excursion"] < 0.01
+
+    def test_a_moving_box_is_reported_as_moving(self) -> None:
+        cycling = [{"box_centre_y": 0.4 + 0.2 * (i % 2)} for i in range(200)]
+
+        assert detection_summary(cycling)["box_centre_y_excursion"] > 0.15
+
+    def test_an_impossible_limb_ratio_is_flagged(self) -> None:
+        """An upper arm shorter than its forearm belongs to no human.
+
+        Measured on `084`: 0.94 and 0.99 left and right, where every person is
+        between 1.05 and 1.35. That is a badly fitted skeleton, not an unusual
+        build — and it is the reading of `segment_cv` this project got wrong,
+        since a consistently wrong fit is perfectly stable.
+        """
+        frames = [{"limb_ratio": r} for r in (0.94, 0.99, 1.20, 0.95)]
+
+        found = detection_summary(frames)
+
+        assert found["limb_ratio_implausible"] == pytest.approx(0.75)
+
+    def test_a_plausible_body_is_not_flagged(self) -> None:
+        assert detection_summary([{"limb_ratio": 1.2}] * 10)["limb_ratio_implausible"] == 0.0
+
+    def test_a_small_body_in_frame_is_reported(self) -> None:
+        """MediaPipe has a practical lower size limit; this is where it shows."""
+        found = detection_summary([{"box_height": 0.08}] * 10)
+
+        assert found["box_height"] == pytest.approx(0.08)
+
+    def test_no_frames_reports_nothing(self) -> None:
+        assert detection_summary([]) == {}
 
 
 class TestOrientationSummary:

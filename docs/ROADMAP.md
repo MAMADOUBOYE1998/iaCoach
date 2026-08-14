@@ -231,10 +231,22 @@ Reste dans M2 :
 - **Ne pas porter ça dans l'app.** Les deux mesures demandées sont faites et
   toutes deux sont négatives. Rien à porter.
 
-- **La question devient la détection.** L'athlète de `084` n'est jamais détecté
-  du tout — pas mal choisi, absent des candidats. Aucune politique de sélection
-  n'y peut rien ; c'est le modèle de pose, ou le cadrage, ou la taille du sujet
-  dans l'image. Piste M4 (fine-tuning), pas M2.
+- **La question est devenue la détection.** L'athlète de `084` n'est jamais
+  détecté — pas mal choisi, absent des candidats. Trois causes possibles, et
+  l'instrumentation pour les séparer est en place :
+
+  | hypothèse | ce qui la confirme |
+  |---|---|
+  | le mode VIDEO ne recherche jamais un second corps (réutilisation de la ROI) | `--running-mode image` fait monter `max_candidates` au-dessus de 1 |
+  | l'athlète est trop petit dans l'image | `detection.box_height` faible sur le corps suivi |
+  | c'est l'athlète, mal ajusté | `detection.box_centre_y_excursion` proche de zéro sur 34 tractions, et `limb_ratio_implausible` élevé |
+
+  Le troisième point est déjà partiellement mesuré : sur `084` le rapport
+  humérus/avant-bras vaut **0,94 à gauche et 0,99 à droite**, là où aucun humain
+  n'est sous 1,05. Ce squelette n'est pas celui d'une personne de morphologie
+  inhabituelle, c'est un ajustement raté — ce qui affaiblit la lecture « corps
+  cohérent, donc quelqu'un d'autre » faite au tour précédent. La stabilité des
+  segments dit que l'ajustement est *constant*, pas qu'il est *juste*.
 
 - Interdiction de toucher un seuil du classifieur d'ici là : `084` a coûté trois
   prédictions, dont deux fausses, toutes portées sur la mauvaise couche.

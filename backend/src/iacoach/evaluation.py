@@ -24,6 +24,7 @@ __all__ = [
     "ClipResult",
     "calibration_from",
     "classification_verdict",
+    "detection_summary",
     "orientation_summary",
     "periodicity_count",
     "score_samples",
@@ -90,6 +91,10 @@ class ClipResult:
     """Signed vertical relations. Answers "is this body upright, and are the
     hands where the declared exercise requires them" — questions no angle can
     answer, because every angle is invariant under rotation."""
+    detection: dict[str, float] = field(default_factory=dict)
+    """Where the detected body sat in the frame and whether it was shaped like a
+    person. Answers what subject selection could not: on `084` the athlete was
+    never a candidate, so the question was never which body to pick."""
     subject: dict[str, int] = field(default_factory=dict)
     """What subject selection had to work with. `max_candidates == 1` means the
     tracker never had a choice, so a wrong body on that clip is a *detection*
@@ -158,6 +163,47 @@ def segment_stability(lengths: list[dict[str, float]]) -> dict[str, float]:
         out[name] = round(math.sqrt(variance) / mean, 4)
     if out:
         out["worst"] = max(out.values())
+    return out
+
+
+HUMAN_LIMB_RATIO = (1.05, 1.35)
+"""Upper arm over forearm. Adults sit near 1.2, children near 1.1; nobody is
+outside this. A value below it is not an unusual build, it is a bad fit."""
+
+
+def detection_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
+    """Where the detected body was, and whether it was shaped like a person.
+
+    Subject *selection* turned out to be the wrong question on clip `084`: the
+    tracker never had more than one candidate, so the athlete was not chosen
+    against — they were never offered. These answer why.
+
+    `box_centre_y_excursion` is the one a rep count cannot give. A pull-up
+    translates the whole body by roughly half a torso, every repetition. A box
+    that barely moves through 34 annotated repetitions does not belong to the
+    person doing them.
+
+    `limb_ratio_implausible` is the fraction of frames outside `HUMAN_LIMB_RATIO`.
+    It exists because `segment_cv` was over-read once already: stability of a
+    segment length says the fit is *consistent*, not that it is *correct*, and a
+    consistently wrong skeleton is perfectly stable.
+    """
+    if not lengths:
+        return {}
+    out: dict[str, float] = {}
+    for name in ("box_width", "box_height", "box_centre_x", "box_centre_y", "limb_ratio"):
+        values = sorted(row[name] for row in lengths if name in row)
+        if not values:
+            continue
+        out[name] = round(_quantile(values, 0.5), 4)
+        if name == "box_centre_y":
+            out["box_centre_y_excursion"] = round(
+                _quantile(values, 0.9) - _quantile(values, 0.1), 4
+            )
+        if name == "limb_ratio":
+            low, high = HUMAN_LIMB_RATIO
+            outside = sum(not low <= v <= high for v in values)
+            out["limb_ratio_implausible"] = round(outside / len(values), 4)
     return out
 
 

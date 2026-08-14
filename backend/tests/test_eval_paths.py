@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from vision.eval.evaluate import ClipLocator, _index_by_name, main
+from vision.eval.evaluate import ClipLocator, _index_by_name, build_parser, main
 
 
 def _touch(path: Path) -> Path:
@@ -108,6 +108,38 @@ class TestFindingNothingIsAnError:
         err = capsys.readouterr().err
         assert "Modèle de pose absent" in err
         assert "clip" not in err
+
+
+class TestTheCommandLineItself:
+    """`--help` is a surface no test covered, and it shipped broken.
+
+    Argparse runs every help string through `%`-formatting. A help text saying
+    "costs 26 % of throughput" makes `% o` a format spec, and `--help` dies with
+    `TypeError: %o format: an integer is required` — for every flag at once,
+    not just the offending one. Nothing in the suite noticed, because nothing
+    had ever built the parser.
+    """
+
+    def test_help_renders(self, capsys: pytest.CaptureFixture[str]) -> None:
+        with pytest.raises(SystemExit) as exit_code:
+            main(["--help"])
+
+        assert exit_code.value.code == 0
+        assert "--max-poses" in capsys.readouterr().out
+
+    def test_every_flag_survives_percent_formatting(self) -> None:
+        """Expands each flag's help alone, so a failure names the guilty flag.
+
+        `--help` renders everything at once, so it says only that *something*
+        is malformed. This says which.
+        """
+        parser = build_parser()
+
+        for action in parser._actions:
+            if action.help is None:
+                continue
+            rendered = action.help % {"default": action.default, "prog": parser.prog}
+            assert rendered, f"aide vide pour {action.option_strings}"
 
 
 class TestClipLocator:

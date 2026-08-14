@@ -45,6 +45,7 @@ from iacoach.classify import Classification, ExerciseClassifier
 from iacoach.contracts import Exercise, FrameSample
 from iacoach.evaluation import (
     ClipResult,
+    detection_summary,
     orientation_summary,
     score_samples,
     segment_stability,
@@ -120,8 +121,52 @@ def _orientation(world: list[Landmark]) -> dict[str, float]:
     }
 
 
+def _detection(normalized: list[Landmark], world: list[Landmark]) -> dict[str, float]:
+    """Where the detected body is in the frame, and whether it is shaped like one.
+
+    Answers the question left open by subject selection: on clip `084` the
+    tracker reported only ever one candidate, so the athlete was never *offered*,
+    and "which body do we pick" was the wrong question. These say why.
+
+    `box_height` is the detected body's share of the frame. MediaPipe's detector
+    has a practical lower size limit; an athlete filmed wide on a bar can fall
+    under it while a bystander nearer the camera does not.
+
+    `centre_y_excursion` is the giveaway a rep count cannot give. A pull-up
+    translates the whole body by roughly half a torso; a standing spectator's
+    box does not move. If the tracked box is still while the annotation says 34
+    repetitions happened, the body being measured is not the one doing them.
+
+    `limb_ratio` is upper arm over forearm. Every human is between about 1.15
+    and 1.25, children included. Well below that is not a person of unusual
+    build — it is a skeleton fitted badly. Worth having because segment *stability*
+    does not imply segment *correctness*: a consistently wrong fit is stable too,
+    which is a reading of `segment_cv` this project got wrong once already.
+    """
+    visible = [p for p in normalized if p.visibility is None or p.visibility >= 0.5]
+    if len(visible) < 4:
+        return {}
+    xs, ys = [p.x for p in visible], [p.y for p in visible]
+
+    def span(a: str, b: str) -> float:
+        p, q = world[LANDMARK[a]], world[LANDMARK[b]]
+        return math.dist((p.x, p.y, p.z), (q.x, q.y, q.z))
+
+    upper = span("LEFT_SHOULDER", "LEFT_ELBOW") + span("RIGHT_SHOULDER", "RIGHT_ELBOW")
+    fore = span("LEFT_ELBOW", "LEFT_WRIST") + span("RIGHT_ELBOW", "RIGHT_WRIST")
+    out = {
+        "box_width": max(xs) - min(xs),
+        "box_height": max(ys) - min(ys),
+        "box_centre_x": (max(xs) + min(xs)) / 2.0,
+        "box_centre_y": (max(ys) + min(ys)) / 2.0,
+    }
+    if fore > 0.0:
+        out["limb_ratio"] = upper / fore
+    return out
+
+
 def sample_video(
-    path: Path, model_path: Path, max_poses: int = 1
+    path: Path, model_path: Path, max_poses: int = 1, running_mode: str = "video"
 ) -> tuple[
     list[FrameSample],
     list[dict[str, float]],
@@ -151,9 +196,16 @@ def sample_video(
     from mediapipe.tasks import python as mp_python
     from mediapipe.tasks.python import vision as mp_vision
 
+    # VIDEO mode reuses the previous frame's region of interest and only runs
+    # the full detector when tracking is lost. That is the right trade on a
+    # phone, and it means a second body entering the scene may never be looked
+    # for at all — which would explain `084` reporting one candidate even with
+    # `num_poses=3`. IMAGE mode re-detects every frame, so the two disagree
+    # exactly when ROI reuse is what hid the athlete.
+    image_mode = running_mode == "image"
     options = mp_vision.PoseLandmarkerOptions(
         base_options=mp_python.BaseOptions(model_asset_path=str(model_path)),
-        running_mode=mp_vision.RunningMode.VIDEO,
+        running_mode=mp_vision.RunningMode.IMAGE if image_mode else mp_vision.RunningMode.VIDEO,
         # Default 1, and *measured* rather than assumed. Raising it to 3 so the
         # tracker could choose cost 26 % of throughput (54.9 -> 40.6 fps on the
         # same 48 030 frames) and bought nothing: false positives 29 -> 28,
@@ -192,7 +244,11 @@ def sample_video(
                 image_format=mp.ImageFormat.SRGB,
                 data=cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB),
             )
-            result = landmarker.detect_for_video(image, int(t_ms))
+            result = (
+                landmarker.detect(image)
+                if image_mode
+                else landmarker.detect_for_video(image, int(t_ms))
+            )
             if not result.pose_world_landmarks or not result.pose_landmarks:
                 continue
             # Selection runs on the *normalised* set: world landmarks are
@@ -212,7 +268,11 @@ def sample_video(
             sample = sampler.sample(world, normalized[chosen], t_ms)
             if sample is not None:
                 samples.append(sample)
-                lengths.append(_segment_lengths(world) | _orientation(world))
+                lengths.append(
+                    _segment_lengths(world)
+                    | _orientation(world)
+                    | _detection(normalized[chosen], world)
+                )
 
     capture.release()
     return samples, lengths, verdicts, frames, time.perf_counter() - started, tracker
@@ -321,9 +381,12 @@ def evaluate_clip(
     dump_dir: Path | None = None,
     in_domain: bool = False,
     max_poses: int = 1,
+    running_mode: str = "video",
 ) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
-    samples, lengths, verdicts, frames, seconds, tracker = sample_video(path, model, max_poses)
+    samples, lengths, verdicts, frames, seconds, tracker = sample_video(
+        path, model, max_poses, running_mode
+    )
     if dump_dir is not None:
         dump_angles(samples, lengths, dump_dir / f"{path.stem}.csv")
         dump_windows(verdicts, dump_dir / f"{path.stem}_windows.csv")
@@ -340,6 +403,7 @@ def evaluate_clip(
     )
     result.segment_cv = segment_stability(lengths)
     result.orientation = orientation_summary(lengths)
+    result.detection = detection_summary(lengths)
     result.subject = (
         {}
         if tracker is None
@@ -408,7 +472,13 @@ class ClipLocator:
         return None, "fichier absent"
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """Separate from `main` so the flags can be rendered without running a pass.
+
+    `--help` shipped broken once because nothing in the suite had ever built
+    this parser: argparse expands `%` in help strings, and a literal per-cent
+    sign in one flag's text kills `--help` for every flag at once.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument(
@@ -425,9 +495,24 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "How many bodies MediaPipe may return per frame. 1 (the default) "
             "bypasses subject selection entirely. Above 1, `SubjectTracker` "
-            "picks one and follows it. Measured on QUVA: 3 costs 26 % of "
+            # `%%`, not `%`: argparse runs help strings through `%`-formatting,
+            # so a bare `% o` is read as a format spec and `--help` dies with
+            # `TypeError: %o format: an integer is required`. Shipped broken
+            # once already, which is what this test-free surface costs.
+            "picks one and follows it. Measured on QUVA: 3 costs 26 %% of "
             "throughput and improves no counting metric, so it is off until "
             "footage exists where it helps."
+        ),
+    )
+    parser.add_argument(
+        "--running-mode",
+        choices=("video", "image"),
+        default="video",
+        help=(
+            "`video` (default) is what the app runs: MediaPipe reuses the "
+            "previous frame's region of interest and only re-detects when "
+            "tracking is lost. `image` re-detects every frame — slower, and the "
+            "way to tell whether ROI reuse is why a second body is never found."
         ),
     )
     parser.add_argument(
@@ -471,7 +556,11 @@ def main(argv: list[str] | None = None) -> int:
             "of accuracy, whose `truth` would describe a different movement."
         ),
     )
-    args = parser.parse_args(argv)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
 
     if not args.model.exists():
         # The npm route needs node; the curl route needs nothing. Both fetch the
@@ -515,6 +604,7 @@ def main(argv: list[str] | None = None) -> int:
             args.dump_angles,
             bool(entry.get("in_domain", False)),
             args.max_poses,
+            args.running_mode,
         )
         if found_via:
             # Carried into the JSON, not just stderr: a run that silently

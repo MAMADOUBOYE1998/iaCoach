@@ -100,6 +100,34 @@ Sur `084`, mêmes 1175 frames détectées et `predicted` qui passe de 2 à 8. Au
 drapeau ne peut isoler proprement la sélection — c'est une propriété de
 MediaPipe.
 
+### Quand le sujet n'est même pas candidat
+
+Si `subject.max_candidates` vaut 1, la sélection n'a rien pu faire : l'athlète
+n'a pas été mal choisi, il n'a pas été proposé. Le bloc `detection` répond alors
+à la question suivante.
+
+| champ | ce qu'il dit |
+|---|---|
+| `box_height` | part de l'image occupée par le corps suivi. Le détecteur a une taille minimale pratique ; un athlète filmé large peut passer dessous quand un passant plus proche ne passe pas. |
+| `box_centre_y_excursion` | déplacement vertical du corps suivi (p90 − p10). **Une traction translate tout le corps d'environ un demi-torse à chaque répétition.** Une boîte immobile sur 34 répétitions annotées n'appartient pas à la personne qui les fait. |
+| `limb_ratio` / `limb_ratio_implausible` | humérus sur avant-bras. Tout humain est entre 1,05 et 1,35, enfants compris. En dessous, ce n'est pas une morphologie inhabituelle, c'est un squelette mal ajusté. |
+
+Ce dernier existe parce que `segment_cv` a été sur-interprété une fois : la
+stabilité d'une longueur dit que l'ajustement est **constant**, pas qu'il est
+**juste**. Un squelette constamment faux est parfaitement stable.
+
+Et `--running-mode image` teste la cause structurelle : en mode `video`,
+MediaPipe réutilise la région d'intérêt de la frame précédente et ne relance le
+détecteur complet que lorsqu'il perd le suivi — donc un second corps entrant
+dans la scène peut n'être **jamais cherché**. Le mode `image` redétecte chaque
+frame. Si `max_candidates` monte, c'est la réutilisation de la ROI qui cachait
+l'athlète ; sinon il n'est pas détectable du tout.
+
+```bash
+python -m vision.eval.evaluate quva.json --out-of-domain \
+    --running-mode image --max-poses 3 --out detection.json
+```
+
 ## Diagnostiquer un comptage faux
 
 Un compteur qui rend 3 au lieu de 9 a trois explications incompatibles, et le
