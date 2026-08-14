@@ -521,11 +521,51 @@ plus « l'amplitude du coude est sous-estimée », c'est la posture entière qui
 n'est pas reconnue. Sauf si le cadrage n'est pas celui qu'on suppose — et ces
 deux causes appellent des correctifs opposés.
 
-Impossible de trancher depuis ce fichier : les features de fenêtre étaient
-calculées puis jetées. `--dump-angles` écrit désormais aussi
-`<clip>_windows.csv` (étiquette, motif, features, score par exercice), ce qui
-rend la question mesurable au lieu d'argumentable. C'est le prochain pas, avant
-tout nouveau seuil.
+### `084` mesuré (1156 fenêtres, passe `spec5`)
+
+| Feature | p5 | médiane | p95 |
+|---|---|---|---|
+| `wrist_above_shoulder` | −0,86 | **−0,79** | −0,63 |
+| `trunk_verticality` | 0,971 | 0,978 | 0,985 |
+| `elbow_rom_deg` | 17,1 | 23,8 | 31,9 |
+| `knee_rom_deg` | 87,8 | 93,3 | 97,2 |
+| `hip_rom_deg` | 66,1 | 74,0 | 84,8 |
+| `confidence` | 1,000 | 1,000 | 1,000 |
+
+**Zéro fenêtre sur 1156** avec les mains au-dessus des épaules. `score_squat`
+vaut **1,000 partout** — pas un cas limite, un maximum. `feet_planted` était donc
+satisfait à fond : la règle n'a jamais été en cause.
+
+Ce que MediaPipe décrit là — buste vertical, mains à 0,8 longueur de bras
+*sous* les épaules, genoux qui parcourent 93°, hanches 74°, coudes quasi
+immobiles, confiance 1,0 — c'est un **corps debout dont les jambes bougent et
+les bras pendent**. Pas un athlète suspendu.
+
+### Et le trou que ça ouvre dans notre code
+
+`trunk_verticality = |trunk · ŷ| / ‖trunk‖`. **La valeur absolue rend un athlète
+suivi à l'envers indiscernable d'un athlète debout** — et tous les autres
+signaux de l'étage d'analyse sont des angles, invariants par rotation. Rien dans
+le pipeline ne peut voir qu'un squelette est retourné.
+
+Deux causes restent compatibles avec la mesure, et elles appellent des
+correctifs opposés :
+
+1. **Le squelette est retourné** (rotation de la vidéo non appliquée, ou pose
+   inversée). Alors la verticalité à 0,978 est un artefact du `abs()`, et
+   `wrist_above_shoulder` a simplement changé de signe.
+2. **Ce n'est pas l'athlète.** `num_poses=1` : sur une aire de jeux, le modèle
+   peut verrouiller un passant. Debout, jambes qui bougent, bras qui pendent —
+   la description colle exactement.
+
+Le discriminant est ajouté au dump par frame : `shoulder_above_hip`. Debout,
+suspendu, en squat, en pleine muscle-up — **dans toute posture qu'un corps
+humain prend, les épaules sont au-dessus des hanches.** Négatif ⇒ squelette
+retourné. Positif avec `wrist_above_shoulder` négatif ⇒ squelette droit et bras
+réellement baissés, donc mauvaise personne ou mauvais moment.
+
+Ni la règle `squat` ni aucun seuil ne sont en cause sur `084`. Ne rien toucher
+au classifieur tant que cette colonne n'a pas parlé.
 
 Attention à la lecture du tableau principal : les faux positifs passent de 31/100
 à 29/97 **sans qu'aucun clip ne change**. Les trois tractions sortent du

@@ -185,11 +185,24 @@ suspendu — la posture entière n'est pas reconnue, pas seulement l'amplitude.
 Autre lecture possible : le cadrage n'est pas celui qu'on suppose. Correctifs
 opposés, et l'étiquette seule ne tranche pas.
 
+Mesuré depuis (1156 fenêtres de `084`) : **zéro fenêtre avec les mains
+au-dessus des épaules**, médiane à −0,79, `score_squat` à 1,000 partout. La
+règle n'était pas en cause ; MediaPipe décrit un corps debout, bras pendants,
+jambes en mouvement.
+
+**Trou structurel que ça révèle :** `trunk_verticality` prend une valeur
+absolue, et tout le reste de l'étage d'analyse est constitué d'angles,
+invariants par rotation. **Un athlète suivi à l'envers est indiscernable d'un
+athlète debout.** Le dump par frame porte désormais `shoulder_above_hip` — le
+seul signe qui ne ment pas, puisqu'aucune posture humaine ne met les épaules
+sous les hanches.
+
 Reste dans M2 :
 
-- **Trancher `084`** avec `<clip>_windows.csv` (features de fenêtre, désormais
-  écrites au lieu d'être jetées). Aucun nouveau seuil avant ça : la dernière
-  prédiction faite sans mesure a échoué, celle d'après à moitié.
+- **Lire `shoulder_above_hip` sur `084`.** Négatif ⇒ squelette retourné
+  (rotation vidéo, ou pose inversée) ; positif ⇒ ce n'est pas l'athlète qui est
+  suivi (`num_poses=1` sur une aire de jeux). Correctifs opposés. Aucun seuil
+  du classifieur ne bouge avant cette lecture.
 - Traduction des `flags` en retours actionnables en français.
 - Recalage de `kip_tolerance_ms` et `trunk_tolerance_deg` sur footage réel
   enregistré au débit réel de l'appareil (~21 fps, pas 30).

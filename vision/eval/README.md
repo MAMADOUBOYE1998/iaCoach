@@ -98,6 +98,17 @@ qu'il a été trouvé au bon endroit. Un os ne change pas de longueur : ce qui
 varie dans ces colonnes est l'estimation 3D qui bouge, et ça ne s'interprète
 qu'à côté de l'angle mesuré sur la même frame.
 
+S'y ajoutent trois relations verticales **signées** :
+`shoulder_above_hip`, `knee_below_hip`, `wrist_above_shoulder_y`.
+
+Tout le reste de l'étage d'analyse est constitué d'angles — invariants par
+rotation — et `trunk_verticality` prend une valeur absolue. **Un athlète suivi à
+l'envers y est donc indiscernable d'un athlète debout.** `shoulder_above_hip` est
+le seul signe qui ne ment pas : debout, suspendu, en squat, en pleine muscle-up,
+un corps humain a toujours les épaules au-dessus des hanches. Négatif, le
+squelette est retourné et tous les angles en aval sont lus sur un corps à
+l'envers.
+
 `<clip>_windows.csv` — une ligne par fenêtre de classification : l'étiquette,
 sa confiance, le motif, les features de la fenêtre (`wrist_above_shoulder`,
 `trunk_verticality`, amplitudes coude/genou/hanche…) et le score de chaque

@@ -77,6 +77,40 @@ def _segment_lengths(world: list[Landmark]) -> dict[str, float]:
     }
 
 
+def _orientation(world: list[Landmark]) -> dict[str, float]:
+    """Signed vertical relations, in torso lengths. y points down.
+
+    Every angle the analysis stage computes is rotation-invariant, and
+    `trunk_verticality` takes an absolute value — so an athlete tracked
+    **upside down** reads as perfectly upright. Nothing in the pipeline can
+    currently tell that apart from a correctly tracked one, and on clip `084`
+    the classifier scores `squat` at 1.000 on all 1156 windows with the hands
+    0.79 arm-lengths *below* the shoulders.
+
+    `shoulder_above_hip` is the discriminator. Standing, hanging, squatting,
+    mid-muscle-up — in every posture a human body takes, the shoulders are
+    above the hips. If this comes out negative, the skeleton is inverted and
+    every angle downstream is being read off an upside-down body. If it stays
+    positive while `wrist_above_shoulder` is negative, the skeleton is upright
+    and the arms really are down: a different person, or a different moment,
+    but not a rotation.
+    """
+
+    def mid_y(left: str, right: str) -> float:
+        return (world[LANDMARK[left]].y + world[LANDMARK[right]].y) / 2.0
+
+    hip_y = mid_y("LEFT_HIP", "RIGHT_HIP")
+    shoulder_y = mid_y("LEFT_SHOULDER", "RIGHT_SHOULDER")
+    torso = abs(hip_y - shoulder_y)
+    if torso <= 0.0:
+        return {}
+    return {
+        "shoulder_above_hip": (hip_y - shoulder_y) / torso,
+        "knee_below_hip": (mid_y("LEFT_KNEE", "RIGHT_KNEE") - hip_y) / torso,
+        "wrist_above_shoulder_y": (shoulder_y - mid_y("LEFT_WRIST", "RIGHT_WRIST")) / torso,
+    }
+
+
 def sample_video(
     path: Path, model_path: Path
 ) -> tuple[list[FrameSample], list[dict[str, float]], list[Classification], int, float]:
@@ -146,7 +180,9 @@ def sample_video(
             )
             if sample is not None:
                 samples.append(sample)
-                lengths.append(_segment_lengths(_landmarks(result.pose_world_landmarks[0])))
+                lengths.append(
+                    _segment_lengths(world) | _orientation(world),
+                )
 
     capture.release()
     return samples, lengths, verdicts, frames, time.perf_counter() - started

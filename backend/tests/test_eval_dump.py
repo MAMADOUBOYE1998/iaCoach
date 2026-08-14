@@ -19,7 +19,8 @@ from pathlib import Path
 
 from iacoach.classify import Classification, WindowFeatures
 from iacoach.contracts import Exercise, FrameSample
-from vision.eval.evaluate import dump_angles, dump_windows
+from iacoach.frame import LANDMARK, Landmark
+from vision.eval.evaluate import _orientation, dump_angles, dump_windows
 
 
 def _sample(t_ms: float, angle: float = 90.0) -> FrameSample:
@@ -163,3 +164,64 @@ class TestDumpWindows:
         header, rows = _read(destination)
         assert rows == []
         assert header[0] == "exercise"
+
+
+def _body(*, inverted: bool = False, arms_up: bool = True) -> list[Landmark]:
+    """A minimal upright skeleton, optionally flipped. y points down."""
+    sign = -1.0 if inverted else 1.0
+    y = {
+        "SHOULDER": -0.5 * sign,
+        "HIP": 0.0,
+        "KNEE": 0.45 * sign,
+        "WRIST": (-1.2 if arms_up else -0.1) * sign,
+    }
+    points = [Landmark(0.0, 0.0, 0.0, 1.0) for _ in range(33)]
+    for joint, value in y.items():
+        for side in ("LEFT", "RIGHT"):
+            points[LANDMARK[f"{side}_{joint}"]] = Landmark(0.1, value, 0.0, 1.0)
+    return points
+
+
+class TestOrientation:
+    """The one thing the analysis stage structurally cannot see.
+
+    Every angle it computes is rotation-invariant, and `trunk_verticality`
+    takes an absolute value, so an athlete tracked upside down reads as
+    perfectly upright. On clip `084` the classifier scores `squat` at 1.000 on
+    all 1156 windows with the hands below the shoulders, and no quantity
+    anywhere in the pipeline could say whether the body was inverted.
+    """
+
+    def test_an_upright_body_has_its_shoulders_above_its_hips(self) -> None:
+        found = _orientation(_body())
+
+        assert found["shoulder_above_hip"] > 0
+        assert found["knee_below_hip"] > 0
+        assert found["wrist_above_shoulder_y"] > 0
+
+    def test_an_inverted_body_flips_every_sign(self) -> None:
+        """The discriminator. `shoulder_above_hip` is negative for no posture
+        a human body can take — only for a skeleton read upside down."""
+        found = _orientation(_body(inverted=True))
+
+        assert found["shoulder_above_hip"] < 0
+        assert found["knee_below_hip"] < 0
+
+    def test_arms_down_does_not_invert_the_torso(self) -> None:
+        """Separates the two candidate causes on `084`.
+
+        Hands below shoulders *with* shoulders still above hips means the
+        skeleton is upright and the arms really are down — a different person,
+        or a different moment. Hands below shoulders *with* the torso flipped
+        means the whole body is upside down. Opposite fixes.
+        """
+        found = _orientation(_body(arms_up=False))
+
+        assert found["wrist_above_shoulder_y"] < 0
+        assert found["shoulder_above_hip"] > 0
+
+    def test_a_degenerate_torso_yields_nothing(self) -> None:
+        """Zero, not a division by it — and no fabricated orientation."""
+        flat = [Landmark(0.0, 0.0, 0.0, 1.0) for _ in range(33)]
+
+        assert _orientation(flat) == {}
