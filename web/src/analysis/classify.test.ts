@@ -89,5 +89,19 @@ for (const file of files) {
       expect(verdict.confidence).toBeCloseTo(fixture.expected.confidence, 9);
       expect(verdict.reason).toBe(fixture.expected.reason);
     });
+
+    // Pins *which* term does the refusing, in this runtime too. The fixture
+    // above only proves the window is refused; a later change could weaken
+    // `feetPlanted` and leave it refused for some unrelated reason, with both
+    // suites still green. Mirrors `TestSquatNeedsTheFeetOnTheGround` in
+    // backend/tests/test_classify.py.
+    if (fixture.name === "swinging_hang_not_a_squat") {
+      it("would be a squat if the same body had its hands down", () => {
+        const window = windowFeatures(features);
+        expect(window.wrist_above_shoulder).toBeGreaterThan(0.9);
+        const lowered = { ...window, wrist_above_shoulder: -1 };
+        expect(classifyWindow(lowered).exercise).toBe("squat");
+      });
+    }
   });
 }

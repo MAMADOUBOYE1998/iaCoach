@@ -10,12 +10,14 @@ real footage — that measurement is the QUVA specificity run recorded in
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 import pytest
 
 from iacoach.classify import (
     UNCLASSIFIABLE,
     ExerciseClassifier,
+    WindowFeatures,
     classify_window,
     frame_features,
     window_features,
@@ -41,6 +43,7 @@ from iacoach.scripts.make_classify_fixtures import (
     push_up_pose,
     rowing_pose,
     squat_pose,
+    swinging_hang_pose,
 )
 
 
@@ -155,6 +158,54 @@ class TestSquatNeedsTheHip:
         assert window.knee_rom_deg > 60.0
         assert window.hip_rom_deg < 20.0
         assert classify_window(window).exercise is not Exercise.SQUAT
+
+
+class TestSquatNeedsTheFeetOnTheGround:
+    """You cannot squat while hanging from a bar, and the rule did not say so.
+
+    Measured, not hypothesised: on the QUVA set the classifier labelled both
+    genuine pull-up clips `squat`, `084` on 99.8 % of its windows. The path in
+    is the pose stage — the elbow angle on those clips spans 35-40 deg over the
+    whole clip where a pull-up spans about 130 — so `arms_still` was satisfied
+    by MediaPipe losing the arms, and a kipping athlete's swinging knees
+    supplied the rest.
+
+    Which is why `arms_still` and `feet_planted` are not the same kind of
+    evidence, even though both are stated negatively. One is satisfied by the
+    *absence* of a signal, and so fires hardest exactly when tracking fails.
+    The other is a positive fact about where the body is.
+    """
+
+    def swinging_hang(self, swing: float) -> WindowFeatures:
+        return summarise(cycle(swinging_hang_pose, 0.0, swing))
+
+    def test_hanging_and_swinging_is_not_a_squat(self) -> None:
+        window = self.swinging_hang(1.0)
+
+        assert window.wrist_above_shoulder > 0.9, "l'athlète est bien suspendu"
+        assert classify_window(window).exercise is not Exercise.SQUAT
+
+    def test_it_refuses_rather_than_claiming_a_pull_up(self) -> None:
+        """The honest answer on a degraded signal is no answer.
+
+        Calling this a pull-up would be right about the athlete and wrong about
+        the evidence: a 6-degree elbow range cannot support the claim, and the
+        reps it would then hand to the counter are the ones the counter already
+        cannot see. Recovering them is a pose-stage problem.
+        """
+        assert classify_window(self.swinging_hang(1.0)).exercise is Exercise.UNKNOWN
+
+    def test_the_same_body_with_its_hands_down_is_a_squat(self) -> None:
+        """Pins the responsibility on `feet_planted` and nothing else.
+
+        Without this, the first two tests would still pass if some unrelated
+        term happened to sink the score, and the rule could be silently
+        weakened later with the suite staying green.
+        """
+        window = self.swinging_hang(1.0)
+        lowered = replace(window, wrist_above_shoulder=-1.0)
+
+        assert classify_window(lowered).exercise is Exercise.SQUAT
 
 
 class TestRefusal:

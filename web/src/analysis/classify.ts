@@ -322,15 +322,34 @@ export function classifyWindow(
   const legsWork = atLeast(f.knee_rom_deg, 50, 30);
   // A squat folds the hip as much as the knee — roughly 130 deg of it. Without
   // this term the rule read "standing, legs moving, arms still", which also
-  // describes walking, cycling and skipping rope: it labelled 34 of the 100
-  // out-of-domain clips a squat, and 16 of them still produced invented reps.
+  // describes walking, cycling and skipping rope. Measured: it removed 4 of the
+  // 34 squat labels on the out-of-domain set and left the simulated squat gate
+  // unchanged at 16 false positives. Anatomically right, nearly useless.
   const hipsFold = atLeast(f.hip_rom_deg, 60, 30);
+  // What the 34 were actually missing. Nothing in the rule said the athlete is
+  // standing on the ground, so an athlete *hanging from a bar* satisfied it:
+  // trunk vertical, knees swinging, and — because the pose stage loses the
+  // elbows on these clips — arms apparently still. Both genuine pull-up clips
+  // in the QUVA set were labelled `squat`, one of them on 99.8 % of windows.
+  //
+  // This is negative evidence too, but of a different kind: `armsStill` is
+  // satisfied by the *absence* of a signal and therefore fires hardest when
+  // tracking fails, whereas hands-not-overhead is a positive fact about where
+  // the body is. An overhead squat would fail it; it is not in the catalogue,
+  // and the day it is, this is the line to revisit.
+  const feetPlanted = atMost(f.wrist_above_shoulder, 0, 0.5);
 
   const scores: Partial<Record<Exercise, number>> = {
     pull_up: Math.min(hangs, upright, armsWork, legsStill),
     dip: Math.min(onBars, plumb, armsWork, legsStill),
     push_up: Math.min(horizontal, armsWork, legsStill),
-    squat: Math.min(legsWork, hipsFold, armsStill, atLeast(f.trunk_verticality, 0.6, 0.3)),
+    squat: Math.min(
+      legsWork,
+      hipsFold,
+      armsStill,
+      feetPlanted,
+      atLeast(f.trunk_verticality, 0.6, 0.3),
+    ),
     l_sit: Math.min(
       band(f.hip_deg, 70, 115, 30),
       atLeast(f.knee_deg, 150, 30),

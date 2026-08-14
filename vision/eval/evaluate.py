@@ -199,6 +199,7 @@ def evaluate_clip(
     model: Path,
     trim_percent: float,
     dump_dir: Path | None = None,
+    in_domain: bool = False,
 ) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
     samples, lengths, labels, frames, seconds = sample_video(path, model)
@@ -213,6 +214,7 @@ def evaluate_clip(
         seconds=seconds,
         trim_percent=trim_percent,
         labels=labels,
+        in_domain=in_domain,
     )
     result.segment_cv = segment_stability(lengths)
     return result
@@ -366,6 +368,7 @@ def main(argv: list[str] | None = None) -> int:
             args.model,
             args.trim_percent,
             args.dump_angles,
+            bool(entry.get("in_domain", False)),
         )
         if found_via:
             # Carried into the JSON, not just stderr: a run that silently

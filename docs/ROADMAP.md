@@ -159,17 +159,42 @@ muscle-up sera lue `pull_up` pendant sa phase de traction).
 *sont* les postures. Ils n'ont été ajustés sur aucun positif annoté, faute
 d'en avoir. À traiter comme `kip_tolerance_ms`.
 
+**Spécificité mesurée, et ce qu'elle cachait.** 31 % → 1 % de faux positifs sur
+les 100 clips QUVA pour une séance de tractions. Deux passes ont ensuite montré
+que ce chiffre était plus étroit qu'il n'en avait l'air (`BENCHMARKS.md`) :
+
+- Le portillon ne tient que pour la traction, qui a une signature géométrique
+  unique. Simulé pour une séance de squats : 34 clips passent, 16 faux positifs,
+  55 reps inventées.
+- `hips_fold` devait faire tomber les 34 étiquettes `squat`. Il en a retiré 4 et
+  laissé le portillon squat simulé **inchangé**. Prédiction enregistrée, mesurée,
+  fausse.
+- Le classifieur étiquette `squat` **les deux vraies tractions du jeu**, `084`
+  sur 99,8 % des fenêtres. Cause : l'amplitude du coude que MediaPipe rend sur
+  ces clips est de 30–40° au lieu de ~130°, donc `arms_still` est satisfait par
+  la *perte du signal*. C'est le même défaut amont que le sous-comptage, et il
+  franchit maintenant une frontière de plus.
+- Donc le « 1 % » était en partie acheté avec le rappel : **0/3** sur les vraies
+  tractions. Le harnais publie désormais `gate_recall` à côté de la spécificité,
+  et sort les clips `in_domain` du dénominateur.
+
+Corrigés depuis : `feet_planted` dans la règle `squat` (on ne squatte pas
+suspendu à une barre) et une fixture `swinging_hang_not_a_squat` reconstruite
+depuis `082`/`084`. Non revérifié sur QUVA.
+
 Reste dans M2 :
 
-- Faire tourner la spécificité sur les 100 clips QUVA : le harnais rapporte
-  maintenant `false_positive_clips_after_gate` et `reps_invented_after_gate`.
-  C'est la seule mesure que ce jeu permet — il n'a pas de positifs exploitables.
+- Repasser QUVA pour vérifier `feet_planted` — et cette fois lire `gate_recall`
+  autant que la spécificité.
 - Traduction des `flags` en retours actionnables en français.
 - Recalage de `kip_tolerance_ms` et `trunk_tolerance_deg` sur footage réel
   enregistré au débit réel de l'appareil (~21 fps, pas 30).
 
-Sortie mesurée : spécificité après portillon sur QUVA. La sensibilité reste
-non mesurable sur données publiques.
+**Ce que ce jeu ne réglera pas.** Trois tractions dégradées, aucun squat, aucun
+dip, aucune pompe : on peut resserrer autant que les négatifs le justifient, on
+ne peut pas prouver qu'un vrai squat passe encore. La sensibilité attend une
+séance filmée par l'athlète, et c'est maintenant le blocage principal de M2 —
+pas un détail de calendrier.
 
 ## M3 — Coaching + persistance ✅ livré
 

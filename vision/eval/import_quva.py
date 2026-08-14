@@ -113,6 +113,18 @@ def main(argv: list[str] | None = None) -> int:
         default="cycles",
     )
     parser.add_argument("--exercise", default="pull_up")
+    parser.add_argument(
+        "--in-domain",
+        default="pullups",
+        help=(
+            "Substring marking clips that ARE the exercise. QUVA is a "
+            "general-purpose repetition dataset and happens to contain three "
+            "pull-up clips; in specificity mode they are positives sitting in a "
+            "negative set. Marked here so the summary can hold them apart "
+            "instead of scoring a correct label as a false positive. Empty "
+            "disables the marking."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if not args.directory.is_dir():
@@ -137,16 +149,17 @@ def main(argv: list[str] | None = None) -> int:
         if count is None:
             unreadable.append(stem)
             continue
-        clips.append(
-            {
-                # `Path.relative_to(walk_up=True)` is 3.12; this project targets
-                # 3.11, and the manifest needs paths that can climb out of the
-                # directory it sits in.
-                "path": os.path.relpath(videos[stem].resolve(), out.parent.resolve()),
-                "reps": count,
-                "exercise": args.exercise,
-            }
-        )
+        entry: dict[str, Any] = {
+            # `Path.relative_to(walk_up=True)` is 3.12; this project targets
+            # 3.11, and the manifest needs paths that can climb out of the
+            # directory it sits in.
+            "path": os.path.relpath(videos[stem].resolve(), out.parent.resolve()),
+            "reps": count,
+            "exercise": args.exercise,
+        }
+        if args.in_domain and args.in_domain in stem:
+            entry["in_domain"] = True
+        clips.append(entry)
 
     if unreadable:
         print(f"\n  {len(unreadable)} annotations illisibles, par ex. {unreadable[:3]}")

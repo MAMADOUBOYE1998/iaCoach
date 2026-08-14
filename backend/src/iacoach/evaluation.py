@@ -71,6 +71,11 @@ class ClipResult:
     exercise: str = ""
     """The exercise the manifest claims. Needed to ask whether the classifier
     would have let this clip reach the counter at all."""
+    in_domain: bool = False
+    """This clip really *is* the exercise, inside a set that mostly is not.
+
+    Defaults to False so a manifest that says nothing is treated as fully
+    out-of-domain — the reading that cannot flatter the gate."""
     classified_as: str = ""
     """What the classifier called it, over the whole clip."""
     classified_share: float = 0.0
@@ -282,6 +287,7 @@ def score_samples(
     seconds: float = 0.0,
     trim_percent: float = 0.0,
     labels: list[Exercise] | None = None,
+    in_domain: bool = False,
 ) -> ClipResult:
     """Calibrate from a clip's samples, then count.
 
@@ -298,6 +304,7 @@ def score_samples(
         detected_frames=len(samples),
         seconds=seconds,
         exercise=exercise.value,
+        in_domain=in_domain,
     )
     if labels:
         verdict = classification_verdict(labels)
@@ -380,8 +387,18 @@ def summarise_out_of_domain(results: list[ClipResult]) -> dict[str, Any]:
     on footage that is not the exercise, refusing is the right answer.
 
     `truth` in the manifest is ignored — it describes a different movement.
+
+    Clips flagged `in_domain` are held apart. A general-purpose repetition
+    dataset can contain the exercise: QUVA has three pull-up clips among its
+    hundred. Counting a correct label on those as a "false positive after the
+    gate" would punish the classifier for being right, and — worse — would let a
+    gate that refuses *everything*, positives included, post the best score on
+    this page. `gate_recall` is reported next to the specificity for that
+    reason: specificity alone is trivially winnable and means nothing on its own.
     """
-    scored = [r for r in results if r.predicted is not None]
+    in_domain = [r for r in results if r.in_domain]
+    out_domain = [r for r in results if not r.in_domain]
+    scored = [r for r in out_domain if r.predicted is not None]
     false_positives = [r for r in scored if (r.predicted or 0) > 0]
     counts = sorted((r.predicted or 0) for r in false_positives)
 
@@ -389,19 +406,22 @@ def summarise_out_of_domain(results: list[ClipResult]) -> dict[str, Any]:
     # not call the manifest's exercise never reaches `RepCounter`, so its
     # invented reps never exist. Clips with no classification at all are counted
     # as surviving — an unmeasured gate must not be credited with a save.
-    classified = [r for r in results if r.classified_as]
+    classified = [r for r in out_domain if r.classified_as]
     survivors = [r for r in false_positives if r.classified_as == r.exercise]
+    recognised = [r for r in in_domain if r.classified_as == r.exercise]
     return {
         "classified_clips": len(classified),
         "false_positive_clips_after_gate": len(survivors) if classified else None,
         "reps_invented_after_gate": sum(r.predicted or 0 for r in survivors)
         if classified
         else None,
-        "clips": len(results),
-        "refused_to_calibrate": len(results) - len(scored),
+        "in_domain_clips": len(in_domain),
+        "gate_recall": (len(recognised) / len(in_domain)) if in_domain else None,
+        "clips": len(out_domain),
+        "refused_to_calibrate": len(out_domain) - len(scored),
         "scored": len(scored),
         "false_positive_clips": len(false_positives),
-        "false_positive_rate": (len(false_positives) / len(results)) if results else 0.0,
+        "false_positive_rate": (len(false_positives) / len(out_domain)) if out_domain else 0.0,
         "reps_invented_total": sum(counts),
         "worst_clip_reps": counts[-1] if counts else 0,
     }

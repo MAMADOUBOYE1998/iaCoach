@@ -390,6 +390,11 @@ si le classifieur nomme l'exercice de la séance.
 |---|---|---|---|---|
 | 2026-08-13, sans portillon (`d89f668`) | 100 | 31 (**31 %**) | 114 | 14 |
 | 2026-08-13, portillon traction (`40713fd`) | 100 | **1 (1 %)** | **5** | 5 |
+| 2026-08-14, `hips_fold` (`5fdeacd`) | 100 | 1 (1 %) | 5 | 5 |
+
+Ce 1 % est à lire avec le rappel mesuré plus bas — **0/3 sur les vraies
+tractions du jeu** — sans quoi il flatte un portillon qui refuse aussi les
+positifs.
 
 Le seul survivant est `040_monkey_bars`, classé `pull_up` sur 91,5 % des
 fenêtres. C'est un échec loyal : quelqu'un suspendu à des barres de singe a les
@@ -444,9 +449,63 @@ Corrigé : `hip_rom_deg` ajouté aux deux runtimes, terme `hips_fold` dans la
 règle, et pose synthétique refaite — hanche 180°→82°, genou 173°→52° sur la
 plage utilisée, soit un squat profond mais réel.
 
-**Non revérifié sur QUVA.** Le resserrement s'appuie sur des négatifs seuls ; il
-prédit que les 34 tombent, et cette prédiction attend une nouvelle passe. La
-sensibilité, elle, reste invérifiable : ce jeu n'a aucun squat.
+### La prédiction était fausse (passe du 2026-08-14)
+
+Prédiction enregistrée : les 34 étiquettes `squat` tombent. Mesuré :
+
+| | `squat` | Portillon squat simulé : clips / FP / reps |
+|---|---|---|
+| avant `hips_fold` (`40713fd`) | 34 | 34 / 16 / 55 |
+| après `hips_fold` (`5fdeacd`) | **30** | **34 / 16 / 55** |
+
+Quatre clips déplacés, et le portillon squat simulé **identique au clip près**.
+Anatomiquement juste, pratiquement nul. Les quatre qui bougent (`033_hometrainer`,
+`038`/`039_monkey_bars`, `083_pullups`) étaient déjà les plus faibles.
+
+### Ce que la passe a réellement montré
+
+Le classifieur étiquette `squat` **les deux vraies tractions du jeu** :
+
+| Clip | Étiquette | Part des fenêtres | Amplitude coude p1–p99 |
+|---|---|---|---|
+| `082_pullups_monkey_bar` | `squat` | 95,3 % | 34,6° |
+| `083_pullups_monkey_bar` | `unknown` | — | 29,4° |
+| `084_pullups_monkey_bar` | `squat` | **99,8 %** | 40,0° |
+
+Une traction parcourt environ 130° du coude. Ces clips en montrent 30 à 40 :
+**l'étage de pose perd les bras**, donc `arms_still` est *satisfait*, et un
+athlète qui kippe fournit le reste — buste vertical, genoux qui balancent.
+
+Deux conséquences.
+
+La première est une règle incomplète : rien ne disait que l'athlète a les pieds
+au sol. Corrigé par `feet_planted` (`_at_most(wrist_above_shoulder, 0.0, 0.5)`),
+avec une fixture `swinging_hang_not_a_squat` reconstruite depuis ces clips —
+elle vaut 0,785 en `squat` sans le terme, 0,0 avec. Le squat en barre au-dessus
+de la tête (*overhead squat*) échouerait ce terme ; il n'est pas au catalogue.
+
+La seconde est plus importante : **`arms_still` et `feet_planted` ne sont pas la
+même sorte de preuve**, bien que tous deux formulés négativement. Le premier est
+satisfait par l'*absence* de signal, donc il se déclenche d'autant plus fort que
+le suivi échoue. Le second est un fait positif sur la position du corps. Toute
+règle du premier type est un faux positif en attente d'une mauvaise vidéo.
+
+### Le « 1 % » était en partie acheté avec le rappel
+
+Le jeu QUVA contient trois vraies tractions. Le portillon traction n'en a
+reconnu **aucune** — et c'est ce qui faisait baisser le taux de faux positifs.
+Un portillon qui refuse tout obtient 0 %.
+
+Corrigé dans le harnais : les clips vraiment dans le domaine sont marqués
+`in_domain` par l'importeur, sortis du dénominateur de spécificité, et
+`gate_recall` est publié à côté. **Rappel du portillon traction sur QUVA : 0/3.**
+La spécificité seule est trivialement gagnable et ne veut rien dire isolée.
+
+**Non revérifié.** `feet_planted` prédit que `082` et `084` quittent `squat`.
+Mais une prédiction vient d'échouer sur cette même page, alors elle vaut ce
+qu'elle vaut : la mesure décidera. Et la sensibilité reste hors de portée de ce
+jeu — trois tractions dégradées, aucun squat, aucun dip, aucune pompe. Seule une
+séance filmée par l'athlète peut la mesurer.
 
 ## Précision de comptage — footage propre
 

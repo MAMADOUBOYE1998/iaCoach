@@ -332,18 +332,33 @@ def classify_window(
     legs_work = _at_least(f.knee_rom_deg, 50.0, 30.0)
     # A squat folds the hip as much as the knee — roughly 130 deg of it. Without
     # this term the rule read "standing, legs moving, arms still", which also
-    # describes walking, cycling and skipping rope: it labelled 34 of the 100
-    # out-of-domain clips a squat, and 16 of them still produced invented reps.
-    # Purely negative evidence, and it only became visible once the synthetic
-    # squat stopped holding its hip rigid, which no real squat does.
+    # describes walking, cycling and skipping rope. Measured: it removed 4 of
+    # the 34 squat labels on the out-of-domain set and left the simulated squat
+    # gate unchanged at 16 false positives. Anatomically right, nearly useless.
     hips_fold = _at_least(f.hip_rom_deg, 60.0, 30.0)
+    # What the 34 were actually missing. Nothing in the rule said the athlete is
+    # standing on the ground, so an athlete *hanging from a bar* satisfied it:
+    # trunk vertical, knees swinging, and — because the pose stage loses the
+    # elbows on these clips — arms apparently still. Both genuine pull-up clips
+    # in the QUVA set were labelled `squat`, one of them on 99.8 % of windows.
+    #
+    # This is negative evidence too, but of a different kind: `arms_still` is
+    # satisfied by the *absence* of a signal and therefore fires hardest when
+    # tracking fails, whereas hands-not-overhead is a positive fact about where
+    # the body is. An overhead squat would fail it; it is not in the catalogue,
+    # and the day it is, this is the line to revisit.
+    feet_planted = _at_most(f.wrist_above_shoulder, 0.0, 0.5)
 
     scores = {
         Exercise.PULL_UP: min(hangs, upright, arms_work, legs_still),
         Exercise.DIP: min(on_bars, plumb, arms_work, legs_still),
         Exercise.PUSH_UP: min(horizontal, arms_work, legs_still),
         Exercise.SQUAT: min(
-            legs_work, hips_fold, arms_still, _at_least(f.trunk_verticality, 0.6, 0.3)
+            legs_work,
+            hips_fold,
+            arms_still,
+            feet_planted,
+            _at_least(f.trunk_verticality, 0.6, 0.3),
         ),
         Exercise.L_SIT: min(
             _band(f.hip_deg, 70.0, 115.0, 30.0),

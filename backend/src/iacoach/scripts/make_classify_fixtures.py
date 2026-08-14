@@ -186,6 +186,52 @@ def dead_hang_pose(_: float) -> list[Landmark]:
     return hanging_pose(172.0, arms_up=True)
 
 
+def swinging_hang_pose(swing: float) -> list[Landmark]:
+    """Hanging from a bar with the knees swinging, elbows nearly locked.
+
+    Reconstructed from the two genuine pull-up clips in the QUVA set, which the
+    classifier labelled `squat` — `084` on 99.8 % of its windows. The elbow
+    angle over those whole clips spans 35-40 deg between the 1st and 99th
+    percentile, where a pull-up spans about 130: the pose stage loses the arms,
+    so `arms_still` is *satisfied*, and the knees swinging under a vertical
+    trunk supplied everything else the squat rule asked for.
+
+    So this is the shape of a rule that passes for the wrong reason, and the
+    reason no earlier fixture caught it: every previous scenario gave the
+    classifier a clean signal to reject, and this one gives it a degraded one.
+    It must come out `unknown` — not `pull_up`. The arms genuinely do not move
+    here, and claiming a pull-up from a 6-degree elbow range would be inventing
+    the evidence. Refusing is the correct answer, and recovering the real reps
+    is a pose-stage problem, not a classifier one.
+    """
+    # 85 deg of knee swing, not 45. At 45 the knee and hip ranges alone drop the
+    # squat score below `min_score`, so the fixture would pass without testing
+    # anything — a kipping athlete swings far more than that, and the fixture has
+    # to fail if `feet_planted` is removed or it is not a regression test.
+    knee_z = THIGH * math.sin(math.radians(85.0 * swing))
+    knee_y = THIGH * math.cos(math.radians(85.0 * swing))
+    points: Points = {}
+    points.update(_mirror("HIP", HIP_HALF, 0.0, 0.0))
+    points.update(_mirror("SHOULDER", SHOULDER_HALF, -TORSO, 0.0))
+    points.update(_mirror("ELBOW", SHOULDER_HALF, -TORSO - UPPER_ARM, 0.0))
+    # A 6 deg elbow excursion — the amplitude MediaPipe actually reports on
+    # those clips, not the amplitude the athlete produced.
+    rad = math.radians(172.0 - 6.0 * swing)
+    points.update(
+        _mirror(
+            "WRIST",
+            SHOULDER_HALF,
+            # Same sign convention as `hanging_pose` with `arms_up`: a nearly
+            # straight elbow puts the wrist *above* it, y pointing down.
+            -TORSO - UPPER_ARM + FOREARM * math.cos(rad),
+            FOREARM * math.sin(rad),
+        )
+    )
+    points.update(_mirror("KNEE", HIP_HALF, knee_y, knee_z))
+    points.update(_mirror("ANKLE", HIP_HALF, knee_y + SHIN * 0.6, knee_z + SHIN * 0.8))
+    return _skeleton(points)
+
+
 @dataclass(frozen=True)
 class Scenario:
     name: str
@@ -240,6 +286,15 @@ def _scenarios() -> list[Scenario]:
             dead_hang_pose,
             0.0,
             0.0,
+        ),
+        Scenario(
+            "swinging_hang_not_a_squat",
+            "Suspendu, genoux qui balancent, coudes quasi verrouillés : "
+            "la forme que le classifieur appelait « squat » sur les vraies "
+            "tractions QUVA.",
+            swinging_hang_pose,
+            0.0,
+            1.0,
         ),
     ]
 

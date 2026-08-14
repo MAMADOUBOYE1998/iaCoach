@@ -143,6 +143,80 @@ class TestOutOfDomain:
         assert summarise_out_of_domain([])["false_positive_rate"] == 0.0
 
 
+def gated(
+    exercise: str, label: str, predicted: int | None, *, in_domain: bool = False
+) -> ClipResult:
+    result = clip(0, predicted)
+    result.exercise, result.classified_as, result.in_domain = exercise, label, in_domain
+    return result
+
+
+class TestTheGateIsNotGradedOnSpecificityAlone:
+    """A gate that refuses everything has perfect specificity.
+
+    This is not a hypothetical: the QUVA set contains three genuine pull-up
+    clips among its hundred, the classifier labelled none of them `pull_up`,
+    and the specificity headline improved *because* of it. A page reporting
+    only the false-positive rate would have read that as progress.
+    """
+
+    def test_in_domain_clips_leave_the_specificity_denominator(self) -> None:
+        results = [
+            gated("pull_up", "unknown", None),
+            gated("pull_up", "squat", 3, in_domain=True),
+        ]
+
+        summary = summarise_out_of_domain(results)
+
+        assert summary["clips"] == 1
+        assert summary["in_domain_clips"] == 1
+        assert summary["false_positive_clips"] == 0
+
+    def test_a_correct_label_is_never_a_false_positive(self) -> None:
+        """Being right about a real pull-up must not cost anything here.
+
+        Before `in_domain` existed it did: the clip was declared out-of-domain,
+        so classifying it correctly let it through the gate and its reps were
+        booked as invented.
+
+        The out-of-domain clip is not decoration. With only the positive in the
+        list there are no out-of-domain clips left to classify, so the after-gate
+        fields correctly come back `None` — unmeasured, not zero — and the
+        assertion would pass for the wrong reason.
+        """
+        results = [
+            gated("pull_up", "pull_up", 9, in_domain=True),
+            gated("pull_up", "unknown", None),
+        ]
+
+        summary = summarise_out_of_domain(results)
+
+        assert summary["false_positive_clips_after_gate"] == 0
+        assert summary["reps_invented_after_gate"] == 0
+        assert summary["gate_recall"] == pytest.approx(1.0)
+
+    def test_refusing_the_positives_shows_up_as_lost_recall(self) -> None:
+        """The measurement that makes a silent gate visible."""
+        results = [
+            gated("pull_up", "squat", 3, in_domain=True),
+            gated("pull_up", "unknown", None, in_domain=True),
+            gated("pull_up", "unknown", None),
+        ]
+
+        summary = summarise_out_of_domain(results)
+
+        assert summary["gate_recall"] == pytest.approx(0.0)
+        assert summary["false_positive_clips_after_gate"] == 0
+
+    def test_no_positives_means_no_recall_claim(self) -> None:
+        """`None`, not 0.0 and not 1.0 — the set simply cannot answer.
+
+        Every manifest before this change is in that case, and a default that
+        looked like a measurement would misreport all of them.
+        """
+        assert summarise_out_of_domain([gated("pull_up", "unknown", None)])["gate_recall"] is None
+
+
 def pullup_cycles(
     count: int, *, fps: float = 30.0, seconds_per_rep: float = 2.0
 ) -> list[FrameSample]:
