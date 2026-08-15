@@ -52,7 +52,7 @@ from iacoach.evaluation import (
     summarise,
     summarise_out_of_domain,
 )
-from iacoach.frame import LANDMARK, FrameSampler, Landmark
+from iacoach.frame import LANDMARK, VISIBILITY_THRESHOLD, FrameSampler, Landmark
 from iacoach.tracking import SubjectTracker
 
 
@@ -158,8 +158,28 @@ def _detection(normalized: list[Landmark], world: list[Landmark]) -> dict[str, f
         p, q = normalized[LANDMARK[a]], normalized[LANDMARK[b]]
         return math.dist((p.x, p.y), (q.x, q.y))
 
-    upper = span("LEFT_SHOULDER", "LEFT_ELBOW") + span("RIGHT_SHOULDER", "RIGHT_ELBOW")
-    fore = span("LEFT_ELBOW", "LEFT_WRIST") + span("RIGHT_ELBOW", "RIGHT_WRIST")
+    def arm_is_trusted(side: str) -> bool:
+        """Invariant no. 5: a landmark below the threshold drives nothing.
+
+        The ratio was first measured across both arms summed and ungated, which
+        put it in the position of judging the fit on frames where the arm is not
+        visible — the pipeline's own rule says such a landmark must not be used.
+        A ratio read off a guessed wrist is not evidence of a bad fit, it is a
+        measurement of nothing, and it inflates whatever it is compared against.
+        """
+        return all(
+            (normalized[LANDMARK[f"{side}_{joint}"]].visibility or 0.0) >= VISIBILITY_THRESHOLD
+            for joint in ("SHOULDER", "ELBOW", "WRIST")
+        )
+
+    # Per side, not summed: summing lets a well-tracked arm carry an invisible
+    # one, and hides the asymmetry that would say which side is failing.
+    trusted = [side for side in ("LEFT", "RIGHT") if arm_is_trusted(side)]
+    ratios = [
+        span(f"{s}_SHOULDER", f"{s}_ELBOW") / span(f"{s}_ELBOW", f"{s}_WRIST")
+        for s in trusted
+        if span(f"{s}_ELBOW", f"{s}_WRIST") > 0.0
+    ]
     upper_2d = span_2d("LEFT_SHOULDER", "LEFT_ELBOW") + span_2d("RIGHT_SHOULDER", "RIGHT_ELBOW")
     fore_2d = span_2d("LEFT_ELBOW", "LEFT_WRIST") + span_2d("RIGHT_ELBOW", "RIGHT_WRIST")
     out = {
@@ -167,9 +187,13 @@ def _detection(normalized: list[Landmark], world: list[Landmark]) -> dict[str, f
         "box_height": max(ys) - min(ys),
         "box_centre_x": (max(xs) + min(xs)) / 2.0,
         "box_centre_y": (max(ys) + min(ys)) / 2.0,
+        # Reported on every frame, gated or not, so a clip whose ratio was
+        # measurable on 5 % of its frames cannot be read as if it were measured
+        # on all of them. `detection_summary` turns it into `limb_ratio_frames`.
+        "arms_trusted": float(len(trusted)),
     }
-    if fore > 0.0:
-        out["limb_ratio"] = upper / fore
+    if ratios:
+        out["limb_ratio"] = sum(ratios) / len(ratios)
     if fore_2d > 0.0:
         # The same ratio in image space. It was added to localise the defect —
         # plausible in 2D and impossible in 3D would have put the fault in the

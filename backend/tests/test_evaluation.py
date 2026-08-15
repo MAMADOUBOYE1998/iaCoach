@@ -224,6 +224,23 @@ class TestDetectionSummary:
         assert detection_summary(rigid)["limb_ratio_cv"] == 0.0
         assert detection_summary(wobbling)["limb_ratio_cv"] > 0.1
 
+    def test_a_ratio_read_on_a_fifth_of_the_clip_says_so(self) -> None:
+        """Coverage travels with the value, or the value lies.
+
+        The ratio is gated on `VISIBILITY_THRESHOLD` — invariant no. 5, the rule
+        the correction stage already obeys. Frames where the arm is not visible
+        contribute nothing rather than a guess. Without the coverage figure, a
+        clip measured on a fifth of its frames reads exactly like one measured
+        on all of them, and `limb_ratio_implausible` silently changes meaning.
+        """
+        measured = [{"limb_ratio": 1.2}] * 20
+        gated_out = [{"box_height": 0.5}] * 80
+
+        found = detection_summary(measured + gated_out)
+
+        assert found["limb_ratio_frames"] == pytest.approx(0.2)
+        assert found["limb_ratio_implausible"] == 0.0
+
     def test_a_stable_but_impossible_skeleton_is_caught_by_the_band_alone(self) -> None:
         """The two signals are complementary, and neither subsumes the other.
 

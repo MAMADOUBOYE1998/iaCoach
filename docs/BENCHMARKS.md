@@ -492,7 +492,92 @@ bande ; un rapport qui oscille à l'intérieur de la bande n'est vu que par la
 variation. `limb_ratio_2d` est conservé comme contexte brut et **n'est plus
 noté** — le noter invitait la lecture qu'il ne supporte pas.
 
-Non mesuré à ce jour : il faut relancer la passe.
+### `limb_ratio_cv` mesuré : deux défauts, et le verdict sur les tractions
+
+96 clips. La seule valeur correcte est zéro. **Aucun clip n'en approche.**
+
+| | valeur |
+|---|---|
+| médiane | **0,199** |
+| quartiles | 0,091 / 0,199 / 0,299 |
+| min / max | 0,025 / 0,628 |
+| clips > 0,05 | **91 / 96** |
+| clips > 0,20 | 47 / 96 |
+
+Une médiane de **20 % de variation sur une quantité que la physique interdit de
+faire varier**. Deux os rigides, aucune posture ni distance ni angle de caméra
+ne peut déplacer leur rapport, et l'échelle par détection s'annule.
+
+**Corrélations, et la surprise :**
+
+| avec | r |
+|---|---|
+| `segment_cv` (pire segment) | **0,940** |
+| taux de détection (`detected/frames`) | **−0,712** |
+| `limb_ratio_implausible` | 0,351 |
+| écart de la médiane à 1,2 | −0,131 |
+
+Le 0,940 corrige une chose que j'avais écrite. `limb_ratio_cv` a été construit
+pour être sans échelle, en supposant que `segment_cv` était contaminé par la
+dérive d'échelle de MediaPipe. À 0,94, il ne l'était pas : `segment_cv` mesurait
+déjà le même bruit d'estimation. La nouvelle mesure **confirme** l'ancienne au
+lieu d'ouvrir un axe. Ce qui reste vrai de la critique de `segment_cv`, c'est
+l'autre moitié — un ajustement constamment faux est parfaitement stable — et
+elle est maintenant mesurée sur tout le jeu, pas sur une anecdote :
+
+| | clips | `limb_ratio_cv` médian | `..._implausible` médian |
+|---|---|---|---|
+| médiane du rapport **plausible** | 58 | **0,224** | 0,507 |
+| médiane du rapport **impossible** | 38 | **0,132** | 0,746 |
+
+Les clips dont le squelette est systématiquement faux sont **plus stables** que
+ceux dont la médiane est juste. Les deux défauts sont bien indépendants, et
+aucune des deux mesures ne remplace l'autre.
+
+Le −0,712 avec le taux de détection est la relation la plus forte du tableau :
+la même difficulté (occlusion, flou de mouvement, corps petit ou inhabituel)
+produit à la fois les pertes de détection et l'instabilité du fit 3D.
+
+#### Les trois tractions : c'est un biais, pas du bruit
+
+| | `082` | `083` | `084` |
+|---|---|---|---|
+| `limb_ratio_cv` | 0,114 | **0,087** | **0,092** |
+| médiane du rapport | 1,036 | **0,943** | **0,967** |
+| frames hors bande | 0,592 | **0,961** | 0,896 |
+
+Les trois clips *dans le domaine* sont dans le tiers le plus stable du jeu
+(0,087–0,114 contre 0,199 en médiane) et leur rapport est au niveau ou sous le
+plancher humain sur 59 à 96 % des frames. **Le squelette est ajusté de façon
+cohérente, et cohéremment faux.**
+
+C'est la réponse à la question posée au tour précédent, et elle est tranchée :
+sur les tractions réelles, **le défaut est un biais**. Un filtrage temporel sur
+les longueurs de segments ne peut rien y faire — un passe-bas sur une valeur
+fausse et stable rend la même valeur fausse. Le seul levier identifié reste le
+fine-tuning du modèle de pose (M4). Sur l'ensemble du jeu les deux défauts
+coexistent (47 clips sur 96 au-dessus de 0,20), mais pas sur ce qui nous
+concerne.
+
+### Ce que cette mesure a révélé de son propre instrument
+
+`limb_ratio` était calculé sur les deux bras sommés et **sans porte de
+visibilité**. Il jugeait donc l'ajustement sur des frames où le bras n'est pas
+visible — ce que l'invariant n°5 du projet interdit explicitement à l'étage de
+correction (`VISIBILITY_THRESHOLD = 0,6`). Un rapport lu sur un poignet deviné
+n'est pas la preuve d'un mauvais fit, c'est une mesure de rien. Et la
+corrélation à −0,712 avec le taux de détection est exactement ce à quoi
+ressemblerait ce biais s'il existait.
+
+Corrigé : le rapport est calculé **par bras**, seulement quand épaule, coude et
+poignet passent tous les trois le seuil, et `limb_ratio_frames` accompagne
+désormais la valeur pour qu'un clip mesuré sur 5 % de ses frames ne se lise pas
+comme un clip mesuré sur toutes. Sommer les deux bras laissait aussi un bras
+bien suivi porter un bras invisible, et masquait l'asymétrie.
+
+**Les chiffres ci-dessus sont donc ceux d'avant la porte.** Ils doivent être
+relus une fois la passe relancée : la part de la variation qui n'était que des
+landmarks non fiables n'est pas connue.
 
 ## Sélection du sujet — mesurée, et pas retenue
 

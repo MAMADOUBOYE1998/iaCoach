@@ -261,12 +261,32 @@ Reste dans M2 :
   0,31 seulement. `033_hometrainer` tient 1,000 sur 99,3 % de ses frames avec un
   `segment_cv` de 2,6 % — stable et faux.
 
-  **Prochaine mesure, nouvellement instrumentée : `limb_ratio_cv`.** Les deux os
-  sont rigides, donc leur rapport est une constante de l'athlète : aucune
-  posture, aucune distance, aucun angle de caméra ne le déplace, et l'échelle
-  par détection s'annule. Zéro est la seule valeur correcte, pour n'importe quel
-  clip. C'est la seule mesure de détection de ce harnais qui ne repose sur
-  aucune bande à croire ni sur aucune hypothèse de projection.
+- **`limb_ratio_cv` mesuré : sur les tractions, c'est un biais.** Médiane 0,199
+  sur 96 clips, 91 clips au-dessus de 0,05, aucun proche de zéro — la seule
+  valeur que la physique autorise. Mais les trois clips *dans le domaine* sont
+  dans le tiers le plus stable (0,087–0,114) **avec** un rapport au plancher
+  humain ou en dessous sur 59 à 96 % des frames. Le squelette est ajusté de
+  façon cohérente, et cohéremment faux.
+
+  **Conséquence directe : le filtrage temporel est éliminé.** Un passe-bas sur
+  une valeur fausse et stable rend la même valeur fausse. La piste « filtrer les
+  longueurs de segments avant tout fine-tuning », ouverte au tour précédent,
+  est fermée par la mesure. Il reste M4.
+
+  Deux résultats secondaires. `limb_ratio_cv` corrèle à **0,940** avec
+  `segment_cv` : la nouvelle mesure confirme l'ancienne au lieu d'ouvrir un axe,
+  et l'hypothèse « `segment_cv` est contaminé par la dérive d'échelle » était
+  fausse. Et les clips au squelette systématiquement faux sont **plus stables**
+  (cv médian 0,132) que ceux dont la médiane est juste (0,224) : les deux
+  défauts sont indépendants, aucune des deux mesures ne remplace l'autre.
+
+- **L'instrument violait l'invariant n°5 du projet.** `limb_ratio` était calculé
+  sur les deux bras sommés et sans porte de visibilité — il jugeait donc le fit
+  sur des frames où le bras n'est pas visible, ce que l'étage de correction a
+  interdiction d'utiliser. Corrigé : par bras, seuil `VISIBILITY_THRESHOLD` sur
+  épaule + coude + poignet, et `limb_ratio_frames` accompagne la valeur.
+  **Tous les chiffres de détection publiés à ce jour sont d'avant la porte** et
+  doivent être relus après une nouvelle passe.
 
 - **M4 remonte.** Le fine-tuning de la pose était un « nice-to-have » de
   robustesse. C'est maintenant le seul levier identifié sur la qualité des

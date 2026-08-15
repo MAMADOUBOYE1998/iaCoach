@@ -188,6 +188,13 @@ def detection_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
     segment length says the fit is *consistent*, not that it is *correct*, and a
     consistently wrong skeleton is perfectly stable.
 
+    Both are computed only on arms whose shoulder, elbow and wrist all clear
+    `VISIBILITY_THRESHOLD` — invariant no. 5, the same rule the correction stage
+    obeys. Ungated, they judged the fit on frames where the arm is not visible,
+    which is not evidence of a bad fit but a measurement of nothing.
+    `limb_ratio_frames` says how much of the clip survived that gate, so a value
+    read on a twentieth of the frames cannot pass for one read on all of them.
+
     `limb_ratio_cv` is the stronger of the two, and the only one here that rests
     on nothing but geometry. The upper arm and the forearm are rigid bones, so
     their ratio is a constant of the athlete — pose, distance and camera angle
@@ -216,6 +223,7 @@ def detection_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
         "box_centre_y",
         "limb_ratio",
         "limb_ratio_2d",
+        "arms_trusted",
     )
     for name in fields:
         values = sorted(row[name] for row in lengths if name in row)
@@ -232,6 +240,9 @@ def detection_summary(lengths: list[dict[str, float]]) -> dict[str, float]:
             low, high = HUMAN_LIMB_RATIO
             outside = sum(not low <= v <= high for v in values)
             out["limb_ratio_implausible"] = round(outside / len(values), 4)
+            # Without this, a clip whose ratio was trustworthy on 5 % of its
+            # frames reads exactly like one measured on all of them.
+            out["limb_ratio_frames"] = round(len(values) / len(lengths), 4)
             mean = sum(values) / len(values)
             if mean > 0.0 and len(values) > 1:
                 var = sum((v - mean) ** 2 for v in values) / (len(values) - 1)
