@@ -331,6 +331,30 @@ ne peut pas prouver qu'un vrai squat passe encore. La sensibilité attend une
 séance filmée par l'athlète, et c'est maintenant le blocage principal de M2 —
 pas un détail de calendrier.
 
+**Le protocole est prêt : `docs/PROTOCOLE_SEANCE.md`.** Cinq blocs, une
+soirée. Le nommage des fichiers porte la vérité terrain (`import_session`
+construit les manifestes et refuse un nom illisible plutôt que de deviner un
+compte), et les variantes sont des **fautes décidées à l'avance** — sans elles,
+`kip_tolerance_ms` n'est pas ajustable, puisque rien dans un lot de tractions
+strictes ne se trouve de l'autre côté du seuil.
+
+Deux outils construits pour ça :
+
+- `--target-fps` rejoue un clip comme un appareil plus lent le voit — frames
+  décimées, horodatages de tournage conservés. Une série filmée devient un
+  balayage 30 / 25 / 21 / 15 fps au lieu de quatre tournages. Le premier
+  ordonnanceur s'ancrait sur la frame retenue et livrait 15 fps quand on en
+  demandait 21 ; le test l'a attrapé, rien en aval ne l'aurait fait.
+- `import_session` sépare les séries des clips de repos en deux manifestes,
+  parce que le harnais les note dans des modes opposés : un dead hang envoyé
+  dans le manifeste de sensibilité laisserait « prédit 1, vrai 0 » passer pour
+  de la précision à ±1.
+
+Le clip le plus important est aussi le moins fatigant : **une T-pose tenue
+15 secondes**. Les deux bras dans le plan de l'image, aucun raccourci de
+perspective, aucune occlusion, aucun mouvement. Un `limb_ratio` impossible là
+n'a plus aucune excuse, et M4 devient obligatoire.
+
 ## M3 — Coaching + persistance ✅ livré
 
 - Persistance SQLite (`sqlite3` nu, pas d'ORM) : athlète, sessions, reps,

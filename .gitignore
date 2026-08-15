@@ -26,6 +26,13 @@ web/public/vendor/
 vision/finetune/data/
 vision/finetune/runs/
 fixtures/clips/
+# Filmed sessions: the footage, and the manifests, which hold absolute paths
+# into a personal home directory. See docs/PROTOCOLE_SEANCE.md.
+fixtures/sessions/
+session.json
+session_rest.json
+*.mp4
+*.mov
 
 # Local database
 *.db

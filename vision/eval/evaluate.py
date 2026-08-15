@@ -215,8 +215,56 @@ def _detection(normalized: list[Landmark], world: list[Landmark]) -> dict[str, f
     return out
 
 
+class FrameDecimator:
+    """Drops frames until roughly `target_fps`, the way a slower device does.
+
+    A phone does not run at the frame rate the camera recorded at: measured on
+    the device, ~21 fps against 30 fps footage. Every time-derived quantity the
+    counter uses — `hip_speed` in m/s against `kip_tolerance_ms`, tempo — is
+    sampled that much more coarsely live than in this harness, and a peak
+    velocity visible at 60 fps is simply not there at 21. Recalibrating those
+    thresholds on footage replayed at full rate would fit them to a signal the
+    app never sees.
+
+    The survivors keep their **true filming timestamps**. Renumbering them would
+    slow the movement down instead of sampling it more coarsely, which is a
+    different clip, not a slower device.
+
+    Asking for more than the source has is a no-op rather than an error: frames
+    cannot be invented, and refusing would make an fps sweep across a mixed-rate
+    session fail on its slowest clip instead of reporting what it could.
+    """
+
+    def __init__(self, source_fps: float, target_fps: float | None) -> None:
+        self.enabled = bool(target_fps and target_fps < source_fps)
+        self._interval_ms = 1000.0 / target_fps if self.enabled and target_fps else 0.0
+        self._next_due_ms = 0.0
+
+    def keep(self, t_ms: float) -> bool:
+        if not self.enabled:
+            return True
+        if t_ms + 1e-9 < self._next_due_ms:
+            return False
+        # Advance the schedule by one interval, **not** to one interval after the
+        # frame that happened to survive. Anchoring on the survivor accumulates
+        # the rounding gap between the two rates: 30 fps asked to yield 21 kept
+        # every other frame and delivered 15, because each kept frame pushed the
+        # next deadline a third of an interval further out than it should have.
+        self._next_due_ms += self._interval_ms
+        if self._next_due_ms <= t_ms:
+            # The source itself skipped — a variable-rate recording, or frames
+            # the decoder dropped. Catch the schedule up rather than emitting a
+            # burst of keeps to make up the deficit.
+            self._next_due_ms = t_ms + self._interval_ms
+        return True
+
+
 def sample_video(
-    path: Path, model_path: Path, max_poses: int = 1, running_mode: str = "video"
+    path: Path,
+    model_path: Path,
+    max_poses: int = 1,
+    running_mode: str = "video",
+    target_fps: float | None = None,
 ) -> tuple[
     list[FrameSample],
     list[dict[str, float]],
@@ -281,6 +329,8 @@ def sample_video(
     lengths: list[dict[str, float]] = []
     verdicts: list[Classification] = []
     frames = 0
+    read = 0
+    decimator = FrameDecimator(fps, target_fps)
     started = time.perf_counter()
 
     with mp_vision.PoseLandmarker.create_from_options(options) as landmarker:
@@ -288,7 +338,13 @@ def sample_video(
             ok, frame_bgr = capture.read()
             if not ok:
                 break
-            t_ms = frames * 1000.0 / fps
+            # Source index, not submitted count: the timestamp has to stay the
+            # moment the frame was filmed, or decimation would slow the movement
+            # down instead of sampling it more coarsely.
+            t_ms = read * 1000.0 / fps
+            read += 1
+            if not decimator.keep(t_ms):
+                continue
             frames += 1
             image = mp.Image(
                 image_format=mp.ImageFormat.SRGB,
@@ -432,10 +488,11 @@ def evaluate_clip(
     in_domain: bool = False,
     max_poses: int = 1,
     running_mode: str = "video",
+    target_fps: float | None = None,
 ) -> ClipResult:
     """Read a clip, then hand the samples to the tested scoring path."""
     samples, lengths, verdicts, frames, seconds, tracker = sample_video(
-        path, model, max_poses, running_mode
+        path, model, max_poses, running_mode, target_fps
     )
     if dump_dir is not None:
         dump_angles(samples, lengths, dump_dir / f"{path.stem}.csv")
@@ -575,6 +632,21 @@ def build_parser() -> argparse.ArgumentParser:
             "manifest lives in the repository and the clips do not."
         ),
     )
+    parser.add_argument(
+        "--target-fps",
+        type=float,
+        default=None,
+        help=(
+            "Replay the clip as a slower device would see it: drop frames until "
+            "roughly this rate, keeping each survivor's true filming timestamp. "
+            "The phone runs at ~21 fps against 30 fps footage, so every "
+            "time-derived quantity — `hip_speed` against `kip_tolerance_ms`, "
+            "tempo — is sampled far more coarsely live than here, and a peak "
+            "velocity visible at 60 fps is simply absent at 21. Lets one filmed "
+            "set be replayed at several rates instead of filmed several times. "
+            "Above the clip's own rate it does nothing: frames cannot be invented."
+        ),
+    )
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument(
         "--trim-percent",
@@ -655,6 +727,7 @@ def main(argv: list[str] | None = None) -> int:
             bool(entry.get("in_domain", False)),
             args.max_poses,
             args.running_mode,
+            args.target_fps,
         )
         if found_via:
             # Carried into the JSON, not just stderr: a run that silently
