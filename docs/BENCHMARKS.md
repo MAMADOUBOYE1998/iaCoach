@@ -575,9 +575,74 @@ désormais la valeur pour qu'un clip mesuré sur 5 % de ses frames ne se lise pa
 comme un clip mesuré sur toutes. Sommer les deux bras laissait aussi un bras
 bien suivi porter un bras invisible, et masquait l'asymétrie.
 
-**Les chiffres ci-dessus sont donc ceux d'avant la porte.** Ils doivent être
-relus une fois la passe relancée : la part de la variation qui n'était que des
-landmarks non fiables n'est pas connue.
+### Après la porte : elle ne change rien, et c'est le résultat
+
+Passe relancée. L'hypothèse était qu'une partie de la variation n'était que des
+landmarks non fiables. **Elle ne l'était pas.**
+
+| | avant la porte | après |
+|---|---|---|
+| `limb_ratio_cv` médian | 0,1807 | **0,1813** |
+| clips > 0,05 | 84 | 85 |
+| clips > 0,20 | 40 | 42 |
+| médiane du rapport | 1,0897 | 1,0836 |
+| clips à médiane sous 1,05 | **33** | **33** |
+| `..._implausible` médian | 0,634 | 0,595 |
+| corrélation au taux de détection | −0,712 | −0,605 |
+
+Rien ne bouge. Le `cv` **monte** même sur 69 clips sur 89 : sommer les deux bras
+moyennait deux estimations et lissait la variance, donc le chiffre d'avant
+*sous-estimait* l'instabilité. La corrélation à −0,605 avec le taux de détection
+survit à la porte, elle ne venait donc pas des landmarks non fiables.
+
+Ce que la porte apporte vraiment : **10 clips ne rapportent plus rien du tout**
+(`018_shovel`, les quatre `bar_lift`, `066`, `078`, `086`, `089`, `098`). Aucun
+bras n'y passe le seuil sur aucune frame. Avant, ils rapportaient un nombre.
+Elle transforme « une valeur » en « pas de valeur » là où il n'y avait rien à
+mesurer, ce qui est son travail.
+
+Couverture médiane : 0,948. 46 clips sur 89 au-dessus de 0,9. Sur ce
+sous-ensemble — le plus fiable du jeu — `cv` médian 0,100, **42 clips sur 46
+au-dessus de 0,05**, rapport médian 1,055 et **21 sur 46 sous le plancher
+humain**. Même sur la moitié la plus propre, un clip sur deux a un squelette
+systématiquement trop court du bras.
+
+### Le vrai résultat : `visibility` est aveugle à ce défaut
+
+| | `082` | `083` | `084` |
+|---|---|---|---|
+| `limb_ratio_frames` (couverture) | 0,905 | **1,000** | **1,000** |
+| bras retenus (médiane) | 2 | 2 | 2 |
+| `limb_ratio_cv` avant → après | 0,114 → 0,093 | 0,087 → **0,087** | 0,092 → **0,092** |
+| rapport avant → après | 1,036 → 1,037 | 0,943 → **0,944** | 0,967 → **0,969** |
+| frames hors bande | 0,592 → 0,587 | 0,961 → **0,961** | 0,896 → 0,885 |
+
+Sur `083` et `084`, **toutes** les frames passaient déjà le seuil de visibilité.
+La porte ne pouvait rien y changer, et elle n'a rien changé : le verdict de biais
+tient, intact.
+
+Mais c'est aussi le résultat le plus dur du tour. **MediaPipe déclare une
+visibilité supérieure à 0,6 sur 100 % des frames de `083`, où le rapport
+humérus/avant-bras est anatomiquement impossible sur 96 % d'entre elles.** Le
+signal de confiance du modèle ne dit rien de la plausibilité anatomique de son
+propre ajustement 3D.
+
+Conséquence directe pour l'app, et pas seulement pour le harnais : l'invariant
+n°5 — aucun landmark sous le seuil de confiance n'est utilisé pour une
+correction — est la **seule** défense du projet contre de mauvais landmarks, et
+elle ne défend pas contre ce mode de défaillance. L'app émettra une correction à
+partir d'un squelette impossible sans que rien ne l'en empêche.
+
+Le contrôle anatomique ferait une défense, mais pas en tant que porte : refuser
+les frames impossibles coûterait 59 %, 96 % et 89 % des frames des trois clips
+de tractions, ce qui supprime le comptage au lieu de le protéger. Il ne peut
+être qu'un signal de confiance, pas un filtre. À décider en M2/M4, avec un
+chiffre mesuré sur une séance réelle avant de trancher.
+
+*Réserve de lecture :* `090_hoolahoop` rapporte un verdict de bande assis sur
+**une seule frame** (couverture 0,0044). `limb_ratio_frames` le dit, mais les
+médianes inter-clips ci-dessus traitent ce clip comme les autres — d'où le
+sous-ensemble à couverture ≥ 0,9, qui est le chiffre à citer.
 
 ## Sélection du sujet — mesurée, et pas retenue
 

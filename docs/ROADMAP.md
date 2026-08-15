@@ -285,8 +285,35 @@ Reste dans M2 :
   sur des frames où le bras n'est pas visible, ce que l'étage de correction a
   interdiction d'utiliser. Corrigé : par bras, seuil `VISIBILITY_THRESHOLD` sur
   épaule + coude + poignet, et `limb_ratio_frames` accompagne la valeur.
-  **Tous les chiffres de détection publiés à ce jour sont d'avant la porte** et
-  doivent être relus après une nouvelle passe.
+  **Mesuré après la porte : elle ne change rien.** `limb_ratio_cv` médian
+  0,1807 → 0,1813, clips à médiane sous 1,05 : 33 → 33, corrélation au taux de
+  détection −0,712 → −0,605. Le `cv` monte même sur 69 clips sur 89, parce que
+  sommer les deux bras lissait la variance : le chiffre d'avant *sous-estimait*
+  l'instabilité. Ce que la porte apporte : 10 clips ne rapportent plus rien du
+  tout, ce qui est exactement son travail.
+
+- **`visibility` est aveugle à ce défaut, et c'est le résultat le plus dur.**
+  Sur `083` et `084`, **100 % des frames passaient déjà le seuil** — la porte ne
+  pouvait rien y changer, et le verdict de biais tient intact. Mais MediaPipe
+  déclare donc une visibilité > 0,6 sur toutes les frames de `083` alors que le
+  rapport humérus/avant-bras y est impossible sur 96 % d'entre elles. Le signal
+  de confiance du modèle ne dit rien de la plausibilité anatomique de son propre
+  ajustement 3D.
+
+  **Conséquence pour l'app, pas seulement pour le harnais.** L'invariant n°5 est
+  la seule défense du projet contre de mauvais landmarks, et elle ne défend pas
+  contre ce mode de défaillance : l'app émettra une correction depuis un
+  squelette impossible sans que rien ne l'arrête. Le contrôle anatomique ferait
+  une défense — mais pas en tant que porte : refuser les frames impossibles
+  coûterait 59 %, 96 % et 89 % des frames des trois clips de tractions, ce qui
+  supprime le comptage au lieu de le protéger. Il ne peut être qu'un **signal de
+  confiance**, jamais un filtre. À trancher en M2/M4 sur une séance réelle.
+
+- **La chaîne de diagnostic est close.** Pas la sélection du sujet, pas la
+  détection, pas l'estimation de profondeur (test invalide), pas du bruit sur
+  les tractions (biais), pas des landmarks non fiables (la visibilité est
+  maximale là où le fit est faux). Tout pointe sur le modèle de pose lui-même.
+  **M4 n'est plus un levier parmi d'autres, c'est le seul identifié.**
 
 - **M4 remonte.** Le fine-tuning de la pose était un « nice-to-have » de
   robustesse. C'est maintenant le seul levier identifié sur la qualité des
